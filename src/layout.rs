@@ -4,7 +4,7 @@ use crate::models::*;
 pub enum Layout<T> {
     Padding {
         amounts: Padding,
-        child: Box<Layout<T>>,
+        element: Box<Layout<T>>,
     },
     Column {
         elements: Vec<Layout<T>>,
@@ -15,14 +15,15 @@ pub enum Layout<T> {
         spacing: f32,
     },
     Stack(Vec<Layout<T>>),
+    Offset {
+        offset_x: f32,
+        offset_y: f32,
+        element: Box<Layout<T>>,
+    },
     Draw(Drawable<T>),
     Explicit {
-        w: Option<f32>,
-        h: Option<f32>,
-        x_align: XAlign,
-        y_align: YAlign,
-        ratio: bool,
-        child: Box<Layout<T>>,
+        options: Size,
+        element: Box<Layout<T>>,
     },
 }
 
@@ -34,7 +35,7 @@ impl<T> Layout<T> {
         while let Some(layout) = stack.pop() {
             match layout {
                 Layout::Draw(drawable) => drawables.push(drawable),
-                Layout::Padding { child, .. } => stack.push(child),
+                Layout::Padding { element: child, .. } => stack.push(child),
                 Layout::Column {
                     elements,
                     spacing: _,
@@ -46,7 +47,12 @@ impl<T> Layout<T> {
                 | Layout::Stack(elements) => {
                     stack.extend(elements.iter().rev());
                 }
-                Layout::Explicit { child, .. } => stack.push(child),
+                Layout::Explicit { element, .. } => stack.push(element),
+                Layout::Offset {
+                    offset_x: _,
+                    offset_y: _,
+                    element,
+                } => stack.push(element),
             }
         }
         drawables
@@ -54,7 +60,10 @@ impl<T> Layout<T> {
 
     pub fn layout(&mut self, available_area: Area) {
         match self {
-            Layout::Padding { amounts, child } => {
+            Layout::Padding {
+                amounts,
+                element: child,
+            } => {
                 let inner_area = Area {
                     x: available_area.x + amounts.leading,
                     y: available_area.y + amounts.top,
@@ -64,36 +73,90 @@ impl<T> Layout<T> {
                 child.layout(inner_area);
             }
             Layout::Column { elements, spacing } => {
-                let total_spacing = *spacing * (elements.len() - 1) as f32;
+                let total_spacing = *spacing * (elements.len() as i32 - 1).max(0) as f32;
                 let available_height = available_area.height - total_spacing;
-                let child_height = available_height / elements.len() as f32;
+                let heights: Vec<Option<f32>> = elements
+                    .iter()
+                    .map(|e| {
+                        let Layout::Explicit {
+                            options,
+                            element: _,
+                        } = e
+                        else {
+                            return None;
+                        };
+                        if options.y_relative {
+                            return None;
+                        }
+                        options.height?.into()
+                    })
+                    .collect();
+                let explicit_consumed = heights.iter().filter_map(|&h| h).fold(0., |c, n| c + n);
+                let remaining = available_height - explicit_consumed;
+                let unconstrained_heights = heights
+                    .iter()
+                    .filter(|&h| h.is_none())
+                    .collect::<Vec<&Option<f32>>>()
+                    .len();
+                let default_height = remaining / unconstrained_heights as f32;
 
                 let mut current_y = available_area.y;
-                for child in elements.iter_mut() {
-                    let child_area = Area {
+                for (i, child) in elements.iter_mut().enumerate() {
+                    let child_height = heights
+                        .get(i)
+                        .unwrap_or(&Some(default_height))
+                        .unwrap_or(default_height);
+                    let area = Area {
                         x: available_area.x,
                         y: current_y,
                         width: available_area.width,
                         height: child_height,
                     };
-                    child.layout(child_area);
+                    child.layout(area);
                     current_y += child_height + *spacing;
                 }
             }
             Layout::Row { elements, spacing } => {
-                let total_spacing = *spacing * (elements.len() - 1) as f32;
+                let total_spacing = *spacing * (elements.len() as i32 - 1).max(0) as f32;
                 let available_width = available_area.width - total_spacing;
-                let child_width = available_width / elements.len() as f32;
+                let widths: Vec<Option<f32>> = elements
+                    .iter()
+                    .map(|e| {
+                        let Layout::Explicit {
+                            options,
+                            element: _,
+                        } = e
+                        else {
+                            return None;
+                        };
+                        if options.x_relative {
+                            return None;
+                        }
+                        options.width?.into()
+                    })
+                    .collect();
+                let explicit_consumed = widths.iter().filter_map(|&h| h).fold(0., |c, n| c + n);
+                let remaining = available_width - explicit_consumed;
+                let unconstrained_widths = widths
+                    .iter()
+                    .filter(|&h| h.is_none())
+                    .collect::<Vec<&Option<f32>>>()
+                    .len();
+                let default_width = remaining / unconstrained_widths as f32;
 
                 let mut current_x = available_area.x;
-                for child in elements.iter_mut() {
-                    let child_area = Area {
+                for (i, child) in elements.iter_mut().enumerate() {
+                    let child_width = widths
+                        .get(i)
+                        .unwrap_or(&Some(default_width))
+                        .unwrap_or(default_width);
+                    let area = Area {
                         x: current_x,
                         y: available_area.y,
                         width: child_width,
                         height: available_area.height,
                     };
-                    child.layout(child_area);
+                    child.layout(area);
                     current_x += child_width + *spacing;
                 }
             }
@@ -108,23 +171,43 @@ impl<T> Layout<T> {
                 }
             }
             Layout::Explicit {
-                w: width,
-                h: height,
-                x_align,
-                y_align,
-                ratio,
-                child,
+                options:
+                    Size {
+                        width,
+                        width_min,
+                        width_max,
+                        height,
+                        height_min,
+                        height_max,
+                        x_align,
+                        y_align,
+                        x_relative,
+                        y_relative,
+                    },
+                element: child,
             } => {
-                let explicit_width = if *ratio {
+                let explicit_width = if *x_relative {
                     available_area.width * width.unwrap_or(1.0)
                 } else {
                     width.unwrap_or(available_area.width)
-                };
-                let explicit_height = if *ratio {
+                }
+                .clamp(
+                    width_min.unwrap_or(0.).min(width_max.unwrap_or(0.)),
+                    width_max
+                        .unwrap_or(available_area.width.max(0.))
+                        .max(width_min.unwrap_or(0.)),
+                );
+                let explicit_height = if *y_relative {
                     available_area.height * height.unwrap_or(1.0)
                 } else {
                     height.unwrap_or(available_area.height)
-                };
+                }
+                .clamp(
+                    height_min.unwrap_or(0.).min(height_max.unwrap_or(0.)),
+                    height_max
+                        .unwrap_or(available_area.height.max(0.))
+                        .max(height_min.unwrap_or(0.)),
+                );
                 let x = match x_align {
                     XAlign::Leading => available_area.x,
                     XAlign::Trailing => available_area.x + (available_area.width - explicit_width),
@@ -142,12 +225,20 @@ impl<T> Layout<T> {
                 child.layout(Area {
                     x: x.max(available_area.x),
                     y: y.max(available_area.y),
-                    width: width
-                        .unwrap_or(available_area.width)
-                        .min(available_area.width),
-                    height: height
-                        .unwrap_or(available_area.height)
-                        .min(available_area.height),
+                    width: explicit_width,
+                    height: explicit_height,
+                });
+            }
+            Layout::Offset {
+                offset_x,
+                offset_y,
+                element,
+            } => {
+                element.layout(Area {
+                    x: available_area.x + *offset_x,
+                    y: available_area.y + *offset_y,
+                    width: available_area.width,
+                    height: available_area.height,
                 });
             }
         }

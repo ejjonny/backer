@@ -9,7 +9,7 @@ impl<T> Layout<T> {
                 top: 0.,
                 bottom: 0.,
             },
-            child: Box::new(self),
+            element: Box::new(self),
         }
     }
 
@@ -21,7 +21,7 @@ impl<T> Layout<T> {
                 top: 0.,
                 bottom: 0.,
             },
-            child: Box::new(self),
+            element: Box::new(self),
         }
     }
 
@@ -33,7 +33,7 @@ impl<T> Layout<T> {
                 top: 0.,
                 bottom: 0.,
             },
-            child: Box::new(self),
+            element: Box::new(self),
         }
     }
 
@@ -45,7 +45,7 @@ impl<T> Layout<T> {
                 top: amount,
                 bottom: 0.,
             },
-            child: Box::new(self),
+            element: Box::new(self),
         }
     }
 
@@ -57,7 +57,7 @@ impl<T> Layout<T> {
                 top: amount,
                 bottom: amount,
             },
-            child: Box::new(self),
+            element: Box::new(self),
         }
     }
 
@@ -69,7 +69,7 @@ impl<T> Layout<T> {
                 top: 0.,
                 bottom: amount,
             },
-            child: Box::new(self),
+            element: Box::new(self),
         }
     }
 
@@ -81,73 +81,38 @@ impl<T> Layout<T> {
                 top: amount,
                 bottom: amount,
             },
-            child: Box::new(self),
+            element: Box::new(self),
         }
     }
 
-    pub fn height(self, h: f32, align: YAlign) -> Layout<T> {
+    pub fn size(self, options: Size) -> Layout<T> {
         Layout::Explicit {
-            w: None,
-            h: Some(h),
-            x_align: XAlign::Center,
-            y_align: align,
-            ratio: false,
-            child: Box::new(self),
+            options,
+            element: Box::new(self),
         }
     }
 
-    pub fn width(self, w: f32, align: XAlign) -> Layout<T> {
-        Layout::Explicit {
-            w: Some(w),
-            h: None,
-            x_align: align,
-            y_align: YAlign::Center,
-            ratio: false,
-            child: Box::new(self),
+    pub fn offset_x(self, amount: f32) -> Layout<T> {
+        Layout::Offset {
+            offset_x: amount,
+            offset_y: 0.,
+            element: Box::new(self),
         }
     }
 
-    pub fn size(self, w: f32, h: f32, x_align: XAlign, y_align: YAlign) -> Layout<T> {
-        Layout::Explicit {
-            w: Some(w),
-            h: Some(h),
-            x_align,
-            y_align,
-            ratio: false,
-            child: Box::new(self),
+    pub fn offset_y(self, amount: f32) -> Layout<T> {
+        Layout::Offset {
+            offset_x: 0.,
+            offset_y: amount,
+            element: Box::new(self),
         }
     }
 
-    pub fn height_ratio(self, h: f32, align: YAlign) -> Layout<T> {
-        Layout::Explicit {
-            w: None,
-            h: Some(h),
-            x_align: XAlign::Center,
-            y_align: align,
-            ratio: true,
-            child: Box::new(self),
-        }
-    }
-
-    pub fn width_ratio(self, w: f32, align: XAlign) -> Layout<T> {
-        Layout::Explicit {
-            w: Some(w),
-            h: None,
-            x_align: align,
-            y_align: YAlign::Center,
-            ratio: true,
-            child: Box::new(self),
-        }
-    }
-
-    pub fn size_ratio(self, w: f32, h: f32, x_align: XAlign, y_align: YAlign) -> Layout<T> {
-        Layout::Explicit {
-            w: Some(w),
-            h: Some(h),
-            x_align,
-            y_align,
-            ratio: true,
-            child: Box::new(self),
+    pub fn offset(self, offset_x: f32, offset_y: f32) -> Layout<T> {
+        Layout::Offset {
+            offset_x,
+            offset_y,
+            element: Box::new(self),
         }
     }
 }
