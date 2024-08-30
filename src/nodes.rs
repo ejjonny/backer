@@ -7,7 +7,7 @@ pub fn column<T>(elements: Vec<Layout<T>>) -> Layout<T> {
     }
 }
 
-pub fn column_spaced<T>(elements: Vec<Layout<T>>, spacing: f32) -> Layout<T> {
+pub fn column_spaced<T>(spacing: f32, elements: Vec<Layout<T>>) -> Layout<T> {
     Layout::Column { elements, spacing }
 }
 
@@ -18,7 +18,7 @@ pub fn row<T>(elements: Vec<Layout<T>>) -> Layout<T> {
     }
 }
 
-pub fn row_spaced<T>(elements: Vec<Layout<T>>, spacing: f32) -> Layout<T> {
+pub fn row_spaced<T>(spacing: f32, elements: Vec<Layout<T>>) -> Layout<T> {
     Layout::Row { elements, spacing }
 }
 
