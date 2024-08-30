@@ -116,12 +116,12 @@ impl<T> Layout<T> {
                 child,
             } => {
                 let explicit_width = if *ratio {
-                    available_area.width * width.unwrap_or(available_area.width)
+                    available_area.width * width.unwrap_or(1.0)
                 } else {
                     width.unwrap_or(available_area.width)
                 };
                 let explicit_height = if *ratio {
-                    available_area.height * height.unwrap_or(available_area.height)
+                    available_area.height * height.unwrap_or(1.0)
                 } else {
                     height.unwrap_or(available_area.height)
                 };
