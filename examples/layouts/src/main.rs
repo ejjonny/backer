@@ -1,12 +1,16 @@
 use backer::models::*;
-use backer::modifiers::*;
 use backer::nodes::*;
 use macroquad::prelude::*;
+use macroquad::ui::root_ui;
+use macroquad::ui::widgets;
+use macroquad::ui::Ui;
 
 #[macroquad::main("Demo")]
 async fn main() {
+    let mut show_alignment = false;
     loop {
-        let layout = row_spaced(
+        let show_alignment_value = show_alignment;
+        let mut layout = row_spaced(
             20.,
             vec![
                 column(vec![
@@ -78,87 +82,105 @@ async fn main() {
                     ]),
                 ]),
                 column(vec![
-                    draw(MyDrawable::Text {
-                        string: "Alignment & Offset".to_string(),
-                        font_size: 15.,
-                        color: WHITE,
+                    conditional(
+                        show_alignment_value,
+                        column(vec![
+                            draw(MyDrawable::Text {
+                                string: "Alignment & Offset".to_string(),
+                                font_size: 15.,
+                                color: WHITE,
+                            })
+                            .size(Size::new().height(20.)),
+                            stack(vec![
+                                draw(MyDrawable::Rect(RED)),
+                                draw(MyDrawable::Rect(WHITE)).size(
+                                    Size::new().height(30.).width(30.).x_align(XAlign::Leading),
+                                ),
+                                draw(MyDrawable::Rect(WHITE)).size(
+                                    Size::new().height(30.).width(30.).x_align(XAlign::Trailing),
+                                ),
+                                draw(MyDrawable::Rect(WHITE))
+                                    .size(Size::new().height(30.).width(30.).y_align(YAlign::Top)),
+                                draw(MyDrawable::Rect(WHITE)).size(
+                                    Size::new().height(30.).width(30.).y_align(YAlign::Bottom),
+                                ),
+                                draw(MyDrawable::Rect(WHITE)).size(
+                                    Size::new().height(30.).width(30.).align(Align::TopLeading),
+                                ),
+                                draw(MyDrawable::Rect(WHITE)).size(
+                                    Size::new()
+                                        .height(30.)
+                                        .width(30.)
+                                        .align(Align::BottomLeading),
+                                ),
+                                draw(MyDrawable::Rect(WHITE)).size(
+                                    Size::new()
+                                        .height(30.)
+                                        .width(30.)
+                                        .align(Align::BottomTrailing),
+                                ),
+                                draw(MyDrawable::Rect(WHITE)).size(
+                                    Size::new().height(30.).width(30.).align(Align::TopTrailing),
+                                ),
+                                draw(MyDrawable::Rect(WHITE))
+                                    .size(
+                                        Size::new()
+                                            .height(30.)
+                                            .width(30.)
+                                            .align(Align::CenterCenter),
+                                    )
+                                    .offset(10., 10.),
+                                draw(MyDrawable::Rect(WHITE))
+                                    .size(
+                                        Size::new()
+                                            .height(30.)
+                                            .width(30.)
+                                            .align(Align::CenterCenter),
+                                    )
+                                    .offset(-10., -10.),
+                            ]),
+                        ]),
+                    ),
+                    draw(MyDrawable::Button {
+                        label: "Show".to_string(),
+                        action: &mut show_alignment,
                     })
-                    .size(Size::new().height(20.)),
-                    stack(vec![
-                        draw(MyDrawable::Rect(RED)),
-                        draw(MyDrawable::Rect(WHITE))
-                            .size(Size::new().height(30.).width(30.).x_align(XAlign::Leading)),
-                        draw(MyDrawable::Rect(WHITE))
-                            .size(Size::new().height(30.).width(30.).x_align(XAlign::Trailing)),
-                        draw(MyDrawable::Rect(WHITE))
-                            .size(Size::new().height(30.).width(30.).y_align(YAlign::Top)),
-                        draw(MyDrawable::Rect(WHITE))
-                            .size(Size::new().height(30.).width(30.).y_align(YAlign::Bottom)),
-                        draw(MyDrawable::Rect(WHITE))
-                            .size(Size::new().height(30.).width(30.).align(Align::TopLeading)),
-                        draw(MyDrawable::Rect(WHITE)).size(
-                            Size::new()
-                                .height(30.)
-                                .width(30.)
-                                .align(Align::BottomLeading),
-                        ),
-                        draw(MyDrawable::Rect(WHITE)).size(
-                            Size::new()
-                                .height(30.)
-                                .width(30.)
-                                .align(Align::BottomTrailing),
-                        ),
-                        draw(MyDrawable::Rect(WHITE))
-                            .size(Size::new().height(30.).width(30.).align(Align::TopTrailing)),
-                        draw(MyDrawable::Rect(WHITE))
-                            .size(
-                                Size::new()
-                                    .height(30.)
-                                    .width(30.)
-                                    .align(Align::CenterCenter),
-                            )
-                            .offset(10., 10.),
-                        draw(MyDrawable::Rect(WHITE))
-                            .size(
-                                Size::new()
-                                    .height(30.)
-                                    .width(30.)
-                                    .align(Align::CenterCenter),
-                            )
-                            .offset(-10., -10.),
-                    ]),
+                    .size(Size::new().height(20.).y_align(YAlign::Bottom)),
                 ]),
             ],
         );
-        let mut repeated = column((0..4).map(|_| layout.clone()).collect());
-        repeated.layout(Area {
+
+        layout.layout(Area {
             x: 0.,
             y: 0.,
             width: screen_width(),
             height: screen_height(),
         });
 
-        repeated
+        layout
             .drawables()
-            .iter()
-            .for_each(|drawable| drawable.element.draw(drawable.area));
+            .iter_mut()
+            .for_each(|drawable| drawable.element.draw(drawable.area, &mut root_ui()));
 
         next_frame().await
     }
 }
 
-#[derive(Debug, Clone)]
-enum MyDrawable {
+enum MyDrawable<'a> {
     Rect(Color),
     Text {
         string: String,
         font_size: f32,
         color: Color,
     },
+    Button {
+        label: String,
+        action: &'a mut bool,
+    },
 }
 
-impl MyDrawable {
-    fn draw(&self, area: Area) {
+impl<'a> MyDrawable<'a> {
+    fn draw(&mut self, area: Area, ui: &mut Ui) {
         match self {
             MyDrawable::Rect(color) => {
                 draw_rectangle(area.x, area.y, area.width, area.height, *color);
@@ -176,6 +198,15 @@ impl MyDrawable {
                     *font_size,
                     *color,
                 );
+            }
+            MyDrawable::Button { label, action } => {
+                if widgets::Button::new(label.as_str())
+                    .size(vec2(area.width, area.height))
+                    .position(vec2(area.x, area.y))
+                    .ui(ui)
+                {
+                    **action = !**action
+                };
             }
         }
     }

@@ -25,10 +25,14 @@ pub enum Layout<T> {
         options: Size,
         element: Box<Layout<T>>,
     },
+    Conditional {
+        condition: bool,
+        element: Box<Layout<T>>,
+    },
 }
 
 impl<T> Layout<T> {
-    pub fn drawables(&self) -> Vec<&Drawable<T>> {
+    pub fn drawables(&mut self) -> Vec<&mut Drawable<T>> {
         let mut drawables = Vec::new();
         let mut stack = vec![self];
 
@@ -45,7 +49,7 @@ impl<T> Layout<T> {
                     spacing: _,
                 }
                 | Layout::Stack(elements) => {
-                    stack.extend(elements.iter().rev());
+                    stack.extend(elements.iter_mut().rev());
                 }
                 Layout::Explicit { element, .. } => stack.push(element),
                 Layout::Offset {
@@ -53,6 +57,11 @@ impl<T> Layout<T> {
                     offset_y: _,
                     element,
                 } => stack.push(element),
+                Layout::Conditional { condition, element } => {
+                    if *condition {
+                        stack.push(element)
+                    }
+                }
             }
         }
         drawables
@@ -73,6 +82,17 @@ impl<T> Layout<T> {
                 child.layout(inner_area);
             }
             Layout::Column { elements, spacing } => {
+                if elements.len() == 1 {
+                    for element in elements {
+                        element.layout(Area {
+                            x: available_area.x,
+                            y: available_area.y,
+                            width: available_area.width,
+                            height: available_area.height,
+                        })
+                    }
+                    return;
+                }
                 let total_spacing = *spacing * (elements.len() as i32 - 1).max(0) as f32;
                 let available_height = available_area.height - total_spacing;
                 let heights: Vec<Option<f32>> = elements
@@ -117,6 +137,17 @@ impl<T> Layout<T> {
                 }
             }
             Layout::Row { elements, spacing } => {
+                if elements.len() == 1 {
+                    for element in elements {
+                        element.layout(Area {
+                            x: available_area.x,
+                            y: available_area.y,
+                            width: available_area.width,
+                            height: available_area.height,
+                        })
+                    }
+                    return;
+                }
                 let total_spacing = *spacing * (elements.len() as i32 - 1).max(0) as f32;
                 let available_width = available_area.width - total_spacing;
                 let widths: Vec<Option<f32>> = elements
@@ -240,6 +271,11 @@ impl<T> Layout<T> {
                     width: available_area.width,
                     height: available_area.height,
                 });
+            }
+            Layout::Conditional { condition, element } => {
+                if *condition {
+                    element.layout(available_area)
+                }
             }
         }
     }
