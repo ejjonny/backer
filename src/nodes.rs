@@ -1,4 +1,7 @@
-use crate::{layout::Layout, models::*};
+use crate::{
+    layout::{Drawable, Layout},
+    models::*,
+};
 
 pub fn column<T>(elements: Vec<Layout<T>>) -> Layout<T> {
     Layout::Column {
@@ -36,7 +39,10 @@ pub fn draw<'a, T, F>(drawable: F) -> Layout<'a, T>
 where
     F: FnMut(Area, &mut T) + 'a,
 {
-    Layout::Draw(Box::new(drawable))
+    Layout::Draw(Drawable {
+        area: Area::default(),
+        draw: Box::new(drawable),
+    })
 }
 
 pub fn conditional<T>(condition: bool, element: Layout<T>) -> Layout<T> {

@@ -1,7 +1,5 @@
 use crate::models::*;
 
-type Drawable<'a, T> = Box<dyn FnMut(Area, &mut T) + 'a>;
-
 pub enum Layout<'a, T> {
     Padding {
         amounts: Padding,
@@ -32,43 +30,48 @@ pub enum Layout<'a, T> {
     },
 }
 
-impl<'a, T> Layout<'a, T> {
-    // pub fn draw(&mut self, ctx: &mut T) {
-    //     let mut drawables = Vec::new();
-    //     let mut stack = vec![self];
+type DrawableFn<'a, T> = Box<dyn FnMut(Area, &mut T) + 'a>;
 
-    //     while let Some(layout) = stack.pop() {
-    //         match layout {
-    //             Layout::Draw(drawable) => drawables.push(drawable),
-    //             Layout::Padding { element: child, .. } => stack.push(child),
-    //             Layout::Column {
-    //                 elements,
-    //                 spacing: _,
-    //             }
-    //             | Layout::Row {
-    //                 elements,
-    //                 spacing: _,
-    //             }
-    //             | Layout::Stack(elements) => {
-    //                 stack.extend(elements.iter_mut().rev());
-    //             }
-    //             Layout::Explicit { element, .. } => stack.push(element),
-    //             Layout::Offset {
-    //                 offset_x: _,
-    //                 offset_y: _,
-    //                 element,
-    //             } => stack.push(element),
-    //             Layout::Conditional { condition, element } => {
-    //                 if *condition {
-    //                     stack.push(element)
-    //                 }
-    //             }
-    //         }
-    //     }
-    //     for drawable in drawables {
-    //         (drawable)(ctx)
-    //     }
-    // }
+pub struct Drawable<'a, T> {
+    pub(crate) area: Area,
+    pub(crate) draw: DrawableFn<'a, T>,
+}
+
+impl<'a, T> Layout<'a, T> {
+    pub fn drawables(&self) -> Vec<&Drawable<'a, T>> {
+        let mut drawables = Vec::new();
+        let mut stack = vec![self];
+
+        while let Some(layout) = stack.pop() {
+            match layout {
+                Layout::Draw(drawable) => drawables.push(drawable),
+                Layout::Padding { element: child, .. } => stack.push(child),
+                Layout::Column {
+                    elements,
+                    spacing: _,
+                }
+                | Layout::Row {
+                    elements,
+                    spacing: _,
+                }
+                | Layout::Stack(elements) => {
+                    stack.extend(elements.iter().rev());
+                }
+                Layout::Explicit { element, .. } => stack.push(element),
+                Layout::Offset {
+                    offset_x: _,
+                    offset_y: _,
+                    element,
+                } => stack.push(element),
+                Layout::Conditional { condition, element } => {
+                    if *condition {
+                        stack.push(element)
+                    }
+                }
+            }
+        }
+        drawables
+    }
 
     pub fn layout(&mut self, available_area: Area, ctx: &mut T) {
         match self {
@@ -205,9 +208,10 @@ impl<'a, T> Layout<'a, T> {
                     child.layout(available_area, ctx)
                 }
             }
-            Layout::Draw(item) => {
+            Layout::Draw(drawable) => {
                 if available_area.width > 0. && available_area.height > 0. {
-                    (item)(available_area, ctx);
+                    drawable.area = available_area;
+                    (drawable.draw)(available_area, ctx);
                 }
             }
             Layout::Explicit {

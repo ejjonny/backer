@@ -1,3 +1,4 @@
+use backer::layout::Layout;
 use backer::models::*;
 use backer::nodes::*;
 use macroquad::prelude::*;
@@ -28,20 +29,20 @@ async fn main() {
                     column(vec![
                         draw(text("Height Constraints", 15., WHITE)).size(Size::new().height(20.)),
                         stack(vec![
-                            draw(rect(BLUE)),
-                            draw(rect(WHITE)).size(
+                            rect(BLUE),
+                            rect(WHITE).size(
                                 Size::new()
                                     .height_relative(0.1)
                                     .y_align(YAlign::Top)
                                     .min_height(20.),
                             ),
-                            draw(rect(WHITE)).size(
+                            rect(WHITE).size(
                                 Size::new()
                                     .height_relative(0.1)
                                     .y_align(YAlign::Bottom)
                                     .min_height(20.),
                             ),
-                            draw(rect(WHITE)).size(Size::new().height(30.)),
+                            rect(WHITE).size(Size::new().height(30.)),
                         ]),
                         draw(|area, show_alignment| {
                             if button(area, "Fullscreen", &mut root_ui()) {
@@ -63,20 +64,20 @@ async fn main() {
                     column(vec![
                         draw(text("Width Constraints", 15., WHITE)).size(Size::new().height(20.)),
                         stack(vec![
-                            draw(rect(RED)),
-                            draw(rect(WHITE)).size(
+                            rect(RED),
+                            rect(WHITE).size(
                                 Size::new()
                                     .width_relative(0.1)
                                     .x_align(XAlign::Leading)
                                     .min_width(20.),
                             ),
-                            draw(rect(WHITE)).size(
+                            rect(WHITE).size(
                                 Size::new()
                                     .width_relative(0.1)
                                     .x_align(XAlign::Trailing)
                                     .min_width(20.),
                             ),
-                            draw(rect(WHITE)).size(Size::new().width(30.)),
+                            rect(WHITE).size(Size::new().width(30.)),
                         ]),
                         draw(|area, show_alignment| {
                             if button(area, "Fullscreen", &mut root_ui()) {
@@ -99,13 +100,13 @@ async fn main() {
                         draw(text("Mixed (rel/abs) Sequence Constraints", 15., WHITE))
                             .size(Size::new().height(20.)),
                         stack(vec![
-                            draw(rect(BLUE)),
+                            rect(BLUE),
                             column_spaced(
                                 10.,
                                 vec![
-                                    draw(rect(WHITE)),
-                                    draw(rect(WHITE)).size(Size::new().height(30.)),
-                                    draw(rect(WHITE)),
+                                    rect(WHITE),
+                                    rect(WHITE).size(Size::new().height(30.)),
+                                    rect(WHITE),
                                 ],
                             )
                             .pad(10.),
@@ -130,32 +131,32 @@ async fn main() {
                     column(vec![
                         draw(text("Alignment & Offset", 15., WHITE)).size(Size::new().height(20.)),
                         stack(vec![
-                            draw(rect(BLUE)),
-                            draw(rect(WHITE))
+                            rect(BLUE),
+                            rect(WHITE)
                                 .size(Size::new().height(30.).width(30.).x_align(XAlign::Leading)),
-                            draw(rect(WHITE))
+                            rect(WHITE)
                                 .size(Size::new().height(30.).width(30.).x_align(XAlign::Trailing)),
-                            draw(rect(WHITE))
+                            rect(WHITE)
                                 .size(Size::new().height(30.).width(30.).y_align(YAlign::Top)),
-                            draw(rect(WHITE))
+                            rect(WHITE)
                                 .size(Size::new().height(30.).width(30.).y_align(YAlign::Bottom)),
-                            draw(rect(WHITE))
+                            rect(WHITE)
                                 .size(Size::new().height(30.).width(30.).align(Align::TopLeading)),
-                            draw(rect(WHITE)).size(
+                            rect(WHITE).size(
                                 Size::new()
                                     .height(30.)
                                     .width(30.)
                                     .align(Align::BottomLeading),
                             ),
-                            draw(rect(WHITE)).size(
+                            rect(WHITE).size(
                                 Size::new()
                                     .height(30.)
                                     .width(30.)
                                     .align(Align::BottomTrailing),
                             ),
-                            draw(rect(WHITE))
+                            rect(WHITE)
                                 .size(Size::new().height(30.).width(30.).align(Align::TopTrailing)),
-                            draw(rect(WHITE))
+                            rect(WHITE)
                                 .size(
                                     Size::new()
                                         .height(30.)
@@ -163,7 +164,7 @@ async fn main() {
                                         .align(Align::CenterCenter),
                                 )
                                 .offset(10., 10.),
-                            draw(rect(WHITE))
+                            rect(WHITE)
                                 .size(
                                     Size::new()
                                         .height(30.)
@@ -213,10 +214,10 @@ fn text<T>(string: &str, font_size: f32, color: Color) -> impl FnMut(Area, &mut 
     }
 }
 
-fn rect<T>(color: Color) -> impl FnMut(Area, &mut T) {
-    move |area: Area, _| {
+fn rect<'a, T>(color: Color) -> Layout<'a, T> {
+    draw(move |area: Area, _| {
         draw_rectangle(area.x, area.y, area.width, area.height, color);
-    }
+    })
 }
 
 fn button(area: Area, label: &str, ui: &mut Ui) -> bool {
