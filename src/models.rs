@@ -1,9 +1,3 @@
-#[derive(Debug, Clone)]
-pub struct Drawable<T> {
-    pub area: Area,
-    pub element: T,
-}
-
 #[derive(Debug, Clone, Copy)]
 pub struct Padding {
     pub(crate) leading: f32,

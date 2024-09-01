@@ -8,7 +8,10 @@ pub fn column<T>(elements: Vec<Layout<T>>) -> Layout<T> {
 }
 
 pub fn column_spaced<T>(spacing: f32, elements: Vec<Layout<T>>) -> Layout<T> {
-    Layout::Column { elements, spacing }
+    Layout::Column {
+        elements: filter_conditionals(elements),
+        spacing,
+    }
 }
 
 pub fn row<T>(elements: Vec<Layout<T>>) -> Layout<T> {
@@ -19,18 +22,21 @@ pub fn row<T>(elements: Vec<Layout<T>>) -> Layout<T> {
 }
 
 pub fn row_spaced<T>(spacing: f32, elements: Vec<Layout<T>>) -> Layout<T> {
-    Layout::Row { elements, spacing }
+    Layout::Row {
+        elements: filter_conditionals(elements),
+        spacing,
+    }
 }
 
 pub fn stack<T>(elements: Vec<Layout<T>>) -> Layout<T> {
     Layout::Stack(filter_conditionals(elements))
 }
 
-pub fn draw<T>(drawable: T) -> Layout<T> {
-    Layout::Draw(Drawable {
-        area: Area::default(),
-        element: drawable,
-    })
+pub fn draw<'a, T, F>(drawable: F) -> Layout<'a, T>
+where
+    F: FnMut(Area, &mut T) + 'a,
+{
+    Layout::Draw(Box::new(drawable))
 }
 
 pub fn conditional<T>(condition: bool, element: Layout<T>) -> Layout<T> {
