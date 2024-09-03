@@ -30,15 +30,15 @@ pub enum Layout<'a, T> {
     },
 }
 
-type DrawableFn<'a, T> = Box<dyn FnMut(Area, &mut T) + 'a>;
+type DrawableFn<'a, T> = Box<dyn FnOnce(Area, &mut T) + 'a>;
 
 pub struct Drawable<'a, T> {
-    pub(crate) area: Area,
-    pub(crate) draw: DrawableFn<'a, T>,
+    pub area: Area,
+    pub draw: Option<DrawableFn<'a, T>>,
 }
 
 impl<'a, T> Layout<'a, T> {
-    pub fn drawables(&self) -> Vec<&Drawable<'a, T>> {
+    pub fn drawables(&mut self) -> impl Iterator<Item = &mut Drawable<'a, T>> {
         let mut drawables = Vec::new();
         let mut stack = vec![self];
 
@@ -55,7 +55,7 @@ impl<'a, T> Layout<'a, T> {
                     spacing: _,
                 }
                 | Layout::Stack(elements) => {
-                    stack.extend(elements.iter().rev());
+                    stack.extend(elements.iter_mut().rev());
                 }
                 Layout::Explicit { element, .. } => stack.push(element),
                 Layout::Offset {
@@ -63,17 +63,25 @@ impl<'a, T> Layout<'a, T> {
                     offset_y: _,
                     element,
                 } => stack.push(element),
-                Layout::Conditional { condition, element } => {
-                    if *condition {
-                        stack.push(element)
-                    }
-                }
+                Layout::Conditional {
+                    condition: _,
+                    element,
+                } => stack.push(element),
             }
         }
-        drawables
+        drawables.into_iter()
     }
 
-    pub fn layout(&mut self, available_area: Area, ctx: &mut T) {
+    pub fn layout_draw(&mut self, available_area: Area, ctx: &mut T) {
+        self.layout(available_area);
+        for drawable in self.drawables() {
+            if let Some(draw) = drawable.draw.take() {
+                (draw)(drawable.area, ctx);
+            }
+        }
+    }
+
+    pub fn layout(&mut self, available_area: Area) {
         match self {
             Layout::Padding {
                 amounts,
@@ -85,20 +93,17 @@ impl<'a, T> Layout<'a, T> {
                     width: available_area.width - amounts.trailing - amounts.leading,
                     height: available_area.height - amounts.bottom - amounts.top,
                 };
-                child.layout(inner_area, ctx);
+                child.layout(inner_area);
             }
             Layout::Column { elements, spacing } => {
                 if elements.len() == 1 {
                     for element in elements {
-                        element.layout(
-                            Area {
-                                x: available_area.x,
-                                y: available_area.y,
-                                width: available_area.width,
-                                height: available_area.height,
-                            },
-                            ctx,
-                        )
+                        element.layout(Area {
+                            x: available_area.x,
+                            y: available_area.y,
+                            width: available_area.width,
+                            height: available_area.height,
+                        })
                     }
                     return;
                 }
@@ -141,22 +146,19 @@ impl<'a, T> Layout<'a, T> {
                         width: available_area.width,
                         height: child_height,
                     };
-                    child.layout(area, ctx);
+                    child.layout(area);
                     current_y += child_height + *spacing;
                 }
             }
             Layout::Row { elements, spacing } => {
                 if elements.len() == 1 {
                     for element in elements {
-                        element.layout(
-                            Area {
-                                x: available_area.x,
-                                y: available_area.y,
-                                width: available_area.width,
-                                height: available_area.height,
-                            },
-                            ctx,
-                        )
+                        element.layout(Area {
+                            x: available_area.x,
+                            y: available_area.y,
+                            width: available_area.width,
+                            height: available_area.height,
+                        })
                     }
                     return;
                 }
@@ -199,19 +201,18 @@ impl<'a, T> Layout<'a, T> {
                         width: child_width,
                         height: available_area.height,
                     };
-                    child.layout(area, ctx);
+                    child.layout(area);
                     current_x += child_width + *spacing;
                 }
             }
             Layout::Stack(children) => {
                 for child in children {
-                    child.layout(available_area, ctx)
+                    child.layout(available_area)
                 }
             }
             Layout::Draw(drawable) => {
                 if available_area.width > 0. && available_area.height > 0. {
                     drawable.area = available_area;
-                    (drawable.draw)(available_area, ctx);
                 }
             }
             Layout::Explicit {
@@ -266,34 +267,28 @@ impl<'a, T> Layout<'a, T> {
                         available_area.y + (available_area.height * 0.5) - (explicit_height * 0.5)
                     }
                 };
-                child.layout(
-                    Area {
-                        x: x.max(available_area.x),
-                        y: y.max(available_area.y),
-                        width: explicit_width,
-                        height: explicit_height,
-                    },
-                    ctx,
-                );
+                child.layout(Area {
+                    x: x.max(available_area.x),
+                    y: y.max(available_area.y),
+                    width: explicit_width,
+                    height: explicit_height,
+                });
             }
             Layout::Offset {
                 offset_x,
                 offset_y,
                 element,
             } => {
-                element.layout(
-                    Area {
-                        x: available_area.x + *offset_x,
-                        y: available_area.y + *offset_y,
-                        width: available_area.width,
-                        height: available_area.height,
-                    },
-                    ctx,
-                );
+                element.layout(Area {
+                    x: available_area.x + *offset_x,
+                    y: available_area.y + *offset_y,
+                    width: available_area.width,
+                    height: available_area.height,
+                });
             }
             Layout::Conditional { condition, element } => {
                 if *condition {
-                    element.layout(available_area, ctx)
+                    element.layout(available_area)
                 }
             }
         }

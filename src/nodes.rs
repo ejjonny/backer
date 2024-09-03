@@ -41,7 +41,7 @@ where
 {
     Layout::Draw(Drawable {
         area: Area::default(),
-        draw: Box::new(drawable),
+        draw: Some(Box::new(drawable)),
     })
 }
 

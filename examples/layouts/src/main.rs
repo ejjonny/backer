@@ -1,31 +1,63 @@
 use backer::layout::Layout;
 use backer::models::*;
 use backer::nodes::*;
+use lilt::Animated;
+use lilt::FloatRepresentable;
+use lilt::Interpolable;
 use macroquad::prelude::*;
 use macroquad::ui::root_ui;
 use macroquad::ui::widgets;
-use macroquad::ui::Ui;
+use std::time::Instant;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum HighlightedCase {
     HeightConstraints,
     WidthConstraints,
     RelAbsSequence,
     AlignmentOffset,
+    None,
 }
+
+impl FloatRepresentable for HighlightedCase {
+    fn float_value(&self) -> f32 {
+        match self {
+            HighlightedCase::HeightConstraints => 0.,
+            HighlightedCase::WidthConstraints => 1.,
+            HighlightedCase::RelAbsSequence => 2.,
+            HighlightedCase::AlignmentOffset => 3.,
+            HighlightedCase::None => 4.,
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
+struct IArea(Area);
+impl Interpolable for IArea {
+    fn interpolated(&self, other: Self, ratio: f32) -> Self {
+        IArea(Area {
+            x: self.0.x.interpolated(other.0.x, ratio),
+            y: self.0.y.interpolated(other.0.y, ratio),
+            width: self.0.width.interpolated(other.0.width, ratio),
+            height: self.0.height.interpolated(other.0.height, ratio),
+        })
+    }
+}
+
+type Context<'a> = (&'a mut HighlightedCase, &'a mut Animated<f32, Instant>);
 
 #[macroquad::main("Demo")]
 async fn main() {
-    let mut show_alignment: Option<HighlightedCase> = None;
+    let mut show_alignment: HighlightedCase = HighlightedCase::None;
+    let mut anim = Animated::<f32, Instant>::new(0.);
+    let mut last_drawables = Option::<Vec<Area>>::None;
     loop {
-        row_spaced(
+        let now = Instant::now();
+        let mut layout = row_spaced::<Context>(
             20.,
             vec![
                 conditional(
-                    show_alignment
-                        .as_ref()
-                        .is_some_and(|a| *a == HighlightedCase::HeightConstraints)
-                        || show_alignment.is_none(),
+                    show_alignment == HighlightedCase::HeightConstraints
+                        || show_alignment == HighlightedCase::None,
                     column(vec![
                         draw(text("Height Constraints", 15., WHITE)).size(Size::new().height(20.)),
                         stack(vec![
@@ -44,23 +76,21 @@ async fn main() {
                             ),
                             rect(WHITE).size(Size::new().height(30.)),
                         ]),
-                        draw(|area, show_alignment| {
-                            if button(area, "Fullscreen", &mut root_ui()) {
-                                if *show_alignment == Some(HighlightedCase::HeightConstraints) {
-                                    *show_alignment = None;
-                                } else {
-                                    *show_alignment = Some(HighlightedCase::HeightConstraints);
-                                }
-                            }
-                        })
-                        .size(Size::new().height(20.).y_align(YAlign::Bottom)),
+                        // draw(|area, (highlight: HighlightedCase, anim: Animated<f32, Instant>))| {
+                        //     if button(area, "Fullscreen", &mut root_ui()) {
+                        //         if highlight == HighlightedCase::HeightConstraints {
+                        //             anim.transition(1., now);
+                        //         } else {
+                        //             anim.transition(1., now);
+                        //         }
+                        //     }
+                        // })
+                        // .size(Size::new().height(20.).y_align(YAlign::Bottom)),
                     ]),
                 ),
                 conditional(
-                    show_alignment
-                        .as_ref()
-                        .is_some_and(|a| *a == HighlightedCase::WidthConstraints)
-                        || show_alignment.is_none(),
+                    show_alignment == HighlightedCase::WidthConstraints
+                        || show_alignment == HighlightedCase::None,
                     column(vec![
                         draw(text("Width Constraints", 15., WHITE)).size(Size::new().height(20.)),
                         stack(vec![
@@ -79,23 +109,22 @@ async fn main() {
                             ),
                             rect(WHITE).size(Size::new().width(30.)),
                         ]),
-                        draw(|area, show_alignment| {
-                            if button(area, "Fullscreen", &mut root_ui()) {
-                                if *show_alignment == Some(HighlightedCase::WidthConstraints) {
-                                    *show_alignment = None;
-                                } else {
-                                    *show_alignment = Some(HighlightedCase::WidthConstraints);
-                                }
-                            }
-                        })
-                        .size(Size::new().height(20.).y_align(YAlign::Bottom)),
+                        // draw(|area, show_alignment: &mut Animated<f32, Instant>| {
+                        //     if button(area, "Fullscreen", &mut root_ui()) {
+                        //         if show_alignment.value == HighlightedCase::WidthConstraints {
+                        //             show_alignment.transition(HighlightedCase::None, now);
+                        //         } else {
+                        //             show_alignment
+                        //                 .transition(HighlightedCase::HeightConstraints, now);
+                        //         }
+                        //     }
+                        // })
+                        // .size(Size::new().height(20.).y_align(YAlign::Bottom)),
                     ]),
                 ),
                 conditional(
-                    show_alignment
-                        .as_ref()
-                        .is_some_and(|a| *a == HighlightedCase::RelAbsSequence)
-                        || show_alignment.is_none(),
+                    show_alignment == HighlightedCase::RelAbsSequence
+                        || show_alignment == HighlightedCase::None,
                     column(vec![
                         draw(text("Mixed (rel/abs) Sequence Constraints", 15., WHITE))
                             .size(Size::new().height(20.)),
@@ -111,23 +140,21 @@ async fn main() {
                             )
                             .pad(10.),
                         ]),
-                        draw(|area, show_alignment| {
-                            if button(area, "Fullscreen", &mut root_ui()) {
-                                if *show_alignment == Some(HighlightedCase::RelAbsSequence) {
-                                    *show_alignment = None;
-                                } else {
-                                    *show_alignment = Some(HighlightedCase::RelAbsSequence);
-                                }
-                            }
-                        })
-                        .size(Size::new().height(20.).y_align(YAlign::Bottom)),
+                        // draw(|area, show_alignment: &mut Animated<f32, Instant>| {
+                        //     if button(area, "Fullscreen", &mut root_ui()) {
+                        //         if show_alignment.value == HighlightedCase::RelAbsSequence {
+                        //             show_alignment.transition(HighlightedCase::None, now);
+                        //         } else {
+                        //             show_alignment.transition(HighlightedCase::RelAbsSequence, now);
+                        //         }
+                        //     }
+                        // })
+                        // .size(Size::new().height(20.).y_align(YAlign::Bottom)),
                     ]),
                 ),
                 conditional(
-                    show_alignment
-                        .as_ref()
-                        .is_some_and(|a| *a == HighlightedCase::AlignmentOffset)
-                        || show_alignment.is_none(),
+                    show_alignment == HighlightedCase::AlignmentOffset
+                        || show_alignment == HighlightedCase::None,
                     column(vec![
                         draw(text("Alignment & Offset", 15., WHITE)).size(Size::new().height(20.)),
                         stack(vec![
@@ -173,29 +200,53 @@ async fn main() {
                                 )
                                 .offset(-10., -10.),
                         ]),
-                        draw(|area, show_alignment| {
-                            if button(area, "Fullscreen", &mut root_ui()) {
-                                if *show_alignment == Some(HighlightedCase::AlignmentOffset) {
-                                    *show_alignment = None;
+                        draw(|area, ctx: &mut Context| {
+                            if button(area, "Fullscreen") {
+                                if *ctx.0 == HighlightedCase::AlignmentOffset {
+                                    *ctx.0 = HighlightedCase::None;
                                 } else {
-                                    *show_alignment = Some(HighlightedCase::AlignmentOffset);
+                                    *ctx.0 = HighlightedCase::AlignmentOffset;
                                 }
+                                *ctx.1 = Animated::new(0.);
+                                ctx.1.transition(1., Instant::now());
                             }
+                            todo!();
                         })
                         .size(Size::new().height(20.).y_align(YAlign::Bottom)),
                     ]),
                 ),
             ],
-        )
-        .layout(
-            Area {
-                x: 0.,
-                y: 0.,
-                width: screen_width(),
-                height: screen_height(),
-            },
-            &mut show_alignment,
         );
+        layout.layout(Area {
+            x: 0.,
+            y: 0.,
+            width: screen_width(),
+            height: screen_height(),
+        });
+        // if let Some(ref last) = last_drawables {
+        for drawable in layout.drawables() {
+            // let interpolated_area = anim
+            //     .animate(
+            //         |v| {
+            //             if v == 0. {
+            //                 IArea(*last)
+            //             } else {
+            //                 IArea(drawable.area)
+            //             }
+            //         },
+            //         now,
+            //     )
+            //     .0;
+            // (drawable.draw)(drawable.area, &mut (&mut show_alignment, &mut anim));
+            // (draw)(drawable.area, &mut (&mut show_alignment, &mut anim));
+
+            if let Some(draw) = drawable.draw.take() {
+                (draw)(drawable.area, &mut (&mut show_alignment, &mut anim));
+            }
+        }
+        // } else {
+        // }
+        // last_drawables = Some(layout.drawables().iter().map(|d| d.area).collect());
 
         next_frame().await
     }
@@ -220,9 +271,9 @@ fn rect<'a, T>(color: Color) -> Layout<'a, T> {
     })
 }
 
-fn button(area: Area, label: &str, ui: &mut Ui) -> bool {
+fn button(area: Area, label: &str) -> bool {
     widgets::Button::new(label)
         .size(vec2(area.width, area.height))
         .position(vec2(area.x, area.y))
-        .ui(ui)
+        .ui(&mut root_ui())
 }
