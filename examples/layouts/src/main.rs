@@ -43,7 +43,10 @@ impl Interpolable for IArea {
     }
 }
 
-type Context<'a> = (&'a mut HighlightedCase, &'a mut Animated<f32, Instant>);
+struct Context<'a> {
+    highlight: &'a mut HighlightedCase,
+    anim: &'a mut Animated<f32, Instant>,
+}
 
 #[macroquad::main("Demo")]
 async fn main() {
@@ -202,13 +205,13 @@ async fn main() {
                         ]),
                         draw(|area, ctx: &mut Context| {
                             if button(area, "Fullscreen") {
-                                if *ctx.0 == HighlightedCase::AlignmentOffset {
-                                    *ctx.0 = HighlightedCase::None;
+                                if *ctx.highlight == HighlightedCase::AlignmentOffset {
+                                    *ctx.highlight = HighlightedCase::None;
                                 } else {
-                                    *ctx.0 = HighlightedCase::AlignmentOffset;
+                                    *ctx.highlight = HighlightedCase::AlignmentOffset;
                                 }
-                                *ctx.1 = Animated::new(0.);
-                                ctx.1.transition(1., Instant::now());
+                                *ctx.anim = Animated::new(0.);
+                                ctx.anim.transition(1., Instant::now());
                             }
                             todo!();
                         })
@@ -224,32 +227,61 @@ async fn main() {
             height: screen_height(),
         });
         // if let Some(ref last) = last_drawables {
-        for drawable in layout.drawables() {
-            // let interpolated_area = anim
-            //     .animate(
-            //         |v| {
-            //             if v == 0. {
-            //                 IArea(*last)
-            //             } else {
-            //                 IArea(drawable.area)
-            //             }
-            //         },
-            //         now,
-            //     )
-            //     .0;
-            // (drawable.draw)(drawable.area, &mut (&mut show_alignment, &mut anim));
-            // (draw)(drawable.area, &mut (&mut show_alignment, &mut anim));
+        // layout.process_drawables(|drawable| {
+        //     if let Some(draw) = drawable.draw.take() {
+        //         (draw)(drawable.area, &mut (&mut show_alignment, &mut anim));
+        //     }
+        // });
+        // let interpolated_area = anim
+        //     .animate(
+        //         |v| {
+        //             if v == 0. {
+        //                 IArea(*last)
+        //             } else {
+        //                 IArea(drawable.area)
+        //             }
+        //         },
+        //         now,
+        //     )
+        //     .0;
+        // (drawable.draw)(drawable.area, &mut (&mut show_alignment, &mut anim));
+        // (draw)(drawable.area, &mut (&mut show_alignment, &mut anim));
 
+        for mut drawable in layout.drawables() {
+            // for i in 0..layout.drawables().len() - 1 {
             if let Some(draw) = drawable.draw.take() {
-                (draw)(drawable.area, &mut (&mut show_alignment, &mut anim));
+                thing(
+                    drawable.area,
+                    &mut Context {
+                        highlight: &mut show_alignment,
+                        anim: &mut anim,
+                    },
+                    draw,
+                );
+                // (draw)(
+                //     drawable.area,
+                //     &mut Context {
+                //         highlight: &mut show_alignment,
+                //         anim: &mut anim,
+                //     },
+                // );
             }
+            // }
         }
+
         // } else {
         // }
         // last_drawables = Some(layout.drawables().iter().map(|d| d.area).collect());
 
         next_frame().await
     }
+}
+
+fn thing<F>(area: Area, ctx: &mut Context, dbf: F)
+where
+    F: FnOnce(Area, &mut Context),
+{
+    (dbf)(area, ctx)
 }
 
 fn text<T>(string: &str, font_size: f32, color: Color) -> impl FnMut(Area, &mut T) + '_ {

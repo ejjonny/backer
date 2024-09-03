@@ -30,7 +30,7 @@ pub enum Layout<'a, T> {
     },
 }
 
-type DrawableFn<'a, T> = Box<dyn FnOnce(Area, &mut T) + 'a>;
+type DrawableFn<'a, T> = Box<dyn FnOnce(Area, &'a mut T) + 'a>;
 
 pub struct Drawable<'a, T> {
     pub area: Area,
@@ -38,47 +38,86 @@ pub struct Drawable<'a, T> {
 }
 
 impl<'a, T> Layout<'a, T> {
-    pub fn drawables(&mut self) -> impl Iterator<Item = &mut Drawable<'a, T>> {
-        let mut drawables = Vec::new();
-        let mut stack = vec![self];
+    // pub fn drawables(&mut self) -> impl Iterator<Item = &mut Drawable<'a, T>> {
+    //     let mut drawables = Vec::new();
+    //     let mut stack = vec![self];
 
-        while let Some(layout) = stack.pop() {
-            match layout {
-                Layout::Draw(drawable) => drawables.push(drawable),
-                Layout::Padding { element: child, .. } => stack.push(child),
-                Layout::Column {
-                    elements,
-                    spacing: _,
-                }
-                | Layout::Row {
-                    elements,
-                    spacing: _,
-                }
-                | Layout::Stack(elements) => {
-                    stack.extend(elements.iter_mut().rev());
-                }
-                Layout::Explicit { element, .. } => stack.push(element),
-                Layout::Offset {
-                    offset_x: _,
-                    offset_y: _,
-                    element,
-                } => stack.push(element),
-                Layout::Conditional {
-                    condition: _,
-                    element,
-                } => stack.push(element),
-            }
-        }
-        drawables.into_iter()
+    //     while let Some(layout) = stack.pop() {
+    //         match layout {
+    //             Layout::Draw(drawable) => drawables.push(drawable),
+    //             Layout::Padding { element: child, .. } => stack.push(child),
+    //             Layout::Column {
+    //                 elements,
+    //                 spacing: _,
+    //             }
+    //             | Layout::Row {
+    //                 elements,
+    //                 spacing: _,
+    //             }
+    //             | Layout::Stack(elements) => {
+    //                 stack.extend(elements.iter_mut().rev());
+    //             }
+    //             Layout::Explicit { element, .. } => stack.push(element),
+    //             Layout::Offset {
+    //                 offset_x: _,
+    //                 offset_y: _,
+    //                 element,
+    //             } => stack.push(element),
+    //             Layout::Conditional {
+    //                 condition: _,
+    //                 element,
+    //             } => stack.push(element),
+    //         }
+    //     }
+    //     drawables.into_iter()
+    // }
+
+    pub fn drawables<'b, 'c>(&'c mut self) -> impl Iterator<Item = Drawable<'a, T>>
+    where
+        'b: 'c,
+    {
+        vec![].into_iter()
+        // let mut drawables = Vec::new();
+        // let mut stack = vec![self];
+
+        // while let Some(layout) = stack.pop() {
+        //     match layout {
+        //         Layout::Draw(drawable) => drawables.push(drawable),
+        //         Layout::Padding { element: child, .. } => stack.push(child),
+        //         Layout::Column {
+        //             elements,
+        //             spacing: _,
+        //         }
+        //         | Layout::Row {
+        //             elements,
+        //             spacing: _,
+        //         }
+        //         | Layout::Stack(elements) => {
+        //             stack.extend(elements.iter_mut().rev());
+        //         }
+        //         Layout::Explicit { element, .. } => stack.push(element),
+        //         Layout::Offset {
+        //             offset_x: _,
+        //             offset_y: _,
+        //             element,
+        //         } => stack.push(element),
+        //         Layout::Conditional {
+        //             condition: _,
+        //             element,
+        //         } => stack.push(element),
+        //     }
+        // }
+        // drawables.into_iter()
     }
 
-    pub fn layout_draw(&mut self, available_area: Area, ctx: &mut T) {
-        self.layout(available_area);
-        for drawable in self.drawables() {
-            if let Some(draw) = drawable.draw.take() {
-                (draw)(drawable.area, ctx);
-            }
-        }
+    pub fn layout_draw(&mut self, available_area: Area, ctx: &'_ mut T) {
+        todo!()
+        // self.layout(available_area);
+        // for mut drawable in self.drawables() {
+        //     if let Some(draw) = drawable.draw.take() {
+        //         (draw)(drawable.area, ctx);
+        //     }
+        // }
     }
 
     pub fn layout(&mut self, available_area: Area) {
