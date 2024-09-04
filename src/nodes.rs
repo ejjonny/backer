@@ -1,82 +1,57 @@
-use std::marker::PhantomData;
+use std::{marker::PhantomData, rc::Rc};
 
 use crate::{
     layout::{Drawable, Layout},
     models::*,
 };
 
-pub fn column<T, U>(elements: Vec<Layout<T, U>>) -> Layout<T, U>
-where
-    T: Fn(Area, &mut U),
-{
+pub fn column<U>(elements: Vec<Layout<U>>) -> Layout<U> {
     Layout::Column {
         elements: filter_conditionals(elements),
         spacing: 0.,
     }
 }
 
-pub fn column_spaced<T, U>(spacing: f32, elements: Vec<Layout<T, U>>) -> Layout<T, U>
-where
-    T: Fn(Area, &mut U),
-{
+pub fn column_spaced<U>(spacing: f32, elements: Vec<Layout<U>>) -> Layout<U> {
     Layout::Column {
         elements: filter_conditionals(elements),
         spacing,
     }
 }
 
-pub fn row<T, U>(elements: Vec<Layout<T, U>>) -> Layout<T, U>
-where
-    T: Fn(Area, &mut U),
-{
+pub fn row<U>(elements: Vec<Layout<U>>) -> Layout<U> {
     Layout::Row {
         elements: filter_conditionals(elements),
         spacing: 0.,
     }
 }
 
-pub fn row_spaced<T, U>(spacing: f32, elements: Vec<Layout<T, U>>) -> Layout<T, U>
-where
-    T: Fn(Area, &mut U),
-{
+pub fn row_spaced<U>(spacing: f32, elements: Vec<Layout<U>>) -> Layout<U> {
     Layout::Row {
         elements: filter_conditionals(elements),
         spacing,
     }
 }
 
-pub fn stack<T, U>(elements: Vec<Layout<T, U>>) -> Layout<T, U>
-where
-    T: Fn(Area, &mut U),
-{
+pub fn stack<U>(elements: Vec<Layout<U>>) -> Layout<U> {
     Layout::Stack(filter_conditionals(elements))
 }
 
-pub fn draw<T, U>(drawable: T) -> Layout<T, U>
-where
-    T: Fn(Area, &mut U),
-{
+pub fn draw<U>(drawable: impl Fn(Area, &mut U) + 'static) -> Layout<U> {
     Layout::Draw(Drawable {
         area: Area::default(),
-        draw: drawable,
-        t: PhantomData,
+        draw: Rc::new(drawable),
     })
 }
 
-pub fn conditional<T, U>(condition: bool, element: Layout<T, U>) -> Layout<T, U>
-where
-    T: Fn(Area, &mut U),
-{
+pub fn conditional<U>(condition: bool, element: Layout<U>) -> Layout<U> {
     Layout::Conditional {
         condition,
         element: Box::new(element),
     }
 }
 
-fn filter_conditionals<T, U>(elements: Vec<Layout<T, U>>) -> Vec<Layout<T, U>>
-where
-    T: Fn(Area, &mut U),
-{
+fn filter_conditionals<U>(elements: Vec<Layout<U>>) -> Vec<Layout<U>> {
     elements
         .into_iter()
         .filter_map(|element| {

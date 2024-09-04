@@ -1,70 +1,98 @@
-use std::marker::PhantomData;
+use std::rc::Rc;
 
 use crate::models::*;
 
-pub enum Layout<D, C>
-where
-    D: Fn(Area, &mut C),
-{
+pub enum Layout<C> {
     Padding {
         amounts: Padding,
-        element: Box<Layout<D, C>>,
+        element: Box<Layout<C>>,
     },
     Column {
-        elements: Vec<Layout<D, C>>,
+        elements: Vec<Layout<C>>,
         spacing: f32,
     },
     Row {
-        elements: Vec<Layout<D, C>>,
+        elements: Vec<Layout<C>>,
         spacing: f32,
     },
-    Stack(Vec<Layout<D, C>>),
+    Stack(Vec<Layout<C>>),
     Offset {
         offset_x: f32,
         offset_y: f32,
-        element: Box<Layout<D, C>>,
+        element: Box<Layout<C>>,
     },
-    Draw(Drawable<D, C>),
+    Draw(Drawable<C>),
     Explicit {
         options: Size,
-        element: Box<Layout<D, C>>,
+        element: Box<Layout<C>>,
     },
     Conditional {
         condition: bool,
-        element: Box<Layout<D, C>>,
+        element: Box<Layout<C>>,
     },
 }
 
-pub struct Drawable<DrawFn, Context>
-where
-    DrawFn: Fn(Area, &mut Context),
-{
-    pub area: Area,
-    pub(crate) draw: DrawFn,
-    pub(crate) t: PhantomData<Context>,
+impl<C> Clone for Layout<C> {
+    fn clone(&self) -> Self {
+        match self {
+            Layout::Padding { amounts, element } => Layout::Padding {
+                amounts: *amounts,
+                element: element.clone(),
+            },
+            Layout::Column { elements, spacing } => Layout::Column {
+                elements: elements.clone(),
+                spacing: *spacing,
+            },
+            Layout::Row { elements, spacing } => Layout::Row {
+                elements: elements.clone(),
+                spacing: *spacing,
+            },
+            Layout::Stack(elements) => Layout::Stack(elements.clone()),
+            Layout::Offset {
+                offset_x,
+                offset_y,
+                element,
+            } => Layout::Offset {
+                offset_x: *offset_x,
+                offset_y: *offset_y,
+                element: element.clone(),
+            },
+            Layout::Draw(drawable) => Layout::Draw(Drawable {
+                area: drawable.area,
+                draw: drawable.draw.clone(),
+            }),
+            Layout::Explicit { options, element } => Layout::Explicit {
+                options: *options,
+                element: element.clone(),
+            },
+            Layout::Conditional { condition, element } => Layout::Conditional {
+                condition: *condition,
+                element: element.clone(),
+            },
+        }
+    }
 }
 
-impl<DrawFn, Context> Drawable<DrawFn, Context>
-where
-    DrawFn: Fn(Area, &mut Context),
-{
+type DrawFn<Context> = Rc<dyn Fn(Area, &mut Context)>;
+
+#[derive(Clone)]
+pub struct Drawable<Context> {
+    pub area: Area,
+    pub(crate) draw: DrawFn<Context>,
+}
+
+impl<Context> Drawable<Context> {
     pub fn draw(&self, area: Area, ctx: &mut Context) {
         (self.draw)(area, ctx)
     }
 }
 
-pub struct LayoutNodeIterator<'a, T, U>
-where
-    T: Fn(Area, &mut U),
-{
-    stack: Vec<&'a Layout<T, U>>,
+pub struct LayoutNodeIterator<'a, U> {
+    stack: Vec<&'a Layout<U>>,
 }
 
-impl<'a, T, U> Iterator for LayoutNodeIterator<'a, T, U>
-where
-    T: Fn(Area, &mut U),
-{
-    type Item = &'a Layout<T, U>;
+impl<'a, U> Iterator for LayoutNodeIterator<'a, U> {
+    type Item = &'a Layout<U>;
 
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(layout) = self.stack.pop() {
@@ -92,21 +120,18 @@ where
     }
 }
 
-impl<DrawFn, Context> Layout<DrawFn, Context>
-where
-    DrawFn: Fn(Area, &mut Context),
-{
-    pub fn iter(&self) -> LayoutNodeIterator<DrawFn, Context> {
+impl<Context> Layout<Context> {
+    pub fn iter(&self) -> LayoutNodeIterator<Context> {
         LayoutNodeIterator { stack: vec![self] }
     }
 
-    pub fn drawables(&self) -> Vec<&Drawable<DrawFn, Context>> {
+    pub fn drawables(&self) -> Vec<&Drawable<Context>> {
         self.iter()
             .filter_map(|l| {
                 let Layout::Draw(d) = l else { return None };
                 Some(d)
             })
-            .collect::<Vec<&Drawable<DrawFn, Context>>>()
+            .collect::<Vec<&Drawable<Context>>>()
     }
 
     pub fn layout_draw(&mut self, available_area: Area, ctx: &mut Context) {

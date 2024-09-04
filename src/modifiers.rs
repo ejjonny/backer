@@ -1,10 +1,7 @@
 use crate::{layout::Layout, models::*};
 
-impl<T, U> Layout<T, U>
-where
-    T: Fn(Area, &mut U),
-{
-    pub fn pad_leading(self, amount: f32) -> Layout<T, U> {
+impl<U> Layout<U> {
+    pub fn pad_leading(self, amount: f32) -> Layout<U> {
         Layout::Padding {
             amounts: Padding {
                 leading: amount,
@@ -16,7 +13,7 @@ where
         }
     }
 
-    pub fn pad_x(self, amount: f32) -> Layout<T, U> {
+    pub fn pad_x(self, amount: f32) -> Layout<U> {
         Layout::Padding {
             amounts: Padding {
                 leading: amount,
@@ -28,7 +25,7 @@ where
         }
     }
 
-    pub fn pad_trailing(self, amount: f32) -> Layout<T, U> {
+    pub fn pad_trailing(self, amount: f32) -> Layout<U> {
         Layout::Padding {
             amounts: Padding {
                 leading: 0.,
@@ -40,7 +37,7 @@ where
         }
     }
 
-    pub fn pad_top(self, amount: f32) -> Layout<T, U> {
+    pub fn pad_top(self, amount: f32) -> Layout<U> {
         Layout::Padding {
             amounts: Padding {
                 leading: 0.,
@@ -52,7 +49,7 @@ where
         }
     }
 
-    pub fn pad_y(self, amount: f32) -> Layout<T, U> {
+    pub fn pad_y(self, amount: f32) -> Layout<U> {
         Layout::Padding {
             amounts: Padding {
                 leading: 0.,
@@ -64,7 +61,7 @@ where
         }
     }
 
-    pub fn pad_bottom(self, amount: f32) -> Layout<T, U> {
+    pub fn pad_bottom(self, amount: f32) -> Layout<U> {
         Layout::Padding {
             amounts: Padding {
                 leading: 0.,
@@ -76,7 +73,7 @@ where
         }
     }
 
-    pub fn pad(self, amount: f32) -> Layout<T, U> {
+    pub fn pad(self, amount: f32) -> Layout<U> {
         Layout::Padding {
             amounts: Padding {
                 leading: amount,
@@ -88,14 +85,14 @@ where
         }
     }
 
-    pub fn size(self, options: Size) -> Layout<T, U> {
+    pub fn size(self, options: Size) -> Layout<U> {
         Layout::Explicit {
             options,
             element: Box::new(self),
         }
     }
 
-    pub fn offset_x(self, amount: f32) -> Layout<T, U> {
+    pub fn offset_x(self, amount: f32) -> Layout<U> {
         Layout::Offset {
             offset_x: amount,
             offset_y: 0.,
@@ -103,7 +100,7 @@ where
         }
     }
 
-    pub fn offset_y(self, amount: f32) -> Layout<T, U> {
+    pub fn offset_y(self, amount: f32) -> Layout<U> {
         Layout::Offset {
             offset_x: 0.,
             offset_y: amount,
@@ -111,7 +108,7 @@ where
         }
     }
 
-    pub fn offset(self, offset_x: f32, offset_y: f32) -> Layout<T, U> {
+    pub fn offset(self, offset_x: f32, offset_y: f32) -> Layout<U> {
         Layout::Offset {
             offset_x,
             offset_y,

@@ -9,3 +9,6 @@ path = "examples/layouts/src/main.rs"
 
 [dev-dependencies]
 macroquad = "0.4.13"
+
+[dependencies]
+lilt = "0.7.0"
