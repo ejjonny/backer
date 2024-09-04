@@ -1,123 +1,119 @@
+use std::marker::PhantomData;
+
 use crate::models::*;
 
-pub enum Layout<'a, T> {
+pub enum Layout<D, C>
+where
+    D: Fn(Area, &mut C),
+{
     Padding {
         amounts: Padding,
-        element: Box<Layout<'a, T>>,
+        element: Box<Layout<D, C>>,
     },
     Column {
-        elements: Vec<Layout<'a, T>>,
+        elements: Vec<Layout<D, C>>,
         spacing: f32,
     },
     Row {
-        elements: Vec<Layout<'a, T>>,
+        elements: Vec<Layout<D, C>>,
         spacing: f32,
     },
-    Stack(Vec<Layout<'a, T>>),
+    Stack(Vec<Layout<D, C>>),
     Offset {
         offset_x: f32,
         offset_y: f32,
-        element: Box<Layout<'a, T>>,
+        element: Box<Layout<D, C>>,
     },
-    Draw(Drawable<'a, T>),
+    Draw(Drawable<D, C>),
     Explicit {
         options: Size,
-        element: Box<Layout<'a, T>>,
+        element: Box<Layout<D, C>>,
     },
     Conditional {
         condition: bool,
-        element: Box<Layout<'a, T>>,
+        element: Box<Layout<D, C>>,
     },
 }
 
-type DrawableFn<'a, T> = Box<dyn FnOnce(Area, &'a mut T) + 'a>;
-
-pub struct Drawable<'a, T> {
+pub struct Drawable<DrawFn, Context>
+where
+    DrawFn: Fn(Area, &mut Context),
+{
     pub area: Area,
-    pub draw: Option<DrawableFn<'a, T>>,
+    pub(crate) draw: DrawFn,
+    pub(crate) t: PhantomData<Context>,
 }
 
-impl<'a, T> Layout<'a, T> {
-    // pub fn drawables(&mut self) -> impl Iterator<Item = &mut Drawable<'a, T>> {
-    //     let mut drawables = Vec::new();
-    //     let mut stack = vec![self];
+impl<DrawFn, Context> Drawable<DrawFn, Context>
+where
+    DrawFn: Fn(Area, &mut Context),
+{
+    pub fn draw(&self, area: Area, ctx: &mut Context) {
+        (self.draw)(area, ctx)
+    }
+}
 
-    //     while let Some(layout) = stack.pop() {
-    //         match layout {
-    //             Layout::Draw(drawable) => drawables.push(drawable),
-    //             Layout::Padding { element: child, .. } => stack.push(child),
-    //             Layout::Column {
-    //                 elements,
-    //                 spacing: _,
-    //             }
-    //             | Layout::Row {
-    //                 elements,
-    //                 spacing: _,
-    //             }
-    //             | Layout::Stack(elements) => {
-    //                 stack.extend(elements.iter_mut().rev());
-    //             }
-    //             Layout::Explicit { element, .. } => stack.push(element),
-    //             Layout::Offset {
-    //                 offset_x: _,
-    //                 offset_y: _,
-    //                 element,
-    //             } => stack.push(element),
-    //             Layout::Conditional {
-    //                 condition: _,
-    //                 element,
-    //             } => stack.push(element),
-    //         }
-    //     }
-    //     drawables.into_iter()
-    // }
+pub struct DrawableIterator<'a, T, U>
+where
+    T: Fn(Area, &mut U),
+{
+    stack: Vec<&'a Layout<T, U>>,
+}
 
-    pub fn drawables<'b, 'c>(&'c mut self) -> impl Iterator<Item = Drawable<'a, T>>
-    where
-        'b: 'c,
-    {
-        vec![].into_iter()
-        // let mut drawables = Vec::new();
-        // let mut stack = vec![self];
+impl<'a, T, U> Iterator for DrawableIterator<'a, T, U>
+where
+    T: Fn(Area, &mut U),
+{
+    type Item = &'a Layout<T, U>;
 
-        // while let Some(layout) = stack.pop() {
-        //     match layout {
-        //         Layout::Draw(drawable) => drawables.push(drawable),
-        //         Layout::Padding { element: child, .. } => stack.push(child),
-        //         Layout::Column {
-        //             elements,
-        //             spacing: _,
-        //         }
-        //         | Layout::Row {
-        //             elements,
-        //             spacing: _,
-        //         }
-        //         | Layout::Stack(elements) => {
-        //             stack.extend(elements.iter_mut().rev());
-        //         }
-        //         Layout::Explicit { element, .. } => stack.push(element),
-        //         Layout::Offset {
-        //             offset_x: _,
-        //             offset_y: _,
-        //             element,
-        //         } => stack.push(element),
-        //         Layout::Conditional {
-        //             condition: _,
-        //             element,
-        //         } => stack.push(element),
-        //     }
-        // }
-        // drawables.into_iter()
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(layout) = self.stack.pop() {
+            match layout {
+                // Leaf
+                Layout::Draw(_) => return Some(layout),
+                // Group
+                Layout::Column { elements, .. }
+                | Layout::Row { elements, .. }
+                | Layout::Stack(elements) => {
+                    self.stack.extend(elements.iter().rev());
+                    return Some(layout);
+                }
+                // Wrapper
+                Layout::Padding { element, .. }
+                | Layout::Explicit { element, .. }
+                | Layout::Offset { element, .. }
+                | Layout::Conditional { element, .. } => {
+                    self.stack.push(element);
+                    return Some(layout);
+                }
+            }
+        }
+        None
+    }
+}
+
+impl<DrawFn, Context> Layout<DrawFn, Context>
+where
+    DrawFn: Fn(Area, &mut Context),
+{
+    pub fn iter(&self) -> DrawableIterator<DrawFn, Context> {
+        DrawableIterator { stack: vec![self] }
     }
 
-    pub fn layout_draw(&mut self, available_area: Area, ctx: &'_ mut T) {
-        todo!()
-        // self.layout(available_area);
-        // for mut drawable in self.drawables() {
-        //     if let Some(draw) = drawable.draw.take() {
-        //         (draw)(drawable.area, ctx);
-        //     }
-        // }
+    pub fn drawables(&self) -> Vec<&Drawable<DrawFn, Context>> {
+        self.iter()
+            .filter_map(|l| {
+                let Layout::Draw(d) = l else { return None };
+                Some(d)
+            })
+            .collect::<Vec<&Drawable<DrawFn, Context>>>()
+    }
+
+    pub fn layout_draw(&mut self, available_area: Area, ctx: &mut Context) {
+        self.layout(available_area);
+        for drawable in self.drawables() {
+            drawable.draw(drawable.area, ctx);
+        }
     }
 
     pub fn layout(&mut self, available_area: Area) {
