@@ -8,5 +8,4 @@ name = "layouts"
 path = "examples/layouts/src/main.rs"
 
 [dev-dependencies]
-lilt = "0.7.0"
 macroquad = "0.4.13"
