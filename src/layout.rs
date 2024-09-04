@@ -53,14 +53,14 @@ where
     }
 }
 
-pub struct DrawableIterator<'a, T, U>
+pub struct LayoutNodeIterator<'a, T, U>
 where
     T: Fn(Area, &mut U),
 {
     stack: Vec<&'a Layout<T, U>>,
 }
 
-impl<'a, T, U> Iterator for DrawableIterator<'a, T, U>
+impl<'a, T, U> Iterator for LayoutNodeIterator<'a, T, U>
 where
     T: Fn(Area, &mut U),
 {
@@ -96,8 +96,8 @@ impl<DrawFn, Context> Layout<DrawFn, Context>
 where
     DrawFn: Fn(Area, &mut Context),
 {
-    pub fn iter(&self) -> DrawableIterator<DrawFn, Context> {
-        DrawableIterator { stack: vec![self] }
+    pub fn iter(&self) -> LayoutNodeIterator<DrawFn, Context> {
+        LayoutNodeIterator { stack: vec![self] }
     }
 
     pub fn drawables(&self) -> Vec<&Drawable<DrawFn, Context>> {

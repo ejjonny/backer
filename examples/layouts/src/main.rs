@@ -1,13 +1,9 @@
 use backer::layout::Layout;
 use backer::models::*;
 use backer::nodes::*;
-use lilt::Animated;
-use lilt::FloatRepresentable;
-use lilt::Interpolable;
 use macroquad::prelude::*;
 use macroquad::ui::root_ui;
 use macroquad::ui::widgets;
-use std::time::Instant;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum HighlightedCase {
@@ -18,43 +14,14 @@ enum HighlightedCase {
     None,
 }
 
-impl FloatRepresentable for HighlightedCase {
-    fn float_value(&self) -> f32 {
-        match self {
-            HighlightedCase::HeightConstraints => 0.,
-            HighlightedCase::WidthConstraints => 1.,
-            HighlightedCase::RelAbsSequence => 2.,
-            HighlightedCase::AlignmentOffset => 3.,
-            HighlightedCase::None => 4.,
-        }
-    }
-}
-
-#[derive(Clone, Copy)]
-struct IArea(Area);
-impl Interpolable for IArea {
-    fn interpolated(&self, other: Self, ratio: f32) -> Self {
-        IArea(Area {
-            x: self.0.x.interpolated(other.0.x, ratio),
-            y: self.0.y.interpolated(other.0.y, ratio),
-            width: self.0.width.interpolated(other.0.width, ratio),
-            height: self.0.height.interpolated(other.0.height, ratio),
-        })
-    }
-}
-
 struct Context<'a> {
     highlight: &'a mut HighlightedCase,
-    anim: &'a mut Animated<f32, Instant>,
 }
 
 #[macroquad::main("Demo")]
 async fn main() {
     let mut show_alignment: HighlightedCase = HighlightedCase::None;
-    let mut anim = Animated::<f32, Instant>::new(0.);
-    let mut last_drawables = Option::<Vec<Area>>::None;
     loop {
-        let now = Instant::now();
         let mut layout = row_spaced(
             20.,
             vec![
@@ -85,8 +52,6 @@ async fn main() {
                             } else {
                                 *ctx.highlight = HighlightedCase::HeightConstraints;
                             }
-                            *ctx.anim = Animated::new(0.);
-                            ctx.anim.transition(1., Instant::now());
                         })
                         .size(Size::new().height(20.).y_align(YAlign::Bottom)),
                     ]),
@@ -118,8 +83,6 @@ async fn main() {
                             } else {
                                 *ctx.highlight = HighlightedCase::WidthConstraints;
                             }
-                            *ctx.anim = Animated::new(0.);
-                            ctx.anim.transition(1., Instant::now());
                         })
                         .size(Size::new().height(20.).y_align(YAlign::Bottom)),
                     ]),
@@ -148,8 +111,6 @@ async fn main() {
                             } else {
                                 *ctx.highlight = HighlightedCase::RelAbsSequence;
                             }
-                            *ctx.anim = Animated::new(0.);
-                            ctx.anim.transition(1., Instant::now());
                         })
                         .size(Size::new().height(20.).y_align(YAlign::Bottom)),
                     ]),
@@ -208,8 +169,6 @@ async fn main() {
                             } else {
                                 *ctx.highlight = HighlightedCase::AlignmentOffset;
                             }
-                            *ctx.anim = Animated::new(0.);
-                            ctx.anim.transition(1., Instant::now());
                         })
                         .size(Size::new().height(20.).y_align(YAlign::Bottom)),
                     ]),
@@ -224,12 +183,10 @@ async fn main() {
         });
         let mut ctx = Context {
             highlight: &mut show_alignment,
-            anim: &mut anim,
         };
         for drawable in layout.drawables() {
             drawable.draw(drawable.area, &mut ctx);
         }
-        last_drawables = Some(layout.drawables().iter().map(|d| d.area).collect());
         next_frame().await
     }
 }
