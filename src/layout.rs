@@ -123,6 +123,10 @@ impl<'a, U> Iterator for LayoutNodeIterator<'a, U> {
 }
 
 impl<Context> Layout<Context> {
+    fn iter(&self) -> LayoutNodeIterator<Context> {
+        LayoutNodeIterator { stack: vec![self] }
+    }
+
     pub fn visit_drawables(
         &self,
         ctx: &mut Context,
@@ -134,10 +138,6 @@ impl<Context> Layout<Context> {
         }) {
             visit(node, ctx)
         }
-    }
-
-    fn iter(&self) -> LayoutNodeIterator<Context> {
-        LayoutNodeIterator { stack: vec![self] }
     }
 
     pub fn drawables(&self) -> Vec<&Drawable<Context>> {
