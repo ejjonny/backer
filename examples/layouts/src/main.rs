@@ -1,6 +1,3 @@
-use std::rc::Rc;
-use std::time::Instant;
-
 use backer::layout::Layout;
 use backer::models::*;
 use backer::nodes::*;
@@ -10,6 +7,7 @@ use lilt::Interpolable;
 use macroquad::prelude::*;
 use macroquad::ui::root_ui;
 use macroquad::ui::widgets;
+use std::time::Instant;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum HighlightedCase {
@@ -21,8 +19,9 @@ enum HighlightedCase {
 }
 
 // #[derive(Debug, Clone, PartialEq, Eq)]
-struct Context<'a> {
-    highlight: &'a mut HighlightedCase,
+struct Context {
+    highlight: HighlightedCase,
+    anim: Animated<HighlightedCase, Instant>,
 }
 
 impl FloatRepresentable for HighlightedCase {
@@ -34,6 +33,23 @@ impl FloatRepresentable for HighlightedCase {
             HighlightedCase::AlignmentOffset => 3.,
             HighlightedCase::None => 4.,
         }
+    }
+}
+
+struct IVec<T>(Vec<T>)
+where
+    T: Interpolable;
+
+impl<T> Interpolable for IVec<T>
+where
+    T: Interpolable,
+{
+    fn interpolated(&self, other: Self, ratio: f32) -> Self {
+        IVec(
+            std::iter::zip(self.0.iter(), other.0)
+                .map(|(a, b)| a.interpolated(b, ratio))
+                .collect(),
+        )
     }
 }
 
@@ -53,10 +69,10 @@ impl Interpolable for IArea {
 #[macroquad::main("Demo")]
 async fn main() {
     let mut highlight: HighlightedCase = HighlightedCase::None;
-    let mut last_layout = None;
-    let mut anim = Animated::<HighlightedCase, Instant>::new(highlight);
+    // let mut last_areas = None;
+    let mut anim = Animated::<HighlightedCase, Instant>::new(highlight).duration(400.);
     loop {
-        let mut layout = layout(&highlight);
+        let mut layout = layout_for_highlight(highlight);
         layout.layout(Area {
             x: 0.,
             y: 0.,
@@ -64,19 +80,46 @@ async fn main() {
             height: screen_height(),
         });
         {
-            let m = &mut highlight;
-            let mut ctx = Context { highlight: m };
-            for drawable in layout.drawables() {
-                drawable.draw(drawable.area, &mut ctx);
-            }
-            drop(m);
+            let now = Instant::now();
+            let areas: Vec<Area> = anim
+                .clone()
+                .animate(
+                    |highlight| {
+                        IVec((|| {
+                            let mut lt = layout_for_highlight(highlight);
+                            lt.layout(Area {
+                                x: 0.,
+                                y: 0.,
+                                width: screen_width(),
+                                height: screen_height(),
+                            });
+                            return lt
+                                .drawables()
+                                .into_iter()
+                                .map(|d| IArea(d.area))
+                                .collect::<Vec<IArea>>();
+                        })())
+                    },
+                    now,
+                )
+                .0
+                .into_iter()
+                .map(|i| i.0)
+                .collect();
+            let mut ctx = Context { highlight, anim };
+            layout
+                .drawables()
+                .into_iter()
+                .enumerate()
+                .for_each(|(i, d)| d.draw(areas[i], &mut ctx));
+            anim = ctx.anim;
+            highlight = ctx.highlight;
         }
-        last_layout = Some(layout);
         next_frame().await
     }
 }
 
-fn layout<'a>(highlight: &HighlightedCase) -> Layout<Context<'a>> {
+fn layout_for_highlight(highlight: HighlightedCase) -> Layout<Context> {
     row_spaced(
         20.,
         vec![
@@ -102,10 +145,13 @@ fn layout<'a>(highlight: &HighlightedCase) -> Layout<Context<'a>> {
                         rect(WHITE).size(Size::new().height(30.)),
                     ]),
                     button("Fullscreen", |ctx: &mut Context| {
-                        if *ctx.highlight == HighlightedCase::HeightConstraints {
-                            *ctx.highlight = HighlightedCase::None;
+                        let now = Instant::now();
+                        if ctx.highlight == HighlightedCase::HeightConstraints {
+                            ctx.highlight = HighlightedCase::None;
+                            ctx.anim.transition(HighlightedCase::None, now);
                         } else {
-                            *ctx.highlight = HighlightedCase::HeightConstraints;
+                            ctx.highlight = HighlightedCase::HeightConstraints;
+                            ctx.anim.transition(HighlightedCase::HeightConstraints, now);
                         }
                     })
                     .size(Size::new().height(20.).y_align(YAlign::Bottom)),
@@ -133,10 +179,13 @@ fn layout<'a>(highlight: &HighlightedCase) -> Layout<Context<'a>> {
                         rect(WHITE).size(Size::new().width(30.)),
                     ]),
                     button("Fullscreen", |ctx: &mut Context| {
-                        if *ctx.highlight == HighlightedCase::WidthConstraints {
-                            *ctx.highlight = HighlightedCase::None;
+                        let now = Instant::now();
+                        if ctx.highlight == HighlightedCase::WidthConstraints {
+                            ctx.highlight = HighlightedCase::None;
+                            ctx.anim.transition(HighlightedCase::None, now);
                         } else {
-                            *ctx.highlight = HighlightedCase::WidthConstraints;
+                            ctx.highlight = HighlightedCase::WidthConstraints;
+                            ctx.anim.transition(HighlightedCase::WidthConstraints, now);
                         }
                     })
                     .size(Size::new().height(20.).y_align(YAlign::Bottom)),
@@ -160,10 +209,13 @@ fn layout<'a>(highlight: &HighlightedCase) -> Layout<Context<'a>> {
                         .pad(10.),
                     ]),
                     button("Fullscreen", |ctx: &mut Context| {
-                        if *ctx.highlight == HighlightedCase::RelAbsSequence {
-                            *ctx.highlight = HighlightedCase::None;
+                        let now = Instant::now();
+                        if ctx.highlight == HighlightedCase::RelAbsSequence {
+                            ctx.highlight = HighlightedCase::None;
+                            ctx.anim.transition(HighlightedCase::None, now);
                         } else {
-                            *ctx.highlight = HighlightedCase::RelAbsSequence;
+                            ctx.highlight = HighlightedCase::RelAbsSequence;
+                            ctx.anim.transition(HighlightedCase::RelAbsSequence, now);
                         }
                     })
                     .size(Size::new().height(20.).y_align(YAlign::Bottom)),
@@ -206,22 +258,23 @@ fn layout<'a>(highlight: &HighlightedCase) -> Layout<Context<'a>> {
                                     .align(Align::CenterCenter),
                             )
                             .offset(10., 10.),
-                        draw(move |area: Area, _| {
-                            draw_rectangle(area.x, area.y, area.width, area.height, RED);
-                        })
-                        .size(
-                            Size::new()
-                                .height(30.)
-                                .width(30.)
-                                .align(Align::CenterCenter),
-                        )
-                        .offset(-10., -10.),
+                        rect(WHITE)
+                            .size(
+                                Size::new()
+                                    .height(30.)
+                                    .width(30.)
+                                    .align(Align::CenterCenter),
+                            )
+                            .offset(-10., -10.),
                     ]),
                     button("Fullscreen", |ctx: &mut Context| {
-                        if *ctx.highlight == HighlightedCase::AlignmentOffset {
-                            *ctx.highlight = HighlightedCase::None;
+                        let now = Instant::now();
+                        if ctx.highlight == HighlightedCase::AlignmentOffset {
+                            ctx.highlight = HighlightedCase::None;
+                            ctx.anim.transition(HighlightedCase::None, now);
                         } else {
-                            *ctx.highlight = HighlightedCase::AlignmentOffset;
+                            ctx.highlight = HighlightedCase::AlignmentOffset;
+                            ctx.anim.transition(HighlightedCase::AlignmentOffset, now);
                         }
                     })
                     .size(Size::new().height(20.).y_align(YAlign::Bottom)),
@@ -233,6 +286,7 @@ fn layout<'a>(highlight: &HighlightedCase) -> Layout<Context<'a>> {
 
 fn text<U>(string: &'static str, font_size: f32, color: Color) -> Layout<U> {
     draw(move |area: Area, _| {
+        // dbg!(area);
         let dimensions = measure_text(string, None, font_size as u16, 1.0);
         draw_text(
             string,
@@ -260,7 +314,7 @@ where
             .position(vec2(area.x, area.y))
             .ui(&mut root_ui())
         {
-            action(ctx)
+            action(ctx);
         }
     })
 }

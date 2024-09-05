@@ -73,7 +73,7 @@ impl<C> Clone for Layout<C> {
     }
 }
 
-type DrawFn<Context> = Rc<dyn Fn(Area, &mut Context)>;
+type DrawFn<Context> = Rc<dyn Fn(Area, &'_ mut Context)>;
 
 #[derive(Clone)]
 pub struct Drawable<Context> {
@@ -83,7 +83,9 @@ pub struct Drawable<Context> {
 
 impl<Context> Drawable<Context> {
     pub fn draw(&self, area: Area, ctx: &mut Context) {
-        (self.draw)(area, ctx)
+        if area.width > 0. && area.height > 0. {
+            (self.draw)(area, ctx);
+        }
     }
 }
 
@@ -121,7 +123,26 @@ impl<'a, U> Iterator for LayoutNodeIterator<'a, U> {
 }
 
 impl<Context> Layout<Context> {
-    pub fn iter(&self) -> LayoutNodeIterator<Context> {
+    fn visit(&self, ctx: &mut Context, visit: impl Fn(&Self, &mut Context)) {
+        for node in self.iter() {
+            visit(node, ctx)
+        }
+    }
+
+    pub fn visit_drawables(
+        &self,
+        ctx: &mut Context,
+        visit: impl Fn(&Drawable<Context>, &mut Context),
+    ) {
+        for node in self.iter().filter_map(|l| {
+            let Layout::Draw(d) = l else { return None };
+            Some(d)
+        }) {
+            visit(node, ctx)
+        }
+    }
+
+    fn iter(&self) -> LayoutNodeIterator<Context> {
         LayoutNodeIterator { stack: vec![self] }
     }
 
@@ -136,9 +157,9 @@ impl<Context> Layout<Context> {
 
     pub fn layout_draw(&mut self, available_area: Area, ctx: &mut Context) {
         self.layout(available_area);
-        for drawable in self.drawables() {
-            drawable.draw(drawable.area, ctx);
-        }
+        self.visit_drawables(ctx, |drawable, ctx| {
+            (drawable.draw)(drawable.area, ctx);
+        });
     }
 
     pub fn layout(&mut self, available_area: Area) {
@@ -156,114 +177,10 @@ impl<Context> Layout<Context> {
                 child.layout(inner_area);
             }
             Layout::Column { elements, spacing } => {
-                if elements.len() == 1 {
-                    for element in elements {
-                        element.layout(Area {
-                            x: available_area.x,
-                            y: available_area.y,
-                            width: available_area.width,
-                            height: available_area.height,
-                        })
-                    }
-                    return;
-                }
-                let total_spacing = *spacing * (elements.len() as i32 - 1).max(0) as f32;
-                let available_height = available_area.height - total_spacing;
-                let heights: Vec<Option<f32>> = elements
-                    .iter()
-                    .map(|e| {
-                        let Layout::Explicit {
-                            options,
-                            element: _,
-                        } = e
-                        else {
-                            return None;
-                        };
-                        if options.y_relative {
-                            return None;
-                        }
-                        options.height?.into()
-                    })
-                    .collect();
-                let explicit_consumed = heights.iter().filter_map(|&h| h).fold(0., |c, n| c + n);
-                let remaining = available_height - explicit_consumed;
-                let unconstrained_heights = heights
-                    .iter()
-                    .filter(|&h| h.is_none())
-                    .collect::<Vec<&Option<f32>>>()
-                    .len();
-                let default_height = remaining / unconstrained_heights as f32;
-
-                let mut current_y = available_area.y;
-                for (i, child) in elements.iter_mut().enumerate() {
-                    let child_height = heights
-                        .get(i)
-                        .unwrap_or(&Some(default_height))
-                        .unwrap_or(default_height);
-                    let area = Area {
-                        x: available_area.x,
-                        y: current_y,
-                        width: available_area.width,
-                        height: child_height,
-                    };
-                    child.layout(area);
-                    current_y += child_height + *spacing;
-                }
+                layout_axis(elements, spacing, available_area, Orientation::Vertical)
             }
             Layout::Row { elements, spacing } => {
-                if elements.len() == 1 {
-                    for element in elements {
-                        element.layout(Area {
-                            x: available_area.x,
-                            y: available_area.y,
-                            width: available_area.width,
-                            height: available_area.height,
-                        })
-                    }
-                    return;
-                }
-                let total_spacing = *spacing * (elements.len() as i32 - 1).max(0) as f32;
-                let available_width = available_area.width - total_spacing;
-                let widths: Vec<Option<f32>> = elements
-                    .iter()
-                    .map(|e| {
-                        let Layout::Explicit {
-                            options,
-                            element: _,
-                        } = e
-                        else {
-                            return None;
-                        };
-                        if options.x_relative {
-                            return None;
-                        }
-                        options.width?.into()
-                    })
-                    .collect();
-                let explicit_consumed = widths.iter().filter_map(|&h| h).fold(0., |c, n| c + n);
-                let remaining = available_width - explicit_consumed;
-                let unconstrained_widths = widths
-                    .iter()
-                    .filter(|&h| h.is_none())
-                    .collect::<Vec<&Option<f32>>>()
-                    .len();
-                let default_width = remaining / unconstrained_widths as f32;
-
-                let mut current_x = available_area.x;
-                for (i, child) in elements.iter_mut().enumerate() {
-                    let child_width = widths
-                        .get(i)
-                        .unwrap_or(&Some(default_width))
-                        .unwrap_or(default_width);
-                    let area = Area {
-                        x: current_x,
-                        y: available_area.y,
-                        width: child_width,
-                        height: available_area.height,
-                    };
-                    child.layout(area);
-                    current_x += child_width + *spacing;
-                }
+                layout_axis(elements, spacing, available_area, Orientation::Horizontal)
             }
             Layout::Stack(children) => {
                 for child in children {
@@ -271,9 +188,12 @@ impl<Context> Layout<Context> {
                 }
             }
             Layout::Draw(drawable) => {
-                if available_area.width > 0. && available_area.height > 0. {
-                    drawable.area = available_area;
-                }
+                drawable.area = Area {
+                    x: available_area.x,
+                    y: available_area.y,
+                    width: available_area.width.max(0.),
+                    height: available_area.height.max(0.),
+                };
             }
             Layout::Explicit {
                 options:
@@ -346,11 +266,110 @@ impl<Context> Layout<Context> {
                     height: available_area.height,
                 });
             }
-            Layout::Conditional { condition, element } => {
+            Layout::Conditional {
+                condition: _,
+                element,
+            } => element.layout(available_area),
+        }
+    }
+}
+
+enum Orientation {
+    Horizontal,
+    Vertical,
+}
+
+fn layout_axis<Context>(
+    elements: &mut [Layout<Context>],
+    spacing: &f32,
+    available_area: Area,
+    orientation: Orientation,
+) {
+    let sizes: Vec<Option<f32>> = elements
+        .iter()
+        .map(|element| match element {
+            Layout::Conditional {
+                condition,
+                element: _,
+            } => {
                 if *condition {
-                    element.layout(available_area)
+                    None
+                } else {
+                    Some(0.)
                 }
             }
+            Layout::Explicit {
+                options,
+                element: _,
+            } => {
+                if (matches!(orientation, Orientation::Horizontal) && options.x_relative)
+                    || (matches!(orientation, Orientation::Vertical) && options.y_relative)
+                {
+                    None
+                } else {
+                    match orientation {
+                        Orientation::Horizontal => options.width,
+                        Orientation::Vertical => options.height,
+                    }
+                }
+            }
+            _ => None,
+        })
+        .map(|size| {
+            let Some(size) = size else { return size };
+            match orientation {
+                Orientation::Horizontal => Some(size.min(available_area.width)),
+                Orientation::Vertical => Some(size.min(available_area.height)),
+            }
+        })
+        .collect();
+
+    let non_zero_elements = sizes
+        .iter()
+        .filter(|&s| s.map_or(true, |v| v != 0.))
+        .count();
+
+    let total_spacing = *spacing * (non_zero_elements as i32 - 1).max(0) as f32;
+    let available_size = match orientation {
+        Orientation::Horizontal => available_area.width,
+        Orientation::Vertical => available_area.height,
+    } - total_spacing;
+
+    let explicit_consumed = sizes.iter().filter_map(|&s| s).sum::<f32>();
+    let remaining = available_size - explicit_consumed;
+    let unconstrained_sizes = sizes.iter().filter(|&s| s.is_none()).count();
+    let default_size = remaining / unconstrained_sizes as f32;
+
+    let mut current_pos = match orientation {
+        Orientation::Horizontal => available_area.x,
+        Orientation::Vertical => available_area.y,
+    };
+
+    for (i, child) in elements.iter_mut().enumerate() {
+        let child_size = sizes
+            .get(i)
+            .unwrap_or(&Some(default_size))
+            .unwrap_or(default_size);
+
+        let area = match orientation {
+            Orientation::Horizontal => Area {
+                x: current_pos,
+                y: available_area.y,
+                width: child_size,
+                height: available_area.height,
+            },
+            Orientation::Vertical => Area {
+                x: available_area.x,
+                y: current_pos,
+                width: available_area.width,
+                height: child_size,
+            },
+        };
+
+        child.layout(area);
+
+        if child_size > 0. {
+            current_pos += child_size + *spacing;
         }
     }
 }
