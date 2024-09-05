@@ -123,12 +123,6 @@ impl<'a, U> Iterator for LayoutNodeIterator<'a, U> {
 }
 
 impl<Context> Layout<Context> {
-    fn visit(&self, ctx: &mut Context, visit: impl Fn(&Self, &mut Context)) {
-        for node in self.iter() {
-            visit(node, ctx)
-        }
-    }
-
     pub fn visit_drawables(
         &self,
         ctx: &mut Context,
