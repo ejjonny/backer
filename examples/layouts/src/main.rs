@@ -18,7 +18,6 @@ enum HighlightedCase {
     None,
 }
 
-// #[derive(Debug, Clone, PartialEq, Eq)]
 struct Context {
     highlight: HighlightedCase,
     anim: Animated<HighlightedCase, Instant>,
@@ -69,8 +68,9 @@ impl Interpolable for IArea {
 #[macroquad::main("Demo")]
 async fn main() {
     let mut highlight: HighlightedCase = HighlightedCase::None;
-    // let mut last_areas = None;
-    let mut anim = Animated::<HighlightedCase, Instant>::new(highlight).duration(400.);
+    let mut anim = Animated::<HighlightedCase, Instant>::new(highlight)
+        .duration(300.)
+        .easing(lilt::Easing::EaseInOut);
     loop {
         let mut layout = layout_for_highlight(highlight);
         layout.layout(Area {
@@ -84,9 +84,9 @@ async fn main() {
             let areas: Vec<Area> = anim
                 .clone()
                 .animate(
-                    |highlight| {
+                    |m_highlight| {
                         IVec((|| {
-                            let mut lt = layout_for_highlight(highlight);
+                            let mut lt = layout_for_highlight(m_highlight);
                             lt.layout(Area {
                                 x: 0.,
                                 y: 0.,
@@ -120,6 +120,7 @@ async fn main() {
 }
 
 fn layout_for_highlight(highlight: HighlightedCase) -> Layout<Context> {
+    let button_size = 50.;
     row_spaced(
         20.,
         vec![
@@ -154,7 +155,7 @@ fn layout_for_highlight(highlight: HighlightedCase) -> Layout<Context> {
                             ctx.anim.transition(HighlightedCase::HeightConstraints, now);
                         }
                     })
-                    .size(Size::new().height(20.).y_align(YAlign::Bottom)),
+                    .size(Size::new().height(button_size).y_align(YAlign::Bottom)),
                 ]),
             ),
             conditional(
@@ -188,7 +189,7 @@ fn layout_for_highlight(highlight: HighlightedCase) -> Layout<Context> {
                             ctx.anim.transition(HighlightedCase::WidthConstraints, now);
                         }
                     })
-                    .size(Size::new().height(20.).y_align(YAlign::Bottom)),
+                    .size(Size::new().height(button_size).y_align(YAlign::Bottom)),
                 ]),
             ),
             conditional(
@@ -218,7 +219,7 @@ fn layout_for_highlight(highlight: HighlightedCase) -> Layout<Context> {
                             ctx.anim.transition(HighlightedCase::RelAbsSequence, now);
                         }
                     })
-                    .size(Size::new().height(20.).y_align(YAlign::Bottom)),
+                    .size(Size::new().height(button_size).y_align(YAlign::Bottom)),
                 ]),
             ),
             conditional(
@@ -277,7 +278,7 @@ fn layout_for_highlight(highlight: HighlightedCase) -> Layout<Context> {
                             ctx.anim.transition(HighlightedCase::AlignmentOffset, now);
                         }
                     })
-                    .size(Size::new().height(20.).y_align(YAlign::Bottom)),
+                    .size(Size::new().height(button_size).y_align(YAlign::Bottom)),
                 ]),
             ),
         ],
@@ -286,7 +287,6 @@ fn layout_for_highlight(highlight: HighlightedCase) -> Layout<Context> {
 
 fn text<U>(string: &'static str, font_size: f32, color: Color) -> Layout<U> {
     draw(move |area: Area, _| {
-        // dbg!(area);
         let dimensions = measure_text(string, None, font_size as u16, 1.0);
         draw_text(
             string,
