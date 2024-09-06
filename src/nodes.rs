@@ -1,7 +1,7 @@
-use std::rc::Rc;
+use std::{any::Any, rc::Rc};
 
 use crate::{
-    layout::{Drawable, Node},
+    layout::{AnyNode, Drawable, Node},
     models::*,
 };
 
@@ -59,6 +59,30 @@ pub fn conditional<U>(condition: bool, element: Node<U>) -> Node<U> {
     }
 }
 
+pub fn scope<U, V: 'static>(scope: impl Fn(&mut U) -> &mut V + 'static, node: Node<V>) -> Node<U> {
+    Node::<U>::Scope {
+        scoped: AnyNode {
+            inner: Box::new(node),
+            clone: |any| {
+                Box::new(
+                    any.downcast_ref::<Node<V>>()
+                        .expect("Invalid downcast")
+                        .clone(),
+                ) as Box<dyn Any>
+            },
+            layout: |any, area| {
+                any.downcast_mut::<Node<V>>()
+                    .expect("Invalid downcast")
+                    .layout(area)
+            },
+            draw: Rc::new(move |any, state| {
+                any.downcast_ref::<Node<V>>()
+                    .expect("Invalid downcast")
+                    .draw(scope(state))
+            }),
+        },
+    }
+}
 fn ungroup<U>(elements: Vec<Node<U>>) -> Vec<Node<U>> {
     elements
         .into_iter()

@@ -50,6 +50,7 @@ fn layout_for_highlight(ctx: &State) -> Node<State> {
                 column_spaced(
                     10.,
                     vec![
+                        scope(|state: &mut State| &mut state.highlight, rect(RED)),
                         text("Mixed (rel/abs) Sequence Constraints", 15., WHITE)
                             .size(Size::new().height(20.)),
                         group(
@@ -142,8 +143,8 @@ fn layout_for_highlight(ctx: &State) -> Node<State> {
 }
 
 fn text<U>(string: &'static str, font_size: f32, color: Color) -> Node<U> {
+    let dimensions = measure_text(string, None, font_size as u16, 1.0);
     draw(move |area: Area, _| {
-        let dimensions = measure_text(string, None, font_size as u16, 1.0);
         draw_text(
             string,
             area.x + ((area.width - dimensions.width) * 0.5),
@@ -152,6 +153,11 @@ fn text<U>(string: &'static str, font_size: f32, color: Color) -> Node<U> {
             color,
         );
     })
+    .size(
+        Size::new()
+            .width(dimensions.width)
+            .height(dimensions.height),
+    )
 }
 
 fn rect<U>(color: Color) -> Node<U> {

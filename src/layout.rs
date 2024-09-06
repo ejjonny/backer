@@ -1,6 +1,5 @@
-use std::rc::Rc;
-
 use crate::models::*;
+use std::{any::Any, marker::PhantomData, rc::Rc};
 
 pub struct Layout<State> {
     pub tree: fn(&State) -> Node<State>,
@@ -10,9 +9,7 @@ impl<State> Layout<State> {
     pub fn draw(&self, state: &mut State, area: Area) {
         let mut layout = (self.tree)(state);
         layout.layout(area);
-        for drawable in layout.drawables() {
-            drawable.draw(drawable.area, state);
-        }
+        layout.draw(state);
     }
 }
 
@@ -46,6 +43,35 @@ pub enum Node<State> {
         element: Box<Node<State>>,
     },
     Space,
+    Scope {
+        scoped: AnyNode<State>,
+    },
+}
+
+pub struct ScopedNode<Super, State> {
+    tree: Layout<State>,
+    scope: fn(Super) -> State,
+    p: PhantomData<Super>,
+}
+
+impl<Super, State> ScopedNode<Super, State> {}
+
+pub struct AnyNode<State> {
+    pub(crate) inner: Box<dyn Any>,
+    pub(crate) clone: fn(&Box<dyn Any>) -> Box<dyn Any>,
+    pub(crate) layout: fn(&mut dyn Any, Area),
+    pub(crate) draw: Rc<dyn Fn(&dyn Any, &mut State)>,
+}
+
+impl<State> Clone for AnyNode<State> {
+    fn clone(&self) -> Self {
+        AnyNode {
+            inner: (self.clone)(&self.inner),
+            clone: self.clone,
+            layout: self.layout,
+            draw: self.draw.clone(),
+        }
+    }
 }
 
 impl<State> Clone for Node<State> {
@@ -87,6 +113,9 @@ impl<State> Clone for Node<State> {
             },
             Node::Group(elements) => Node::Group(elements.clone()),
             Node::Space => Node::Space,
+            Node::Scope { scoped } => Node::Scope {
+                scoped: scoped.clone(),
+            },
         }
     }
 }
@@ -136,6 +165,7 @@ impl<'a, U> Iterator for LayoutNodeIterator<'a, U> {
                 }
                 Node::Space => return Some(layout),
                 Node::Group(_) => unreachable!(),
+                Node::Scope { scoped: _ } => return Some(layout),
             }
         }
         None
@@ -143,16 +173,16 @@ impl<'a, U> Iterator for LayoutNodeIterator<'a, U> {
 }
 
 impl<State> Node<State> {
-    fn iter(&self) -> LayoutNodeIterator<State> {
+    pub(crate) fn iter(&self) -> LayoutNodeIterator<State> {
         LayoutNodeIterator { stack: vec![self] }
     }
 
-    pub fn visit_drawables(&self, ctx: &mut State, visit: impl Fn(&Drawable<State>, &mut State)) {
+    pub fn visit_drawables(&self, state: &mut State, visit: impl Fn(&Drawable<State>, &mut State)) {
         for node in self.iter().filter_map(|l| {
             let Node::Draw(d) = l else { return None };
             Some(d)
         }) {
-            visit(node, ctx)
+            visit(node, state)
         }
     }
 
@@ -165,11 +195,15 @@ impl<State> Node<State> {
             .collect::<Vec<&Drawable<State>>>()
     }
 
-    pub fn layout_draw(&mut self, available_area: Area, ctx: &mut State) {
+    pub fn layout_draw(&mut self, available_area: Area, state: &mut State) {
         self.layout(available_area);
-        self.visit_drawables(ctx, |drawable, ctx| {
-            (drawable.draw)(drawable.area, ctx);
-        });
+        self.draw(state);
+    }
+
+    pub fn draw(&self, state: &mut State) {
+        for drawable in self.drawables() {
+            drawable.draw(drawable.area, state);
+        }
     }
 
     pub fn layout(&mut self, available_area: Area) {
@@ -206,21 +240,21 @@ impl<State> Node<State> {
                 };
             }
             Node::Explicit {
-                options:
-                    Size {
-                        width,
-                        width_min,
-                        width_max,
-                        height,
-                        height_min,
-                        height_max,
-                        x_align,
-                        y_align,
-                        x_relative,
-                        y_relative,
-                    },
+                options,
                 element: child,
             } => {
+                let Size {
+                    width,
+                    width_min,
+                    width_max,
+                    height,
+                    height_min,
+                    height_max,
+                    x_align,
+                    y_align,
+                    x_relative,
+                    y_relative,
+                } = options;
                 let explicit_width = if *x_relative {
                     available_area.width * width.unwrap_or(1.0)
                 } else {
@@ -282,6 +316,7 @@ impl<State> Node<State> {
             } => element.layout(available_area),
             Node::Group(_) => unreachable!(),
             Node::Space => (),
+            Node::Scope { scoped } => (scoped.layout)(&mut scoped.inner, available_area),
         }
     }
 }
