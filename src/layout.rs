@@ -2,154 +2,170 @@ use std::rc::Rc;
 
 use crate::models::*;
 
-pub enum Layout<C> {
-    Padding {
-        amounts: Padding,
-        element: Box<Layout<C>>,
-    },
-    Column {
-        elements: Vec<Layout<C>>,
-        spacing: f32,
-    },
-    Row {
-        elements: Vec<Layout<C>>,
-        spacing: f32,
-    },
-    Stack(Vec<Layout<C>>),
-    Offset {
-        offset_x: f32,
-        offset_y: f32,
-        element: Box<Layout<C>>,
-    },
-    Draw(Drawable<C>),
-    Explicit {
-        options: Size,
-        element: Box<Layout<C>>,
-    },
-    Conditional {
-        condition: bool,
-        element: Box<Layout<C>>,
-    },
+pub struct Layout<State> {
+    pub tree: fn(&State) -> Node<State>,
 }
 
-impl<C> Clone for Layout<C> {
-    fn clone(&self) -> Self {
-        match self {
-            Layout::Padding { amounts, element } => Layout::Padding {
-                amounts: *amounts,
-                element: element.clone(),
-            },
-            Layout::Column { elements, spacing } => Layout::Column {
-                elements: elements.clone(),
-                spacing: *spacing,
-            },
-            Layout::Row { elements, spacing } => Layout::Row {
-                elements: elements.clone(),
-                spacing: *spacing,
-            },
-            Layout::Stack(elements) => Layout::Stack(elements.clone()),
-            Layout::Offset {
-                offset_x,
-                offset_y,
-                element,
-            } => Layout::Offset {
-                offset_x: *offset_x,
-                offset_y: *offset_y,
-                element: element.clone(),
-            },
-            Layout::Draw(drawable) => Layout::Draw(Drawable {
-                area: drawable.area,
-                draw: drawable.draw.clone(),
-            }),
-            Layout::Explicit { options, element } => Layout::Explicit {
-                options: *options,
-                element: element.clone(),
-            },
-            Layout::Conditional { condition, element } => Layout::Conditional {
-                condition: *condition,
-                element: element.clone(),
-            },
+impl<State> Layout<State> {
+    pub fn draw(&self, state: &mut State, area: Area) {
+        let mut layout = (self.tree)(state);
+        layout.layout(area);
+        for drawable in layout.drawables() {
+            drawable.draw(drawable.area, state);
         }
     }
 }
 
-type DrawFn<Context> = Rc<dyn Fn(Area, &'_ mut Context)>;
-
-#[derive(Clone)]
-pub struct Drawable<Context> {
-    pub area: Area,
-    pub(crate) draw: DrawFn<Context>,
+pub enum Node<State> {
+    Padding {
+        amounts: Padding,
+        element: Box<Node<State>>,
+    },
+    Column {
+        elements: Vec<Node<State>>,
+        spacing: f32,
+    },
+    Row {
+        elements: Vec<Node<State>>,
+        spacing: f32,
+    },
+    Stack(Vec<Node<State>>),
+    Group(Vec<Node<State>>),
+    Offset {
+        offset_x: f32,
+        offset_y: f32,
+        element: Box<Node<State>>,
+    },
+    Draw(Drawable<State>),
+    Explicit {
+        options: Size,
+        element: Box<Node<State>>,
+    },
+    Conditional {
+        condition: bool,
+        element: Box<Node<State>>,
+    },
+    Space,
 }
 
-impl<Context> Drawable<Context> {
-    pub fn draw(&self, area: Area, ctx: &mut Context) {
+impl<State> Clone for Node<State> {
+    fn clone(&self) -> Self {
+        match self {
+            Node::Padding { amounts, element } => Node::Padding {
+                amounts: *amounts,
+                element: element.clone(),
+            },
+            Node::Column { elements, spacing } => Node::Column {
+                elements: elements.clone(),
+                spacing: *spacing,
+            },
+            Node::Row { elements, spacing } => Node::Row {
+                elements: elements.clone(),
+                spacing: *spacing,
+            },
+            Node::Stack(elements) => Node::Stack(elements.clone()),
+            Node::Offset {
+                offset_x,
+                offset_y,
+                element,
+            } => Node::Offset {
+                offset_x: *offset_x,
+                offset_y: *offset_y,
+                element: element.clone(),
+            },
+            Node::Draw(drawable) => Node::Draw(Drawable {
+                area: drawable.area,
+                draw: drawable.draw.clone(),
+            }),
+            Node::Explicit { options, element } => Node::Explicit {
+                options: *options,
+                element: element.clone(),
+            },
+            Node::Conditional { condition, element } => Node::Conditional {
+                condition: *condition,
+                element: element.clone(),
+            },
+            Node::Group(elements) => Node::Group(elements.clone()),
+            Node::Space => Node::Space,
+        }
+    }
+}
+
+type DrawFn<State> = Rc<dyn Fn(Area, &'_ mut State)>;
+
+#[derive(Clone)]
+pub struct Drawable<State> {
+    pub area: Area,
+    pub(crate) draw: DrawFn<State>,
+}
+
+impl<State> Drawable<State> {
+    pub fn draw(&self, area: Area, state: &mut State) {
         if area.width > 0. && area.height > 0. {
-            (self.draw)(area, ctx);
+            (self.draw)(area, state);
         }
     }
 }
 
 pub struct LayoutNodeIterator<'a, U> {
-    stack: Vec<&'a Layout<U>>,
+    stack: Vec<&'a Node<U>>,
 }
 
 impl<'a, U> Iterator for LayoutNodeIterator<'a, U> {
-    type Item = &'a Layout<U>;
+    type Item = &'a Node<U>;
 
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(layout) = self.stack.pop() {
             match layout {
                 // Leaf
-                Layout::Draw(_) => return Some(layout),
+                Node::Draw(_) => return Some(layout),
                 // Group
-                Layout::Column { elements, .. }
-                | Layout::Row { elements, .. }
-                | Layout::Stack(elements) => {
+                Node::Column { elements, .. }
+                | Node::Row { elements, .. }
+                | Node::Stack(elements) => {
                     self.stack.extend(elements.iter().rev());
                     return Some(layout);
                 }
                 // Wrapper
-                Layout::Padding { element, .. }
-                | Layout::Explicit { element, .. }
-                | Layout::Offset { element, .. }
-                | Layout::Conditional { element, .. } => {
+                Node::Padding { element, .. }
+                | Node::Explicit { element, .. }
+                | Node::Offset { element, .. }
+                | Node::Conditional { element, .. } => {
                     self.stack.push(element);
                     return Some(layout);
                 }
+                Node::Space => return Some(layout),
+                Node::Group(_) => unreachable!(),
             }
         }
         None
     }
 }
 
-impl<Context> Layout<Context> {
-    fn iter(&self) -> LayoutNodeIterator<Context> {
+impl<State> Node<State> {
+    fn iter(&self) -> LayoutNodeIterator<State> {
         LayoutNodeIterator { stack: vec![self] }
     }
 
-    pub fn visit_drawables(
-        &self,
-        ctx: &mut Context,
-        visit: impl Fn(&Drawable<Context>, &mut Context),
-    ) {
+    pub fn visit_drawables(&self, ctx: &mut State, visit: impl Fn(&Drawable<State>, &mut State)) {
         for node in self.iter().filter_map(|l| {
-            let Layout::Draw(d) = l else { return None };
+            let Node::Draw(d) = l else { return None };
             Some(d)
         }) {
             visit(node, ctx)
         }
     }
 
-    pub fn drawables(&self) -> Vec<&Drawable<Context>> {
+    pub fn drawables(&self) -> Vec<&Drawable<State>> {
         self.iter()
             .filter_map(|l| {
-                let Layout::Draw(d) = l else { return None };
+                let Node::Draw(d) = l else { return None };
                 Some(d)
             })
-            .collect::<Vec<&Drawable<Context>>>()
+            .collect::<Vec<&Drawable<State>>>()
     }
 
-    pub fn layout_draw(&mut self, available_area: Area, ctx: &mut Context) {
+    pub fn layout_draw(&mut self, available_area: Area, ctx: &mut State) {
         self.layout(available_area);
         self.visit_drawables(ctx, |drawable, ctx| {
             (drawable.draw)(drawable.area, ctx);
@@ -158,7 +174,7 @@ impl<Context> Layout<Context> {
 
     pub fn layout(&mut self, available_area: Area) {
         match self {
-            Layout::Padding {
+            Node::Padding {
                 amounts,
                 element: child,
             } => {
@@ -170,18 +186,18 @@ impl<Context> Layout<Context> {
                 };
                 child.layout(inner_area);
             }
-            Layout::Column { elements, spacing } => {
+            Node::Column { elements, spacing } => {
                 layout_axis(elements, spacing, available_area, Orientation::Vertical)
             }
-            Layout::Row { elements, spacing } => {
+            Node::Row { elements, spacing } => {
                 layout_axis(elements, spacing, available_area, Orientation::Horizontal)
             }
-            Layout::Stack(children) => {
+            Node::Stack(children) => {
                 for child in children {
                     child.layout(available_area)
                 }
             }
-            Layout::Draw(drawable) => {
+            Node::Draw(drawable) => {
                 drawable.area = Area {
                     x: available_area.x,
                     y: available_area.y,
@@ -189,7 +205,7 @@ impl<Context> Layout<Context> {
                     height: available_area.height.max(0.),
                 };
             }
-            Layout::Explicit {
+            Node::Explicit {
                 options:
                     Size {
                         width,
@@ -248,7 +264,7 @@ impl<Context> Layout<Context> {
                     height: explicit_height,
                 });
             }
-            Layout::Offset {
+            Node::Offset {
                 offset_x,
                 offset_y,
                 element,
@@ -260,10 +276,12 @@ impl<Context> Layout<Context> {
                     height: available_area.height,
                 });
             }
-            Layout::Conditional {
+            Node::Conditional {
                 condition: _,
                 element,
             } => element.layout(available_area),
+            Node::Group(_) => unreachable!(),
+            Node::Space => (),
         }
     }
 }
@@ -273,8 +291,8 @@ enum Orientation {
     Vertical,
 }
 
-fn layout_axis<Context>(
-    elements: &mut [Layout<Context>],
+fn layout_axis<State>(
+    elements: &mut [Node<State>],
     spacing: &f32,
     available_area: Area,
     orientation: Orientation,
@@ -282,7 +300,7 @@ fn layout_axis<Context>(
     let sizes: Vec<Option<f32>> = elements
         .iter()
         .map(|element| match element {
-            Layout::Conditional {
+            Node::Conditional {
                 condition,
                 element: _,
             } => {
@@ -292,7 +310,7 @@ fn layout_axis<Context>(
                     Some(0.)
                 }
             }
-            Layout::Explicit {
+            Node::Explicit {
                 options,
                 element: _,
             } => {
