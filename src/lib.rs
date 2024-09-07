@@ -1,6 +1,7 @@
 #![warn(missing_docs)]
 
-/*! A library for straight-forward UI layout.
+/*!
+A library for straight-forward UI layout.
 
 Dependency free & framework-agnostic. Backer can be used in an index-based layout approach or with inline drawing code.
 
