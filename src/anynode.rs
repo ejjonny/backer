@@ -2,7 +2,7 @@ use crate::models::Area;
 use std::{any::Any, fmt, rc::Rc};
 
 type AnyDrawFn<State> = Rc<dyn Fn(&dyn Any, &mut State)>;
-pub struct AnyNode<State> {
+pub(crate) struct AnyNode<State> {
     pub(crate) inner: Box<dyn Any>,
     pub(crate) clone: fn(&Box<dyn Any>) -> Box<dyn Any>,
     pub(crate) layout: fn(&mut dyn Any, Area),
@@ -10,11 +10,11 @@ pub struct AnyNode<State> {
 }
 
 impl<State> AnyNode<State> {
-    pub fn draw(&self, state: &mut State) {
+    pub(crate) fn draw(&self, state: &mut State) {
         (self.draw)(&*self.inner, state)
     }
 
-    pub fn layout(&mut self, available_area: Area) {
+    pub(crate) fn layout(&mut self, available_area: Area) {
         (self.layout)(&mut *self.inner, available_area)
     }
 }

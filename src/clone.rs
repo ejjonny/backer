@@ -1,44 +1,44 @@
-use crate::{drawable::Drawable, layout::Node};
+use crate::{drawable::Drawable, layout::NodeValue};
 
-impl<State> Clone for Node<State> {
+impl<State> Clone for NodeValue<State> {
     fn clone(&self) -> Self {
         match self {
-            Node::Padding { amounts, element } => Node::Padding {
+            NodeValue::Padding { amounts, element } => NodeValue::Padding {
                 amounts: *amounts,
                 element: element.clone(),
             },
-            Node::Column { elements, spacing } => Node::Column {
+            NodeValue::Column { elements, spacing } => NodeValue::Column {
                 elements: elements.clone(),
                 spacing: *spacing,
             },
-            Node::Row { elements, spacing } => Node::Row {
+            NodeValue::Row { elements, spacing } => NodeValue::Row {
                 elements: elements.clone(),
                 spacing: *spacing,
             },
-            Node::Stack(elements) => Node::Stack(elements.clone()),
-            Node::Offset {
+            NodeValue::Stack(elements) => NodeValue::Stack(elements.clone()),
+            NodeValue::Offset {
                 offset_x,
                 offset_y,
                 element,
-            } => Node::Offset {
+            } => NodeValue::Offset {
                 offset_x: *offset_x,
                 offset_y: *offset_y,
                 element: element.clone(),
             },
-            Node::Draw(drawable) => Node::Draw(Drawable {
+            NodeValue::Draw(drawable) => NodeValue::Draw(Drawable {
                 area: drawable.area,
                 draw: drawable.draw.clone(),
             }),
-            Node::Explicit { options, element } => Node::Explicit {
+            NodeValue::Explicit { options, element } => NodeValue::Explicit {
                 options: *options,
                 element: element.clone(),
             },
-            Node::Group(elements) => Node::Group(elements.clone()),
-            Node::Space => Node::Space,
-            Node::Scope { scoped } => Node::Scope {
+            NodeValue::Group(elements) => NodeValue::Group(elements.clone()),
+            NodeValue::Space => NodeValue::Space,
+            NodeValue::Scope { scoped } => NodeValue::Scope {
                 scoped: scoped.clone(),
             },
-            Node::Empty => Node::Empty,
+            NodeValue::Empty => NodeValue::Empty,
         }
     }
 }

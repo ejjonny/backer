@@ -13,35 +13,39 @@ impl<State> Layout<State> {
 impl<State> Layout<State> {
     pub fn draw(&self, area: Area, state: &mut State) {
         let mut layout = (self.tree)(state);
-        layout.layout(area);
-        layout.draw(state);
+        layout.inner.layout(area);
+        layout.inner.draw(state);
     }
 }
 
-pub enum Node<State> {
+pub struct Node<State> {
+    pub(crate) inner: NodeValue<State>,
+}
+
+pub(crate) enum NodeValue<State> {
     Padding {
         amounts: Padding,
-        element: Box<Node<State>>,
+        element: Box<NodeValue<State>>,
     },
     Column {
-        elements: Vec<Node<State>>,
+        elements: Vec<NodeValue<State>>,
         spacing: f32,
     },
     Row {
-        elements: Vec<Node<State>>,
+        elements: Vec<NodeValue<State>>,
         spacing: f32,
     },
-    Stack(Vec<Node<State>>),
-    Group(Vec<Node<State>>),
+    Stack(Vec<NodeValue<State>>),
+    Group(Vec<NodeValue<State>>),
     Offset {
         offset_x: f32,
         offset_y: f32,
-        element: Box<Node<State>>,
+        element: Box<NodeValue<State>>,
     },
     Draw(Drawable<State>),
     Explicit {
         options: Size,
-        element: Box<Node<State>>,
+        element: Box<NodeValue<State>>,
     },
     Empty,
     Space,
@@ -50,30 +54,30 @@ pub enum Node<State> {
     },
 }
 
-impl<State> Node<State> {
-    pub fn draw(&self, state: &mut State) {
+impl<State> NodeValue<State> {
+    pub(crate) fn draw(&self, state: &mut State) {
         match self {
-            Node::Draw(drawable) => drawable.draw(drawable.area, state),
-            Node::Padding { element, .. }
-            | Node::Explicit { element, .. }
-            | Node::Offset { element, .. } => {
+            NodeValue::Draw(drawable) => drawable.draw(drawable.area, state),
+            NodeValue::Padding { element, .. }
+            | NodeValue::Explicit { element, .. }
+            | NodeValue::Offset { element, .. } => {
                 element.draw(state);
             }
-            Node::Stack(elements) => {
+            NodeValue::Stack(elements) => {
                 elements.iter().for_each(|el| el.draw(state));
             }
-            Node::Column { elements, .. } | Node::Row { elements, .. } => {
+            NodeValue::Column { elements, .. } | NodeValue::Row { elements, .. } => {
                 elements.iter().rev().for_each(|el| el.draw(state));
             }
-            Node::Space => (),
-            Node::Scope { scoped } => scoped.draw(state),
-            Node::Group(_) | Node::Empty => unreachable!(),
+            NodeValue::Space => (),
+            NodeValue::Scope { scoped } => scoped.draw(state),
+            NodeValue::Group(_) | NodeValue::Empty => unreachable!(),
         }
     }
 
-    pub fn layout(&mut self, available_area: Area) {
+    pub(crate) fn layout(&mut self, available_area: Area) {
         match self {
-            Node::Padding {
+            NodeValue::Padding {
                 amounts,
                 element: child,
             } => {
@@ -85,18 +89,18 @@ impl<State> Node<State> {
                 };
                 child.layout(inner_area);
             }
-            Node::Column { elements, spacing } => {
+            NodeValue::Column { elements, spacing } => {
                 layout_axis(elements, spacing, available_area, Orientation::Vertical)
             }
-            Node::Row { elements, spacing } => {
+            NodeValue::Row { elements, spacing } => {
                 layout_axis(elements, spacing, available_area, Orientation::Horizontal)
             }
-            Node::Stack(children) => {
+            NodeValue::Stack(children) => {
                 for child in children {
                     child.layout(available_area)
                 }
             }
-            Node::Draw(drawable) => {
+            NodeValue::Draw(drawable) => {
                 drawable.area = Area {
                     x: available_area.x,
                     y: available_area.y,
@@ -104,7 +108,7 @@ impl<State> Node<State> {
                     height: available_area.height.max(0.),
                 };
             }
-            Node::Explicit {
+            NodeValue::Explicit {
                 options,
                 element: child,
             } => {
@@ -163,7 +167,7 @@ impl<State> Node<State> {
                     height: explicit_height,
                 });
             }
-            Node::Offset {
+            NodeValue::Offset {
                 offset_x,
                 offset_y,
                 element,
@@ -175,9 +179,9 @@ impl<State> Node<State> {
                     height: available_area.height,
                 });
             }
-            Node::Space => (),
-            Node::Scope { scoped } => scoped.layout(available_area),
-            Node::Group(_) | Node::Empty => unreachable!(),
+            NodeValue::Space => (),
+            NodeValue::Scope { scoped } => scoped.layout(available_area),
+            NodeValue::Group(_) | NodeValue::Empty => unreachable!(),
         }
     }
 }
@@ -188,7 +192,7 @@ enum Orientation {
 }
 
 fn layout_axis<State>(
-    elements: &mut [Node<State>],
+    elements: &mut [NodeValue<State>],
     spacing: &f32,
     available_area: Area,
     orientation: Orientation,
@@ -196,7 +200,7 @@ fn layout_axis<State>(
     let sizes: Vec<Option<f32>> = elements
         .iter()
         .map(|element| match element {
-            Node::Explicit {
+            NodeValue::Explicit {
                 options,
                 element: _,
             } => {
