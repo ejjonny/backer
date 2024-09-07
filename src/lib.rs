@@ -14,7 +14,6 @@ mod debug;
 mod drawable;
 mod layout;
 
-/// Core objects
 pub use layout::{Layout, Node};
 
 /// Structs involved in layout definitions
