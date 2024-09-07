@@ -1,16 +1,25 @@
 # Backer
-A library for straight-forward UI layout. 
+
+![rust](https://github.com/ejjonny/backer/actions/workflows/rust.yml/badge.svg)
+[![coverage](https://codecov.io/github/ejjonny/backer/main/graph/badge.svg?token=4XJNXRSQNX)](https://codecov.io/github/ejjonny/backer)
+[![crates.io](https://img.shields.io/crates/v/backer.svg)](https://crates.io/crates/backer)
+[![downloads](https://img.shields.io/crates/d/backer.svg)](https://crates.io/crates/backer)
+[![license](https://img.shields.io/crates/l/backer.svg)](https://github.com/backer/blob/master/LICENSE)
+
+A library for straight-forward UI layout.
 
 Dependency free & framework-agnostic. Backer can be used in an index-based layout approach or with inline drawing code.
 
-*This library **only** implements layout & could be integrated with a range of UI crates.*
+_This library **only** implements layout & could be integrated with a range of UI crates._
 
-###  Features
+### Features
+
 - Declarative API
 - Minimal interface
 - Single pass layout
 
 ### Status
-The crate is currently usable but is very new! Currently lacks docs / testing & will likely publish breaking changes often. 
+
+The crate is currently usable but is very new! Currently lacks docs / testing & will likely publish breaking changes often.
 
 Contribution welcome!
