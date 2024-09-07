@@ -12,8 +12,8 @@ authors = ["ejjonny"]
 crate-type = ["lib"]
 
 [[example]]
-name = "layouts"
-path = "examples/layouts/src/main.rs"
+name = "macroquad-example"
+path = "examples/macroquad-example/src/main.rs"
 
 [[example]]
 name = "egui-example"
