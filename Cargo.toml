@@ -15,5 +15,14 @@ crate-type = ["lib"]
 name = "layouts"
 path = "examples/layouts/src/main.rs"
 
+[[example]]
+name = "iced-example"
+path = "examples/iced-example/src/main.rs"
+
 [dev-dependencies]
 macroquad = "0.4.13"
+iced = { git = "https://github.com/iced-rs/iced", rev = "169667ef1b4fa754ed1edb5fa0e845aede2638fb", features = [
+    "canvas",
+] }
+iced_core = { git = "https://github.com/iced-rs/iced", rev = "169667ef1b4fa754ed1edb5fa0e845aede2638fb" }
+iced_futures = "0.12.0"
