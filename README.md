@@ -3,7 +3,7 @@
 ![rust](https://github.com/ejjonny/backer/actions/workflows/rust.yml/badge.svg)
 [![crates.io](https://img.shields.io/crates/v/backer.svg)](https://crates.io/crates/backer)
 [![downloads](https://img.shields.io/crates/d/backer.svg)](https://crates.io/crates/backer)
-[![license](https://img.shields.io/crates/l/backer.svg)](https://github.com/backer/blob/main/LICENSE)
+[![license](https://img.shields.io/crates/l/backer.svg)](https://github.com/ejjonny/backer/blob/main/LICENSE)
 
 A library for straight-forward UI layout.
 
