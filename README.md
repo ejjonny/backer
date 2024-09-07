@@ -130,7 +130,7 @@ let layout = Layout::new(my_layout_fn);
 layout.draw(available_area, &mut my_state);
 ```
 
-### Status
+## Status
 
 The crate is currently usable but is very new! Currently lacks docs / testing & will likely publish breaking changes often.
 
