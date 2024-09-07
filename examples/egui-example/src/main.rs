@@ -23,11 +23,14 @@ fn main() -> eframe::Result {
 }
 
 fn tree(ui: &mut Ui) -> Node<Ui> {
+    labeled_rect(ui, "A".to_string()).pad(5.)
+}
+
+fn labeled_rect(ui: &mut Ui, text: String) -> Node<Ui> {
     stack(vec![
         draw_rect(Color32::from_rgb(255, 255, 255), true),
-        draw_label(ui, "My Label".to_string()).pad(10.),
+        draw_label(ui, text),
     ])
-    .pad(5.)
 }
 
 fn draw_label(ui: &mut Ui, text: String) -> Node<Ui> {
@@ -40,12 +43,7 @@ fn draw_label(ui: &mut Ui, text: String) -> Node<Ui> {
             egui::Label::new(RichText::new(text.clone()).size(16.)),
         );
     })
-    .size(
-        Size::new()
-            .width(text_area.width)
-            .height(text_area.height)
-            .align(backer::models::Align::TopLeading),
-    )
+    .size(Size::new().width(text_area.width).height(text_area.height))
 }
 
 fn draw_rect(color: Color32, stroke: bool) -> Node<Ui> {
