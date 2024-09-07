@@ -1,12 +1,11 @@
-use crate::models::*;
-use std::{any::Any, marker::PhantomData, rc::Rc};
+use crate::{anynode::AnyNode, drawable::Drawable, models::*};
 
 pub struct Layout<State> {
     pub tree: fn(&State) -> Node<State>,
 }
 
 impl<State> Layout<State> {
-    pub fn draw(&self, state: &mut State, area: Area) {
+    pub fn draw(&self, area: Area, state: &mut State) {
         let mut layout = (self.tree)(state);
         layout.layout(area);
         layout.draw(state);
@@ -48,161 +47,22 @@ pub enum Node<State> {
     },
 }
 
-pub struct ScopedNode<Super, State> {
-    tree: Layout<State>,
-    scope: fn(Super) -> State,
-    p: PhantomData<Super>,
-}
-
-impl<Super, State> ScopedNode<Super, State> {}
-
-pub struct AnyNode<State> {
-    pub(crate) inner: Box<dyn Any>,
-    pub(crate) clone: fn(&Box<dyn Any>) -> Box<dyn Any>,
-    pub(crate) layout: fn(&mut dyn Any, Area),
-    pub(crate) draw: Rc<dyn Fn(&dyn Any, &mut State)>,
-}
-
-impl<State> Clone for AnyNode<State> {
-    fn clone(&self) -> Self {
-        AnyNode {
-            inner: (self.clone)(&self.inner),
-            clone: self.clone,
-            layout: self.layout,
-            draw: self.draw.clone(),
-        }
-    }
-}
-
-impl<State> Clone for Node<State> {
-    fn clone(&self) -> Self {
-        match self {
-            Node::Padding { amounts, element } => Node::Padding {
-                amounts: *amounts,
-                element: element.clone(),
-            },
-            Node::Column { elements, spacing } => Node::Column {
-                elements: elements.clone(),
-                spacing: *spacing,
-            },
-            Node::Row { elements, spacing } => Node::Row {
-                elements: elements.clone(),
-                spacing: *spacing,
-            },
-            Node::Stack(elements) => Node::Stack(elements.clone()),
-            Node::Offset {
-                offset_x,
-                offset_y,
-                element,
-            } => Node::Offset {
-                offset_x: *offset_x,
-                offset_y: *offset_y,
-                element: element.clone(),
-            },
-            Node::Draw(drawable) => Node::Draw(Drawable {
-                area: drawable.area,
-                draw: drawable.draw.clone(),
-            }),
-            Node::Explicit { options, element } => Node::Explicit {
-                options: *options,
-                element: element.clone(),
-            },
-            Node::Conditional { condition, element } => Node::Conditional {
-                condition: *condition,
-                element: element.clone(),
-            },
-            Node::Group(elements) => Node::Group(elements.clone()),
-            Node::Space => Node::Space,
-            Node::Scope { scoped } => Node::Scope {
-                scoped: scoped.clone(),
-            },
-        }
-    }
-}
-
-type DrawFn<State> = Rc<dyn Fn(Area, &'_ mut State)>;
-
-#[derive(Clone)]
-pub struct Drawable<State> {
-    pub area: Area,
-    pub(crate) draw: DrawFn<State>,
-}
-
-impl<State> Drawable<State> {
-    pub fn draw(&self, area: Area, state: &mut State) {
-        if area.width > 0. && area.height > 0. {
-            (self.draw)(area, state);
-        }
-    }
-}
-
-pub struct LayoutNodeIterator<'a, U> {
-    stack: Vec<&'a Node<U>>,
-}
-
-impl<'a, U> Iterator for LayoutNodeIterator<'a, U> {
-    type Item = &'a Node<U>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if let Some(layout) = self.stack.pop() {
-            match layout {
-                // Leaf
-                Node::Draw(_) => return Some(layout),
-                // Group
-                Node::Column { elements, .. }
-                | Node::Row { elements, .. }
-                | Node::Stack(elements) => {
-                    self.stack.extend(elements.iter().rev());
-                    return Some(layout);
-                }
-                // Wrapper
-                Node::Padding { element, .. }
-                | Node::Explicit { element, .. }
-                | Node::Offset { element, .. }
-                | Node::Conditional { element, .. } => {
-                    self.stack.push(element);
-                    return Some(layout);
-                }
-                Node::Space => return Some(layout),
-                Node::Group(_) => unreachable!(),
-                Node::Scope { scoped: _ } => return Some(layout),
-            }
-        }
-        None
-    }
-}
-
 impl<State> Node<State> {
-    pub(crate) fn iter(&self) -> LayoutNodeIterator<State> {
-        LayoutNodeIterator { stack: vec![self] }
-    }
-
-    pub fn visit_drawables(&self, state: &mut State, visit: impl Fn(&Drawable<State>, &mut State)) {
-        for node in self.iter().filter_map(|l| {
-            let Node::Draw(d) = l else { return None };
-            Some(d)
-        }) {
-            visit(node, state)
-        }
-    }
-
-    pub fn drawables(&self) -> Vec<&Drawable<State>> {
-        self.iter()
-            .filter_map(|l| {
-                let Node::Draw(d) = l else { return None };
-                Some(d)
-            })
-            .collect::<Vec<&Drawable<State>>>()
-    }
-
-    pub fn layout_draw(&mut self, available_area: Area, state: &mut State) {
-        self.layout(available_area);
-        self.draw(state);
-    }
-
     pub fn draw(&self, state: &mut State) {
-        for drawable in self.drawables() {
-            drawable.draw(drawable.area, state);
+        match self {
+            Node::Draw(drawable) => drawable.draw(drawable.area, state),
+            Node::Padding { element, .. }
+            | Node::Explicit { element, .. }
+            | Node::Offset { element, .. }
+            | Node::Conditional { element, .. } => {
+                element.draw(state);
+            }
+            Node::Column { elements, .. } | Node::Row { elements, .. } | Node::Stack(elements) => {
+                elements.iter().rev().for_each(|el| el.draw(state));
+            }
+            Node::Space => (),
+            Node::Scope { scoped } => scoped.draw(state),
+            Node::Group(_) => unreachable!(),
         }
     }
 
@@ -314,9 +174,9 @@ impl<State> Node<State> {
                 condition: _,
                 element,
             } => element.layout(available_area),
-            Node::Group(_) => unreachable!(),
             Node::Space => (),
-            Node::Scope { scoped } => (scoped.layout)(&mut scoped.inner, available_area),
+            Node::Scope { scoped } => scoped.layout(available_area),
+            Node::Group(_) => unreachable!(),
         }
     }
 }

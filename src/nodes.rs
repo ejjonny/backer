@@ -1,9 +1,5 @@
+use crate::{anynode::AnyNode, drawable::Drawable, layout::Node, models::*};
 use std::{any::Any, rc::Rc};
-
-use crate::{
-    layout::{AnyNode, Drawable, Node},
-    models::*,
-};
 
 pub fn column<U>(elements: Vec<Node<U>>) -> Node<U> {
     Node::Column {
@@ -83,6 +79,7 @@ pub fn scope<U, V: 'static>(scope: impl Fn(&mut U) -> &mut V + 'static, node: No
         },
     }
 }
+
 fn ungroup<U>(elements: Vec<Node<U>>) -> Vec<Node<U>> {
     elements
         .into_iter()

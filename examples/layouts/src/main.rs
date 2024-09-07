@@ -27,13 +27,13 @@ async fn main() {
     };
     loop {
         layout.draw(
-            &mut state,
             Area {
                 x: 0.,
                 y: 0.,
                 width: screen_width(),
                 height: screen_height(),
             },
+            &mut state,
         );
         next_frame().await
     }

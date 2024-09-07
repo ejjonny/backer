@@ -12,3 +12,7 @@ macroquad = "0.4.13"
 
 [dependencies]
 lilt = "0.7.0"
+
+[profile.release-with-debug]
+inherits = "release"
+debug = true
