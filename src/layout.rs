@@ -37,10 +37,7 @@ pub enum Node<State> {
         options: Size,
         element: Box<Node<State>>,
     },
-    Conditional {
-        condition: bool,
-        element: Box<Node<State>>,
-    },
+    Empty,
     Space,
     Scope {
         scoped: AnyNode<State>,
@@ -56,12 +53,6 @@ impl<State> Node<State> {
             | Node::Offset { element, .. } => {
                 element.draw(state);
             }
-            Node::Conditional {
-                element,
-                condition: _,
-            } => {
-                element.draw(state);
-            }
             Node::Stack(elements) => {
                 elements.iter().for_each(|el| el.draw(state));
             }
@@ -70,7 +61,7 @@ impl<State> Node<State> {
             }
             Node::Space => (),
             Node::Scope { scoped } => scoped.draw(state),
-            Node::Group(_) => unreachable!(),
+            Node::Group(_) | Node::Empty => unreachable!(),
         }
     }
 
@@ -178,13 +169,9 @@ impl<State> Node<State> {
                     height: available_area.height,
                 });
             }
-            Node::Conditional {
-                condition: _,
-                element,
-            } => element.layout(available_area),
             Node::Space => (),
             Node::Scope { scoped } => scoped.layout(available_area),
-            Node::Group(_) => unreachable!(),
+            Node::Group(_) | Node::Empty => unreachable!(),
         }
     }
 }

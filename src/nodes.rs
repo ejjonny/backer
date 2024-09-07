@@ -3,38 +3,38 @@ use std::{any::Any, rc::Rc};
 
 pub fn column<U>(elements: Vec<Node<U>>) -> Node<U> {
     Node::Column {
-        elements: filter_conditionals(ungroup(elements)),
+        elements: filter_empty(ungroup(elements)),
         spacing: 0.,
     }
 }
 
 pub fn group<U>(elements: Vec<Node<U>>) -> Node<U> {
-    Node::Group(filter_conditionals(ungroup(elements)))
+    Node::Group(filter_empty(ungroup(elements)))
 }
 
 pub fn column_spaced<U>(spacing: f32, elements: Vec<Node<U>>) -> Node<U> {
     Node::Column {
-        elements: filter_conditionals(ungroup(elements)),
+        elements: filter_empty(ungroup(elements)),
         spacing,
     }
 }
 
 pub fn row<U>(elements: Vec<Node<U>>) -> Node<U> {
     Node::Row {
-        elements: filter_conditionals(ungroup(elements)),
+        elements: filter_empty(ungroup(elements)),
         spacing: 0.,
     }
 }
 
 pub fn row_spaced<U>(spacing: f32, elements: Vec<Node<U>>) -> Node<U> {
     Node::Row {
-        elements: filter_conditionals(ungroup(elements)),
+        elements: filter_empty(ungroup(elements)),
         spacing,
     }
 }
 
 pub fn stack<U>(elements: Vec<Node<U>>) -> Node<U> {
-    Node::Stack(filter_conditionals(ungroup(elements)))
+    Node::Stack(filter_empty(ungroup(elements)))
 }
 
 pub fn draw<U>(drawable: impl Fn(Area, &mut U) + 'static) -> Node<U> {
@@ -48,19 +48,17 @@ pub fn space<U>() -> Node<U> {
     Node::Space
 }
 
-pub fn conditional<U>(condition: bool, element: Node<U>) -> Node<U> {
-    Node::Conditional {
-        condition,
-        element: Box::new(element),
-    }
+pub fn logic<U>(element: impl Fn() -> Node<U>) -> Node<U> {
+    element()
+}
+
+pub fn empty<U>() -> Node<U> {
+    Node::Empty
 }
 
 pub fn scope<U, V: 'static>(scope: impl Fn(&mut U) -> &mut V + 'static, node: Node<V>) -> Node<U> {
     match node {
-        Node::Conditional {
-            condition: false,
-            element: _,
-        } => conditional(false, space()),
+        Node::Empty => empty(),
         _ => Node::<U>::Scope {
             scoped: AnyNode {
                 inner: Box::new(node),
@@ -99,16 +97,12 @@ fn ungroup<U>(elements: Vec<Node<U>>) -> Vec<Node<U>> {
         .collect()
 }
 
-fn filter_conditionals<U>(elements: Vec<Node<U>>) -> Vec<Node<U>> {
+fn filter_empty<U>(elements: Vec<Node<U>>) -> Vec<Node<U>> {
     elements
         .into_iter()
         .filter(|el| {
-            if let Node::Conditional {
-                condition,
-                element: _,
-            } = el
-            {
-                return *condition;
+            if let Node::Empty = el {
+                return false;
             }
             true
         })

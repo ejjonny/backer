@@ -50,100 +50,111 @@ fn layout_for_highlight(ctx: &State) -> Node<State> {
                 |state: &mut State| &mut state.highlight,
                 rel_abs_seq(highlight),
             ),
-            conditional(
-                highlight == HighlightedCase::AlignmentOffset || highlight == HighlightedCase::None,
-                column_spaced(
-                    10.,
-                    vec![
-                        text("Alignment & Offset", 15., WHITE),
-                        stack(vec![
-                            rect(BLUE),
-                            rect(WHITE)
-                                .size(Size::new().height(30.).width(30.).x_align(XAlign::Leading)),
-                            rect(WHITE)
-                                .size(Size::new().height(30.).width(30.).x_align(XAlign::Trailing)),
-                            rect(WHITE)
-                                .size(Size::new().height(30.).width(30.).y_align(YAlign::Top)),
-                            rect(WHITE)
-                                .size(Size::new().height(30.).width(30.).y_align(YAlign::Bottom)),
-                            rect(WHITE)
-                                .size(Size::new().height(30.).width(30.).align(Align::TopLeading)),
-                            rect(WHITE).size(
-                                Size::new()
-                                    .height(30.)
-                                    .width(30.)
-                                    .align(Align::BottomLeading),
-                            ),
-                            rect(WHITE).size(
-                                Size::new()
-                                    .height(30.)
-                                    .width(30.)
-                                    .align(Align::BottomTrailing),
-                            ),
-                            rect(WHITE)
-                                .size(Size::new().height(30.).width(30.).align(Align::TopTrailing)),
-                            rect(WHITE)
-                                .size(
+            logic(|| {
+                if highlight == HighlightedCase::AlignmentOffset
+                    || highlight == HighlightedCase::None
+                {
+                    return column_spaced(
+                        10.,
+                        vec![
+                            text("Alignment & Offset", 15., WHITE),
+                            stack(vec![
+                                rect(BLUE),
+                                rect(WHITE).size(
+                                    Size::new().height(30.).width(30.).x_align(XAlign::Leading),
+                                ),
+                                rect(WHITE).size(
+                                    Size::new().height(30.).width(30.).x_align(XAlign::Trailing),
+                                ),
+                                rect(WHITE)
+                                    .size(Size::new().height(30.).width(30.).y_align(YAlign::Top)),
+                                rect(WHITE).size(
+                                    Size::new().height(30.).width(30.).y_align(YAlign::Bottom),
+                                ),
+                                rect(WHITE).size(
+                                    Size::new().height(30.).width(30.).align(Align::TopLeading),
+                                ),
+                                rect(WHITE).size(
                                     Size::new()
                                         .height(30.)
                                         .width(30.)
-                                        .align(Align::CenterCenter),
-                                )
-                                .offset(10., 10.),
-                            rect(WHITE)
-                                .size(
+                                        .align(Align::BottomLeading),
+                                ),
+                                rect(WHITE).size(
                                     Size::new()
                                         .height(30.)
                                         .width(30.)
-                                        .align(Align::CenterCenter),
-                                )
-                                .offset(-10., -10.),
-                        ]),
-                        button("Fullscreen", |ctx: &mut State| {
-                            if ctx.highlight == HighlightedCase::AlignmentOffset {
-                                ctx.highlight = HighlightedCase::None;
-                            } else {
-                                ctx.highlight = HighlightedCase::AlignmentOffset;
-                            }
-                        })
-                        .size(Size::new().height(BTN_SIZE).y_align(YAlign::Bottom)),
-                    ],
-                ),
-            ),
+                                        .align(Align::BottomTrailing),
+                                ),
+                                rect(WHITE).size(
+                                    Size::new().height(30.).width(30.).align(Align::TopTrailing),
+                                ),
+                                rect(WHITE)
+                                    .size(
+                                        Size::new()
+                                            .height(30.)
+                                            .width(30.)
+                                            .align(Align::CenterCenter),
+                                    )
+                                    .offset(10., 10.),
+                                rect(WHITE)
+                                    .size(
+                                        Size::new()
+                                            .height(30.)
+                                            .width(30.)
+                                            .align(Align::CenterCenter),
+                                    )
+                                    .offset(-10., -10.),
+                            ]),
+                            button("Fullscreen", |ctx: &mut State| {
+                                if ctx.highlight == HighlightedCase::AlignmentOffset {
+                                    ctx.highlight = HighlightedCase::None;
+                                } else {
+                                    ctx.highlight = HighlightedCase::AlignmentOffset;
+                                }
+                            })
+                            .size(Size::new().height(BTN_SIZE).y_align(YAlign::Bottom)),
+                        ],
+                    );
+                }
+                empty()
+            }),
         ],
     )
 }
 
 fn rel_abs_seq(highlight: HighlightedCase) -> Node<HighlightedCase> {
-    conditional(
-        highlight == HighlightedCase::RelAbsSequence || highlight == HighlightedCase::None,
-        column_spaced(
-            10.,
-            vec![
-                text("Mixed (rel/abs) Sequence Constraints", 15., WHITE),
-                stack(vec![
-                    rect(BLUE),
-                    column_spaced(
-                        10.,
-                        vec![
-                            rect(WHITE),
-                            rect(WHITE).size(Size::new().height(30.)),
-                            rect(WHITE),
-                        ],
-                    )
-                    .pad(10.),
-                ]),
-                button("Fullscreen", |highlight: &mut HighlightedCase| {
-                    if *highlight == HighlightedCase::RelAbsSequence {
-                        *highlight = HighlightedCase::None;
-                    } else {
-                        *highlight = HighlightedCase::RelAbsSequence;
-                    }
-                })
-                .size(Size::new().height(BTN_SIZE).y_align(YAlign::Bottom)),
-            ],
-        ),
-    )
+    logic(|| {
+        if highlight == HighlightedCase::RelAbsSequence || highlight == HighlightedCase::None {
+            return column_spaced(
+                10.,
+                vec![
+                    text("Mixed (rel/abs) Sequence Constraints", 15., WHITE),
+                    stack(vec![
+                        rect(BLUE),
+                        column_spaced(
+                            10.,
+                            vec![
+                                rect(WHITE),
+                                rect(WHITE).size(Size::new().height(30.)),
+                                rect(WHITE),
+                            ],
+                        )
+                        .pad(10.),
+                    ]),
+                    button("Fullscreen", |highlight: &mut HighlightedCase| {
+                        if *highlight == HighlightedCase::RelAbsSequence {
+                            *highlight = HighlightedCase::None;
+                        } else {
+                            *highlight = HighlightedCase::RelAbsSequence;
+                        }
+                    })
+                    .size(Size::new().height(BTN_SIZE).y_align(YAlign::Bottom)),
+                ],
+            );
+        }
+        empty()
+    })
 }
 
 fn text<U>(string: &'static str, font_size: f32, color: Color) -> Node<U> {

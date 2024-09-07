@@ -37,12 +37,8 @@ impl<State> fmt::Debug for Node<State> {
                 .field("options", options)
                 .field("element", element)
                 .finish(),
-            Node::Conditional { condition, element } => f
-                .debug_struct("Conditional")
-                .field("condition", condition)
-                .field("element", element)
-                .finish(),
             Node::Space => write!(f, "Space"),
+            Node::Empty => write!(f, "Empty"),
             Node::Scope { scoped } => f.debug_struct("Scope").field("scoped", scoped).finish(),
         }
     }

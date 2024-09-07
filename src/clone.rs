@@ -33,15 +33,12 @@ impl<State> Clone for Node<State> {
                 options: *options,
                 element: element.clone(),
             },
-            Node::Conditional { condition, element } => Node::Conditional {
-                condition: *condition,
-                element: element.clone(),
-            },
             Node::Group(elements) => Node::Group(elements.clone()),
             Node::Space => Node::Space,
             Node::Scope { scoped } => Node::Scope {
                 scoped: scoped.clone(),
             },
+            Node::Empty => Node::Empty,
         }
     }
 }
