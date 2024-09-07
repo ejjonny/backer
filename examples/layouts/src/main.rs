@@ -41,7 +41,7 @@ async fn main() {
 }
 
 const BTN_SIZE: f32 = 50.;
-fn layout_for_highlight(ctx: &State) -> Node<State> {
+fn layout_for_highlight(ctx: &mut State) -> Node<State> {
     let highlight = ctx.highlight;
     row_spaced(
         20.,

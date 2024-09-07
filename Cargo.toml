@@ -15,5 +15,12 @@ crate-type = ["lib"]
 name = "layouts"
 path = "examples/layouts/src/main.rs"
 
+[[example]]
+name = "egui-example"
+path = "examples/egui-example/src/main.rs"
+
+
 [dev-dependencies]
 macroquad = "0.4.13"
+egui = "0.28.1"
+eframe = "0.28.1"
