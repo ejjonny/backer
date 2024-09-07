@@ -216,12 +216,9 @@ fn layout_axis<State>(
         })
         .collect();
 
-    let non_zero_elements = sizes
-        .iter()
-        .filter(|&s| s.map_or(true, |v| v != 0.))
-        .count();
+    let element_count = sizes.len();
 
-    let total_spacing = *spacing * (non_zero_elements as i32 - 1).max(0) as f32;
+    let total_spacing = *spacing * (element_count as i32 - 1).max(0) as f32;
     let available_size = match orientation {
         Orientation::Horizontal => available_area.width,
         Orientation::Vertical => available_area.height,
@@ -260,8 +257,6 @@ fn layout_axis<State>(
 
         child.layout(area);
 
-        if child_size > 0. {
-            current_pos += child_size + *spacing;
-        }
+        current_pos += child_size + *spacing;
     }
 }
