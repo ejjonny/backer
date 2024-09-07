@@ -132,6 +132,6 @@ layout.draw(available_area, &mut my_state);
 
 ## Status
 
-The crate is currently usable but is very new! Currently lacks docs / testing & will likely publish breaking changes often.
+The crate is currently usable but is very new! Currently lacks testing & will likely publish breaking changes often.
 
 Contributions are always welcome 🤗
