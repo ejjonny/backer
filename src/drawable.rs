@@ -4,13 +4,13 @@ use std::{fmt, rc::Rc};
 type DrawFn<State> = Rc<dyn Fn(Area, &'_ mut State)>;
 
 #[derive(Clone)]
-pub struct Drawable<State> {
-    pub area: Area,
+pub(crate) struct Drawable<State> {
+    pub(crate) area: Area,
     pub(crate) draw: DrawFn<State>,
 }
 
 impl<State> Drawable<State> {
-    pub fn draw(&self, area: Area, state: &mut State) {
+    pub(crate) fn draw(&self, area: Area, state: &mut State) {
         if area.width > 0. && area.height > 0. {
             (self.draw)(area, state);
         }
