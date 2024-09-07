@@ -5,6 +5,12 @@ pub struct Layout<State> {
 }
 
 impl<State> Layout<State> {
+    pub fn new(tree: fn(&mut State) -> Node<State>) -> Self {
+        Self { tree }
+    }
+}
+
+impl<State> Layout<State> {
     pub fn draw(&self, area: Area, state: &mut State) {
         let mut layout = (self.tree)(state);
         layout.layout(area);

@@ -1,8 +1,6 @@
-use backer::{
-    layout::{Layout, Node},
-    models::{Area, Size, XAlign},
-    nodes::{draw, stack},
-};
+use backer::layout::Layout;
+use backer::layout::Node;
+use backer::{models::*, nodes::*};
 use eframe::egui;
 use egui::{Color32, Pos2, Rect, RichText, Stroke, Ui};
 
@@ -14,7 +12,7 @@ fn main() -> eframe::Result {
 
     eframe::run_simple_native("Layout Example", options, move |ctx, _frame| {
         egui::CentralPanel::default().show(ctx, |ui| {
-            let layout = Layout { tree };
+            let layout = Layout::new(my_layout_fn);
             let viewport = ctx.input(|i| i.screen_rect());
             let available_area = area_from(viewport);
             layout.draw(available_area, ui);
@@ -22,25 +20,48 @@ fn main() -> eframe::Result {
     })
 }
 
-fn tree(ui: &mut Ui) -> Node<Ui> {
-    labeled_rect(ui, "A".to_string()).pad(5.)
+fn my_layout_fn(ui: &mut Ui) -> Node<Ui> {
+    column_spaced(
+        10.,
+        vec![
+            draw_a(ui),
+            row_spaced(
+                10.,
+                vec![
+                    draw_b(ui).size(Size::new().width(180.).x_align(XAlign::Leading)),
+                    column_spaced(10., vec![draw_a(ui), draw_b(ui), draw_c(ui)]),
+                ],
+            ),
+            draw_c(ui),
+        ],
+    )
+    .pad(10.)
 }
 
-fn labeled_rect(ui: &mut Ui, text: String) -> Node<Ui> {
-    stack(vec![
-        draw_rect(Color32::from_rgb(255, 255, 255), true),
-        draw_label(ui, text),
-    ])
+fn draw_a(ui: &mut Ui) -> Node<Ui> {
+    labeled_rect(ui, "A".to_string(), Color32::BLUE)
+}
+
+fn draw_b(ui: &mut Ui) -> Node<Ui> {
+    labeled_rect(ui, "B".to_string(), Color32::RED)
+}
+
+fn draw_c(ui: &mut Ui) -> Node<Ui> {
+    labeled_rect(ui, "C".to_string(), Color32::GOLD)
+}
+
+fn labeled_rect(ui: &mut Ui, text: String, color: Color32) -> Node<Ui> {
+    stack(vec![draw_rect(color, true), draw_label(ui, text)])
 }
 
 fn draw_label(ui: &mut Ui, text: String) -> Node<Ui> {
-    let label = egui::Label::new(RichText::new(text.clone()).size(16.));
+    let label = egui::Label::new(RichText::new(text.clone()).size(10.));
     let galley = label.layout_in_ui(ui).1.rect;
     let text_area = area_from(galley);
     draw(move |area, ui: &mut Ui| {
         ui.put(
             rect(area),
-            egui::Label::new(RichText::new(text.clone()).size(16.)),
+            egui::Label::new(RichText::new(text.clone()).size(10.)),
         );
     })
     .size(Size::new().width(text_area.width).height(text_area.height))
