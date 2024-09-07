@@ -1,7 +1,13 @@
 use crate::{anynode::AnyNode, drawable::Drawable, models::*};
 
 pub struct Layout<State> {
-    pub tree: fn(&State) -> Node<State>,
+    tree: fn(&mut State) -> Node<State>,
+}
+
+impl<State> Layout<State> {
+    pub fn new(tree: fn(&mut State) -> Node<State>) -> Self {
+        Self { tree }
+    }
 }
 
 impl<State> Layout<State> {

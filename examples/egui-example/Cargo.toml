@@ -1,0 +1,8 @@
+[package]
+name = "egui-example"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+egui = "0.28.1"
+eframe = "0.28.1"

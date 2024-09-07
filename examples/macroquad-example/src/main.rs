@@ -23,9 +23,7 @@ async fn main() {
     let mut state = State {
         highlight: HighlightedCase::None,
     };
-    let layout = Layout {
-        tree: layout_for_highlight,
-    };
+    let layout = Layout::new(layout_for_highlight);
     loop {
         layout.draw(
             Area {
@@ -41,7 +39,7 @@ async fn main() {
 }
 
 const BTN_SIZE: f32 = 50.;
-fn layout_for_highlight(ctx: &State) -> Node<State> {
+fn layout_for_highlight(ctx: &mut State) -> Node<State> {
     let highlight = ctx.highlight;
     row_spaced(
         20.,
