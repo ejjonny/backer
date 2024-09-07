@@ -53,11 +53,19 @@ impl<State> Node<State> {
             Node::Draw(drawable) => drawable.draw(drawable.area, state),
             Node::Padding { element, .. }
             | Node::Explicit { element, .. }
-            | Node::Offset { element, .. }
-            | Node::Conditional { element, .. } => {
+            | Node::Offset { element, .. } => {
                 element.draw(state);
             }
-            Node::Column { elements, .. } | Node::Row { elements, .. } | Node::Stack(elements) => {
+            Node::Conditional {
+                element,
+                condition: _,
+            } => {
+                element.draw(state);
+            }
+            Node::Stack(elements) => {
+                elements.iter().for_each(|el| el.draw(state));
+            }
+            Node::Column { elements, .. } | Node::Row { elements, .. } => {
                 elements.iter().rev().for_each(|el| el.draw(state));
             }
             Node::Space => (),
@@ -195,16 +203,6 @@ fn layout_axis<State>(
     let sizes: Vec<Option<f32>> = elements
         .iter()
         .map(|element| match element {
-            Node::Conditional {
-                condition,
-                element: _,
-            } => {
-                if *condition {
-                    None
-                } else {
-                    Some(0.)
-                }
-            }
             Node::Explicit {
                 options,
                 element: _,

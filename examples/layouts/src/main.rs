@@ -13,6 +13,7 @@ enum HighlightedCase {
     None,
 }
 
+#[derive(Clone, Copy, Debug)]
 struct State {
     highlight: HighlightedCase,
 }
@@ -39,106 +40,109 @@ async fn main() {
     }
 }
 
+const BTN_SIZE: f32 = 50.;
 fn layout_for_highlight(ctx: &State) -> Node<State> {
-    let button_size = 50.;
     let highlight = ctx.highlight;
     row_spaced(
         20.,
         vec![
-            conditional(
-                highlight == HighlightedCase::RelAbsSequence || highlight == HighlightedCase::None,
-                column_spaced(
-                    10.,
-                    vec![
-                        scope(|state: &mut State| &mut state.highlight, rect(RED)),
-                        text("Mixed (rel/abs) Sequence Constraints", 15., WHITE)
-                            .size(Size::new().height(20.)),
-                        group(
-                            (0..20)
-                                .map(|_| rect(BLUE).size(Size::new().height(20.)))
-                                .collect(),
-                        ),
-                        space(),
-                        // stack(vec![
-                        //     rect(BLUE),
-                        //     column_spaced(
-                        //         10.,
-                        //         vec![
-                        //             rect(WHITE),
-                        //             rect(WHITE).size(Size::new().height(30.)),
-                        //             rect(WHITE),
-                        //         ],
-                        //     )
-                        //     .pad(10.),
-                        // ]),
-                        button("Fullscreen", |ctx: &mut State| {
-                            if ctx.highlight == HighlightedCase::RelAbsSequence {
-                                ctx.highlight = HighlightedCase::None;
-                            } else {
-                                ctx.highlight = HighlightedCase::RelAbsSequence;
-                            }
-                        })
-                        .size(Size::new().height(button_size).y_align(YAlign::Bottom)),
-                    ],
-                ),
+            scope(
+                |state: &mut State| &mut state.highlight,
+                rel_abs_seq(highlight),
             ),
             conditional(
                 highlight == HighlightedCase::AlignmentOffset || highlight == HighlightedCase::None,
-                column(vec![
-                    text("Alignment & Offset", 15., WHITE).size(Size::new().height(20.)),
-                    stack(vec![
-                        rect(BLUE),
-                        rect(WHITE)
-                            .size(Size::new().height(30.).width(30.).x_align(XAlign::Leading)),
-                        rect(WHITE)
-                            .size(Size::new().height(30.).width(30.).x_align(XAlign::Trailing)),
-                        rect(WHITE).size(Size::new().height(30.).width(30.).y_align(YAlign::Top)),
-                        rect(WHITE)
-                            .size(Size::new().height(30.).width(30.).y_align(YAlign::Bottom)),
-                        rect(WHITE)
-                            .size(Size::new().height(30.).width(30.).align(Align::TopLeading)),
-                        rect(WHITE).size(
-                            Size::new()
-                                .height(30.)
-                                .width(30.)
-                                .align(Align::BottomLeading),
-                        ),
-                        rect(WHITE).size(
-                            Size::new()
-                                .height(30.)
-                                .width(30.)
-                                .align(Align::BottomTrailing),
-                        ),
-                        rect(WHITE)
-                            .size(Size::new().height(30.).width(30.).align(Align::TopTrailing)),
-                        rect(WHITE)
-                            .size(
+                column_spaced(
+                    10.,
+                    vec![
+                        text("Alignment & Offset", 15., WHITE),
+                        stack(vec![
+                            rect(BLUE),
+                            rect(WHITE)
+                                .size(Size::new().height(30.).width(30.).x_align(XAlign::Leading)),
+                            rect(WHITE)
+                                .size(Size::new().height(30.).width(30.).x_align(XAlign::Trailing)),
+                            rect(WHITE)
+                                .size(Size::new().height(30.).width(30.).y_align(YAlign::Top)),
+                            rect(WHITE)
+                                .size(Size::new().height(30.).width(30.).y_align(YAlign::Bottom)),
+                            rect(WHITE)
+                                .size(Size::new().height(30.).width(30.).align(Align::TopLeading)),
+                            rect(WHITE).size(
                                 Size::new()
                                     .height(30.)
                                     .width(30.)
-                                    .align(Align::CenterCenter),
-                            )
-                            .offset(10., 10.),
-                        rect(WHITE)
-                            .size(
+                                    .align(Align::BottomLeading),
+                            ),
+                            rect(WHITE).size(
                                 Size::new()
                                     .height(30.)
                                     .width(30.)
-                                    .align(Align::CenterCenter),
-                            )
-                            .offset(-10., -10.),
-                    ]),
-                    button("Fullscreen", |ctx: &mut State| {
-                        if ctx.highlight == HighlightedCase::AlignmentOffset {
-                            ctx.highlight = HighlightedCase::None;
-                        } else {
-                            ctx.highlight = HighlightedCase::AlignmentOffset;
-                        }
-                    })
-                    .size(Size::new().height(button_size).y_align(YAlign::Bottom)),
-                ]),
+                                    .align(Align::BottomTrailing),
+                            ),
+                            rect(WHITE)
+                                .size(Size::new().height(30.).width(30.).align(Align::TopTrailing)),
+                            rect(WHITE)
+                                .size(
+                                    Size::new()
+                                        .height(30.)
+                                        .width(30.)
+                                        .align(Align::CenterCenter),
+                                )
+                                .offset(10., 10.),
+                            rect(WHITE)
+                                .size(
+                                    Size::new()
+                                        .height(30.)
+                                        .width(30.)
+                                        .align(Align::CenterCenter),
+                                )
+                                .offset(-10., -10.),
+                        ]),
+                        button("Fullscreen", |ctx: &mut State| {
+                            if ctx.highlight == HighlightedCase::AlignmentOffset {
+                                ctx.highlight = HighlightedCase::None;
+                            } else {
+                                ctx.highlight = HighlightedCase::AlignmentOffset;
+                            }
+                        })
+                        .size(Size::new().height(BTN_SIZE).y_align(YAlign::Bottom)),
+                    ],
+                ),
             ),
         ],
+    )
+}
+
+fn rel_abs_seq(highlight: HighlightedCase) -> Node<HighlightedCase> {
+    conditional(
+        highlight == HighlightedCase::RelAbsSequence || highlight == HighlightedCase::None,
+        column_spaced(
+            10.,
+            vec![
+                text("Mixed (rel/abs) Sequence Constraints", 15., WHITE),
+                stack(vec![
+                    rect(BLUE),
+                    column_spaced(
+                        10.,
+                        vec![
+                            rect(WHITE),
+                            rect(WHITE).size(Size::new().height(30.)),
+                            rect(WHITE),
+                        ],
+                    )
+                    .pad(10.),
+                ]),
+                button("Fullscreen", |highlight: &mut HighlightedCase| {
+                    if *highlight == HighlightedCase::RelAbsSequence {
+                        *highlight = HighlightedCase::None;
+                    } else {
+                        *highlight = HighlightedCase::RelAbsSequence;
+                    }
+                })
+                .size(Size::new().height(BTN_SIZE).y_align(YAlign::Bottom)),
+            ],
+        ),
     )
 }
 
@@ -180,43 +184,3 @@ where
         }
     })
 }
-
-// impl FloatRepresentable for HighlightedCase {
-//     fn float_value(&self) -> f32 {
-//         match self {
-//             HighlightedCase::RelAbsSequence => 2.,
-//             HighlightedCase::AlignmentOffset => 3.,
-//             HighlightedCase::None => 4.,
-//         }
-//     }
-// }
-
-// struct IVec<T>(Vec<T>)
-// where
-//     T: Interpolable;
-
-// impl<T> Interpolable for IVec<T>
-// where
-//     T: Interpolable,
-// {
-//     fn interpolated(&self, other: Self, ratio: f32) -> Self {
-//         IVec(
-//             std::iter::zip(self.0.iter(), other.0)
-//                 .map(|(a, b)| a.interpolated(b, ratio))
-//                 .collect(),
-//         )
-//     }
-// }
-
-// #[derive(Clone, Copy)]
-// struct IArea(Area);
-// impl Interpolable for IArea {
-//     fn interpolated(&self, other: Self, ratio: f32) -> Self {
-//         IArea(Area {
-//             x: self.0.x.interpolated(other.0.x, ratio),
-//             y: self.0.y.interpolated(other.0.y, ratio),
-//             width: self.0.width.interpolated(other.0.width, ratio),
-//             height: self.0.height.interpolated(other.0.height, ratio),
-//         })
-//     }
-// }
