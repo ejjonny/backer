@@ -6,6 +6,7 @@ use crate::{
 };
 use std::{any::Any, rc::Rc};
 
+/// Defines a vertical sequence of elements
 pub fn column<U>(elements: Vec<Node<U>>) -> Node<U> {
     Node {
         inner: NodeValue::Column {
@@ -14,13 +15,30 @@ pub fn column<U>(elements: Vec<Node<U>>) -> Node<U> {
         },
     }
 }
-
+/// Defines multiple elements at once.
+/// Has no impact on layout.
+/// Just a convenience for adding a `Vec` of elements to a sequence node inline.
+/// ```rust
+/// use backer::*;
+/// use backer::models::*;
+/// use backer::nodes::*;
+///
+/// column::<()>(vec![
+///     empty(),
+///     group(
+///         (0..5)
+///             .into_iter()
+///             .map(|i| empty())
+///             .collect()
+///     ),
+/// ]);
+/// ```
 pub fn group<U>(elements: Vec<Node<U>>) -> Node<U> {
     Node {
         inner: NodeValue::Group(filter_empty(ungroup(elements))),
     }
 }
-
+/// Defines a vertical sequence of elements with the specified spacing between each element.
 pub fn column_spaced<U>(spacing: f32, elements: Vec<Node<U>>) -> Node<U> {
     Node {
         inner: NodeValue::Column {
@@ -29,7 +47,7 @@ pub fn column_spaced<U>(spacing: f32, elements: Vec<Node<U>>) -> Node<U> {
         },
     }
 }
-
+/// Defines a horizontal sequence of elements
 pub fn row<U>(elements: Vec<Node<U>>) -> Node<U> {
     Node {
         inner: NodeValue::Row {
@@ -38,7 +56,7 @@ pub fn row<U>(elements: Vec<Node<U>>) -> Node<U> {
         },
     }
 }
-
+/// Defines a horizontal sequence of elements with the specified spacing between each element.
 pub fn row_spaced<U>(spacing: f32, elements: Vec<Node<U>>) -> Node<U> {
     Node {
         inner: NodeValue::Row {
@@ -47,13 +65,28 @@ pub fn row_spaced<U>(spacing: f32, elements: Vec<Node<U>>) -> Node<U> {
         },
     }
 }
-
+/// Defines a sequence of elements to be laid out on top of each other.
 pub fn stack<U>(elements: Vec<Node<U>>) -> Node<U> {
     Node {
         inner: NodeValue::Stack(filter_empty(ungroup(elements))),
     }
 }
-
+/// Defines a node that can be drawn
+/// This node is the point of integration with the UI library of your choice.
+/// ```rust
+/// use backer::*;
+/// use backer::models::*;
+/// use backer::nodes::*;
+///
+/// struct MyState {}
+/// fn my_drawable(state: &mut MyState) -> Node<MyState> {
+///  draw(move |area: Area, state: &mut MyState| {
+///    // The `area` parameter is the space alotted for your view after layout is calculated
+///    // The `state` parameter is *your* mutable state that you pass when you call layout.
+///    // This closure should draw UI based on the alotted area or update your state so that drawing can be performed later.
+///  })
+///}
+/// ```
 pub fn draw<U>(drawable: impl Fn(Area, &mut U) + 'static) -> Node<U> {
     Node {
         inner: NodeValue::Draw(Drawable {
@@ -62,23 +95,25 @@ pub fn draw<U>(drawable: impl Fn(Area, &mut U) + 'static) -> Node<U> {
         }),
     }
 }
-
+/// Defines an empty space which is laid out the same as any other node.
 pub fn space<U>() -> Node<U> {
     Node {
         inner: NodeValue::Space,
     }
 }
-
+/// A convenience for creating an inline closure that runs some code to determine
+/// which nodes should be added to the layout.
 pub fn logic<U>(element: impl Fn() -> Node<U>) -> Node<U> {
     element()
 }
-
+/// Nothing! This will not have any impact on layout - useful for conditionally
+/// adding elements to a layout in the case where nothing should be added.
 pub fn empty<U>() -> Node<U> {
     Node {
         inner: NodeValue::Empty,
     }
 }
-
+/// Narrows or scopes the mutable state available to the children of this node
 pub fn scope<U, V: 'static>(scope: impl Fn(&mut U) -> &mut V + 'static, node: Node<V>) -> Node<U> {
     Node {
         inner: match node.inner {

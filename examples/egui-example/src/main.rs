@@ -1,5 +1,5 @@
-use backer::layout::Layout;
-use backer::layout::Node;
+use backer::Layout;
+use backer::Node;
 use backer::{models::*, nodes::*};
 use eframe::egui;
 use egui::{Color32, Pos2, Rect, RichText, Stroke, Ui};
