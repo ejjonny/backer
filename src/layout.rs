@@ -1,16 +1,54 @@
 use crate::{anynode::AnyNode, drawable::Drawable, models::*};
 
+/**
+The root object used to store & calculate a layout
+
+# Example
+
+```rust
+
+use backer::*;
+use backer::models::*;
+use backer::nodes::*;
+
+let layout = Layout::new(my_layout_fn);
+
+// UI libraries generally will expose methods to get the available screen size
+// In a real implementation this should use the real screen size!
+let available_area = Area {
+        x: 0.,
+        y: 0.,
+        width: 100.,
+        height: 100.,
+    };
+let mut my_state = MyState {};
+
+let layout = Layout::new(my_layout_fn);
+// Perform layout & draw all of your drawable nodes.
+layout.draw(available_area, &mut my_state);
+
+fn my_layout_fn(state: &mut MyState) -> Node<MyState> {
+    // Your layout here
+    row(vec![
+        space(),
+    ])
+}
+struct MyState {}
+```
+ */
 pub struct Layout<State> {
     tree: fn(&mut State) -> Node<State>,
 }
 
 impl<State> Layout<State> {
+    /// Creates a new [`Layout<State>`].
     pub fn new(tree: fn(&mut State) -> Node<State>) -> Self {
         Self { tree }
     }
 }
 
 impl<State> Layout<State> {
+    /// Calculates layout and draws all draw nodes in the tree
     pub fn draw(&self, area: Area, state: &mut State) {
         let mut layout = (self.tree)(state);
         layout.inner.layout(area);
@@ -18,6 +56,7 @@ impl<State> Layout<State> {
     }
 }
 
+/// A layout tree node. Use methods in `backer::nodes::*` to create nodes.
 pub struct Node<State> {
     pub(crate) inner: NodeValue<State>,
 }

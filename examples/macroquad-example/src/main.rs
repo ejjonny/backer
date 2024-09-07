@@ -1,7 +1,7 @@
-use backer::layout::Layout;
-use backer::layout::Node;
 use backer::models::*;
 use backer::nodes::*;
+use backer::Layout;
+use backer::Node;
 use macroquad::prelude::*;
 use macroquad::ui::root_ui;
 use macroquad::ui::widgets;
