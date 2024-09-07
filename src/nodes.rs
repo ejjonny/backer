@@ -1,98 +1,110 @@
-use std::marker::PhantomData;
+use crate::{anynode::AnyNode, drawable::Drawable, layout::Node, models::*};
+use std::{any::Any, rc::Rc};
 
-use crate::{
-    layout::{Drawable, Layout},
-    models::*,
-};
-
-pub fn column<T, U>(elements: Vec<Layout<T, U>>) -> Layout<T, U>
-where
-    T: Fn(Area, &mut U),
-{
-    Layout::Column {
-        elements: filter_conditionals(elements),
+pub fn column<U>(elements: Vec<Node<U>>) -> Node<U> {
+    Node::Column {
+        elements: filter_empty(ungroup(elements)),
         spacing: 0.,
     }
 }
 
-pub fn column_spaced<T, U>(spacing: f32, elements: Vec<Layout<T, U>>) -> Layout<T, U>
-where
-    T: Fn(Area, &mut U),
-{
-    Layout::Column {
-        elements: filter_conditionals(elements),
+pub fn group<U>(elements: Vec<Node<U>>) -> Node<U> {
+    Node::Group(filter_empty(ungroup(elements)))
+}
+
+pub fn column_spaced<U>(spacing: f32, elements: Vec<Node<U>>) -> Node<U> {
+    Node::Column {
+        elements: filter_empty(ungroup(elements)),
         spacing,
     }
 }
 
-pub fn row<T, U>(elements: Vec<Layout<T, U>>) -> Layout<T, U>
-where
-    T: Fn(Area, &mut U),
-{
-    Layout::Row {
-        elements: filter_conditionals(elements),
+pub fn row<U>(elements: Vec<Node<U>>) -> Node<U> {
+    Node::Row {
+        elements: filter_empty(ungroup(elements)),
         spacing: 0.,
     }
 }
 
-pub fn row_spaced<T, U>(spacing: f32, elements: Vec<Layout<T, U>>) -> Layout<T, U>
-where
-    T: Fn(Area, &mut U),
-{
-    Layout::Row {
-        elements: filter_conditionals(elements),
+pub fn row_spaced<U>(spacing: f32, elements: Vec<Node<U>>) -> Node<U> {
+    Node::Row {
+        elements: filter_empty(ungroup(elements)),
         spacing,
     }
 }
 
-pub fn stack<T, U>(elements: Vec<Layout<T, U>>) -> Layout<T, U>
-where
-    T: Fn(Area, &mut U),
-{
-    Layout::Stack(filter_conditionals(elements))
+pub fn stack<U>(elements: Vec<Node<U>>) -> Node<U> {
+    Node::Stack(filter_empty(ungroup(elements)))
 }
 
-pub fn draw<T, U>(drawable: T) -> Layout<T, U>
-where
-    T: Fn(Area, &mut U),
-{
-    Layout::Draw(Drawable {
+pub fn draw<U>(drawable: impl Fn(Area, &mut U) + 'static) -> Node<U> {
+    Node::Draw(Drawable {
         area: Area::default(),
-        draw: drawable,
-        t: PhantomData,
+        draw: Rc::new(drawable),
     })
 }
 
-pub fn conditional<T, U>(condition: bool, element: Layout<T, U>) -> Layout<T, U>
-where
-    T: Fn(Area, &mut U),
-{
-    Layout::Conditional {
-        condition,
-        element: Box::new(element),
+pub fn space<U>() -> Node<U> {
+    Node::Space
+}
+
+pub fn logic<U>(element: impl Fn() -> Node<U>) -> Node<U> {
+    element()
+}
+
+pub fn empty<U>() -> Node<U> {
+    Node::Empty
+}
+
+pub fn scope<U, V: 'static>(scope: impl Fn(&mut U) -> &mut V + 'static, node: Node<V>) -> Node<U> {
+    match node {
+        Node::Empty => empty(),
+        _ => Node::<U>::Scope {
+            scoped: AnyNode {
+                inner: Box::new(node),
+                clone: |any| {
+                    Box::new(
+                        any.downcast_ref::<Node<V>>()
+                            .expect("Invalid downcast")
+                            .clone(),
+                    ) as Box<dyn Any>
+                },
+                layout: |any, area| {
+                    any.downcast_mut::<Node<V>>()
+                        .expect("Invalid downcast")
+                        .layout(area)
+                },
+                draw: Rc::new(move |any, state| {
+                    any.downcast_ref::<Node<V>>()
+                        .expect("Invalid downcast")
+                        .draw(scope(state))
+                }),
+            },
+        },
     }
 }
 
-fn filter_conditionals<T, U>(elements: Vec<Layout<T, U>>) -> Vec<Layout<T, U>>
-where
-    T: Fn(Area, &mut U),
-{
+fn ungroup<U>(elements: Vec<Node<U>>) -> Vec<Node<U>> {
     elements
         .into_iter()
-        .filter_map(|element| {
-            if let Layout::Conditional {
-                condition,
-                element: _,
-            } = element
-            {
-                if condition {
-                    element.into()
-                } else {
-                    None
-                }
+        .flat_map(|el| {
+            if let Node::Group(els) = el {
+                els
             } else {
-                element.into()
+                vec![el]
             }
+        })
+        .collect()
+}
+
+fn filter_empty<U>(elements: Vec<Node<U>>) -> Vec<Node<U>> {
+    elements
+        .into_iter()
+        .filter(|el| {
+            if let Node::Empty = el {
+                return false;
+            }
+            true
         })
         .collect()
 }
