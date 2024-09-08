@@ -123,19 +123,21 @@ pub fn scope<U, V: 'static>(scope: impl Fn(&mut U) -> &mut V + 'static, node: No
                     inner: Box::new(node),
                     clone: |any| {
                         Box::new(
-                            any.downcast_ref::<NodeValue<V>>()
+                            any.downcast_ref::<Node<V>>()
                                 .expect("Invalid downcast")
                                 .clone(),
                         ) as Box<dyn Any>
                     },
                     layout: |any, area| {
-                        any.downcast_mut::<NodeValue<V>>()
+                        any.downcast_mut::<Node<V>>()
                             .expect("Invalid downcast")
+                            .inner
                             .layout(area)
                     },
                     draw: Rc::new(move |any, state| {
-                        any.downcast_ref::<NodeValue<V>>()
+                        any.downcast_ref::<Node<V>>()
                             .expect("Invalid downcast")
+                            .inner
                             .draw(scope(state))
                     }),
                 },

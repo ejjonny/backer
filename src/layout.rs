@@ -3,7 +3,7 @@ use crate::{anynode::AnyNode, drawable::Drawable, models::*};
 /**
 The root object used to store & calculate a layout
 
-# Example
+# Quick Start
 
 ```rust
 
@@ -56,9 +56,18 @@ impl<State> Layout<State> {
     }
 }
 
-/// A layout tree node. Use methods in `backer::nodes::*` to create nodes.
+/// A layout tree node. Use methods in [`crate::nodes`] to create nodes.
+#[derive(Debug)]
 pub struct Node<State> {
     pub(crate) inner: NodeValue<State>,
+}
+
+impl<State> Clone for Node<State> {
+    fn clone(&self) -> Self {
+        Node {
+            inner: self.inner.clone(),
+        }
+    }
 }
 
 pub(crate) enum NodeValue<State> {
@@ -237,23 +246,35 @@ fn layout_axis<State>(
     orientation: Orientation,
 ) {
     let sizes: Vec<Option<f32>> = elements
-        .iter()
+        .iter_mut()
         .map(|element| match element {
             NodeValue::Explicit {
                 options,
                 element: _,
-            } => {
-                if (matches!(orientation, Orientation::Horizontal) && options.x_relative)
-                    || (matches!(orientation, Orientation::Vertical) && options.y_relative)
-                {
-                    None
-                } else {
-                    match orientation {
-                        Orientation::Horizontal => options.width,
-                        Orientation::Vertical => options.height,
+            } => match orientation {
+                Orientation::Horizontal => {
+                    if let Some(width) = options.width {
+                        if options.x_relative {
+                            options.width = None;
+                            return Some(width * available_area.width);
+                        } else {
+                            return Some(width);
+                        }
                     }
+                    None
                 }
-            }
+                Orientation::Vertical => {
+                    if let Some(height) = options.height {
+                        if options.y_relative {
+                            options.height = None;
+                            return Some(height * available_area.height);
+                        } else {
+                            return Some(height);
+                        }
+                    }
+                    None
+                }
+            },
             _ => None,
         })
         .map(|size| {

@@ -58,50 +58,29 @@ fn layout_for_highlight(ctx: &mut State) -> Node<State> {
                             text("Alignment & Offset", 15., WHITE),
                             stack(vec![
                                 rect(BLUE),
-                                rect(WHITE).size(
-                                    Size::new().height(30.).width(30.).x_align(XAlign::Leading),
-                                ),
-                                rect(WHITE).size(
-                                    Size::new().height(30.).width(30.).x_align(XAlign::Trailing),
-                                ),
+                                rect(WHITE).height(30.).width(30.).x_align(XAlign::Leading),
+                                rect(WHITE).height(30.).width(30.).x_align(XAlign::Trailing),
+                                rect(WHITE).height(30.).width(30.).y_align(YAlign::Top),
+                                rect(WHITE).height(30.).width(30.).y_align(YAlign::Bottom),
+                                rect(WHITE).height(30.).width(30.).align(Align::TopLeading),
                                 rect(WHITE)
-                                    .size(Size::new().height(30.).width(30.).y_align(YAlign::Top)),
-                                rect(WHITE).size(
-                                    Size::new().height(30.).width(30.).y_align(YAlign::Bottom),
-                                ),
-                                rect(WHITE).size(
-                                    Size::new().height(30.).width(30.).align(Align::TopLeading),
-                                ),
-                                rect(WHITE).size(
-                                    Size::new()
-                                        .height(30.)
-                                        .width(30.)
-                                        .align(Align::BottomLeading),
-                                ),
-                                rect(WHITE).size(
-                                    Size::new()
-                                        .height(30.)
-                                        .width(30.)
-                                        .align(Align::BottomTrailing),
-                                ),
-                                rect(WHITE).size(
-                                    Size::new().height(30.).width(30.).align(Align::TopTrailing),
-                                ),
+                                    .height(30.)
+                                    .width(30.)
+                                    .align(Align::BottomLeading),
                                 rect(WHITE)
-                                    .size(
-                                        Size::new()
-                                            .height(30.)
-                                            .width(30.)
-                                            .align(Align::CenterCenter),
-                                    )
+                                    .height(30.)
+                                    .width(30.)
+                                    .align(Align::BottomTrailing),
+                                rect(WHITE).height(30.).width(30.).align(Align::TopTrailing),
+                                rect(WHITE)
+                                    .height(30.)
+                                    .width(30.)
+                                    .align(Align::CenterCenter)
                                     .offset(10., 10.),
                                 rect(WHITE)
-                                    .size(
-                                        Size::new()
-                                            .height(30.)
-                                            .width(30.)
-                                            .align(Align::CenterCenter),
-                                    )
+                                    .height(30.)
+                                    .width(30.)
+                                    .align(Align::CenterCenter)
                                     .offset(-10., -10.),
                             ]),
                             button("Fullscreen", |ctx: &mut State| {
@@ -111,7 +90,8 @@ fn layout_for_highlight(ctx: &mut State) -> Node<State> {
                                     ctx.highlight = HighlightedCase::AlignmentOffset;
                                 }
                             })
-                            .size(Size::new().height(BTN_SIZE).y_align(YAlign::Bottom)),
+                            .height(BTN_SIZE)
+                            .y_align(YAlign::Bottom),
                         ],
                     );
                 }
@@ -130,15 +110,8 @@ fn rel_abs_seq(highlight: HighlightedCase) -> Node<HighlightedCase> {
                     text("Mixed (rel/abs) Sequence Constraints", 15., WHITE),
                     stack(vec![
                         rect(BLUE),
-                        column_spaced(
-                            10.,
-                            vec![
-                                rect(WHITE),
-                                rect(WHITE).size(Size::new().height(30.)),
-                                rect(WHITE),
-                            ],
-                        )
-                        .pad(10.),
+                        column_spaced(10., vec![rect(WHITE), rect(WHITE).height(30.), rect(WHITE)])
+                            .pad(10.),
                     ]),
                     button("Fullscreen", |highlight: &mut HighlightedCase| {
                         if *highlight == HighlightedCase::RelAbsSequence {
@@ -147,7 +120,8 @@ fn rel_abs_seq(highlight: HighlightedCase) -> Node<HighlightedCase> {
                             *highlight = HighlightedCase::RelAbsSequence;
                         }
                     })
-                    .size(Size::new().height(BTN_SIZE).y_align(YAlign::Bottom)),
+                    .height(BTN_SIZE)
+                    .y_align(YAlign::Bottom),
                 ],
             );
         }
@@ -166,11 +140,8 @@ fn text<U>(string: &'static str, font_size: f32, color: Color) -> Node<U> {
             color,
         );
     })
-    .size(
-        Size::new()
-            .width(dimensions.width)
-            .height(dimensions.height),
-    )
+    .width(dimensions.width)
+    .height(dimensions.height)
 }
 
 fn rect<U>(color: Color) -> Node<U> {

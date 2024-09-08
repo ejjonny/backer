@@ -28,7 +28,7 @@ fn my_layout_fn(ui: &mut Ui) -> Node<Ui> {
             row_spaced(
                 10.,
                 vec![
-                    draw_b(ui).size(Size::new().width(180.).x_align(XAlign::Leading)),
+                    draw_b(ui).min_width(200.),
                     column_spaced(10., vec![draw_a(ui), draw_b(ui), draw_c(ui)]),
                 ],
             ),
@@ -64,7 +64,8 @@ fn draw_label(ui: &mut Ui, text: String) -> Node<Ui> {
             egui::Label::new(RichText::new(text.clone()).size(10.)),
         );
     })
-    .size(Size::new().width(text_area.width).height(text_area.height))
+    .width(text_area.width)
+    .height(text_area.height)
 }
 
 fn draw_rect(color: Color32, stroke: bool) -> Node<Ui> {
