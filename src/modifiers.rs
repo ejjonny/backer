@@ -150,15 +150,15 @@ impl<U> Node<U> {
             options.y_relative = false;
         })
     }
-    /// Specifies an explicit width for a node as a fraction of the available width
-    pub fn relative_width(self, ratio: f32) -> Self {
+    /// Specifies a width for a node relative to the available width
+    pub fn rel_width(self, ratio: f32) -> Self {
         self.wrap_or_update_explicit(|options| {
             options.width = ratio.into();
             options.x_relative = true;
         })
     }
-    /// Specifies an explicit height for a node as a fraction of the available height
-    pub fn relative_height(self, ratio: f32) -> Self {
+    /// Specifies a height for a node relative to the available height
+    pub fn rel_height(self, ratio: f32) -> Self {
         self.wrap_or_update_explicit(|options| {
             options.height = ratio.into();
             options.y_relative = true;
@@ -202,8 +202,8 @@ impl<U> Node<U> {
     }
     /// Specifies an alignment along the x axis.
     ///
-    /// This will only have an effect if the node is constrained to be smaller than the area that is available
-    /// Otherwise, there's no wiggle room!
+    /// This will only have an effect if the node is constrained to be smaller than the area that is available,
+    /// otherwise, there's no wiggle room.
     pub fn x_align(self, align: XAlign) -> Self {
         self.wrap_or_update_explicit(|options| {
             options.x_align = align;
@@ -211,8 +211,8 @@ impl<U> Node<U> {
     }
     /// Specifies an alignment along the y axis.
     ///
-    /// This will only have an effect if the node is constrained to be smaller than the area that is available.
-    /// Otherwise, there's no wiggle room!
+    /// This will only have an effect if the node is constrained to be smaller than the area that is available,
+    /// otherwise, there's no wiggle room.
     pub fn y_align(self, align: YAlign) -> Self {
         self.wrap_or_update_explicit(|options| {
             options.y_align = align;
@@ -220,8 +220,8 @@ impl<U> Node<U> {
     }
     /// Specifies an alignment along both the x & y axis.
     ///
-    /// This will only have an effect if the node is constrained along the axis to be smaller than the area that is available.
-    /// Otherwise, there's no wiggle room!
+    /// This will only have an effect if the node is constrained along the axis to be smaller than the area that is available,
+    /// otherwise, there's no wiggle room.
     pub fn align(self, align: Align) -> Self {
         self.wrap_or_update_explicit(|options| match align {
             Align::TopLeading => {

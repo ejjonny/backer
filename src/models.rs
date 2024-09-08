@@ -44,7 +44,7 @@ pub enum Align {
 }
 
 /// An allocation of screen space as a rectangle
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, PartialEq)]
 pub struct Area {
     /// Origin - usually the left-most X
     pub x: f32,
@@ -54,6 +54,18 @@ pub struct Area {
     pub width: f32,
     /// Available height, starting at `y`
     pub height: f32,
+}
+
+impl Area {
+    /// Creates a new [`Area`].
+    pub fn new(x: f32, y: f32, width: f32, height: f32) -> Self {
+        Self {
+            x,
+            y,
+            width,
+            height,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
