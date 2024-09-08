@@ -511,4 +511,81 @@ mod tests {
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
     }
+    #[test]
+    fn test_stack_basic() {
+        Layout::new(|()| {
+            stack(vec![
+                draw(|a, _| {
+                    assert_eq!(a, Area::new(0., 0., 100., 100.));
+                }),
+                draw(|a, _| {
+                    assert_eq!(a, Area::new(0., 0., 100., 100.));
+                }),
+            ])
+        })
+        .draw(Area::new(0., 0., 100., 100.), &mut ());
+    }
+
+    #[test]
+    fn test_stack_alignment() {
+        Layout::new(|()| {
+            stack(vec![
+                draw(|a, _| {
+                    assert_eq!(a, Area::new(0., 0., 10., 20.));
+                })
+                .rel_width(0.1)
+                .rel_height(0.2)
+                .align(Align::TopLeading),
+                draw(|a, _| {
+                    assert_eq!(a, Area::new(45., 0., 10., 20.));
+                })
+                .rel_width(0.1)
+                .rel_height(0.2)
+                .align(Align::TopCenter),
+                draw(|a, _| {
+                    assert_eq!(a, Area::new(90., 0., 10., 20.));
+                })
+                .rel_width(0.1)
+                .rel_height(0.2)
+                .align(Align::TopTrailing),
+                draw(|a, _| {
+                    assert_eq!(a, Area::new(90., 40., 10., 20.));
+                })
+                .rel_width(0.1)
+                .rel_height(0.2)
+                .align(Align::CenterTrailing),
+                draw(|a, _| {
+                    assert_eq!(a, Area::new(90., 80., 10., 20.));
+                })
+                .rel_width(0.1)
+                .rel_height(0.2)
+                .align(Align::BottomTrailing),
+                draw(|a, _| {
+                    assert_eq!(a, Area::new(45., 80., 10., 20.));
+                })
+                .width(10.)
+                .height(20.)
+                .align(Align::BottomCenter),
+                draw(|a, _| {
+                    assert_eq!(a, Area::new(0., 80., 10., 20.));
+                })
+                .width(10.)
+                .height(20.)
+                .align(Align::BottomLeading),
+                draw(|a, _| {
+                    assert_eq!(a, Area::new(0., 40., 10., 20.));
+                })
+                .width(10.)
+                .height(20.)
+                .align(Align::CenterLeading),
+                draw(|a, _| {
+                    assert_eq!(a, Area::new(45., 40., 10., 20.));
+                })
+                .width(10.)
+                .height(20.)
+                .align(Align::CenterCenter),
+            ])
+        })
+        .draw(Area::new(0., 0., 100., 100.), &mut ());
+    }
 }
