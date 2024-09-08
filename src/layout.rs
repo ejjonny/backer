@@ -588,4 +588,55 @@ mod tests {
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
     }
+    #[test]
+    fn test_sequence_spacing() {
+        Layout::new(|()| {
+            row_spaced(
+                10.,
+                vec![
+                    draw(|a, _| {
+                        assert_eq!(a, Area::new(0., 40., 10., 20.));
+                    })
+                    .width(10.)
+                    .height(20.),
+                    draw(|a, _| {
+                        assert_eq!(a, Area::new(20., 0., 25., 100.));
+                    }),
+                    draw(|a, _| {
+                        assert_eq!(a, Area::new(55., 40., 10., 20.));
+                    })
+                    .width(10.)
+                    .height(20.),
+                    draw(|a, _| {
+                        assert_eq!(a, Area::new(75., 0., 25., 100.));
+                    }),
+                ],
+            )
+        })
+        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        Layout::new(|()| {
+            column_spaced(
+                10.,
+                vec![
+                    draw(|a, _| {
+                        assert_eq!(a, Area::new(0., 0., 100., 15.));
+                    }),
+                    draw(|a, _| {
+                        assert_eq!(a, Area::new(45., 25., 10., 20.));
+                    })
+                    .width(10.)
+                    .height(20.),
+                    draw(|a, _| {
+                        assert_eq!(a, Area::new(0., 55., 100., 15.));
+                    }),
+                    draw(|a, _| {
+                        assert_eq!(a, Area::new(45., 80., 10., 20.));
+                    })
+                    .width(10.)
+                    .height(20.),
+                ],
+            )
+        })
+        .draw(Area::new(0., 0., 100., 100.), &mut ());
+    }
 }
