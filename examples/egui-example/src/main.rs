@@ -36,7 +36,7 @@ fn my_layout_fn(ui: &mut Ui) -> Node<Ui> {
                     })
                     .collect(),
             ),
-            space(), // draw_c(ui),
+            space(),
         ],
     )
     .pad(10.)
