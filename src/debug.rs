@@ -40,6 +40,12 @@ impl<State> fmt::Debug for NodeValue<State> {
             NodeValue::Space => write!(f, "Space"),
             NodeValue::Empty => write!(f, "Empty"),
             NodeValue::Scope { scoped } => f.debug_struct("Scope").field("scoped", scoped).finish(),
+            NodeValue::Wrapping {
+                axis,
+                elements,
+                axis_spacing,
+                off_axis_spacing,
+            } => todo!(),
         }
     }
 }

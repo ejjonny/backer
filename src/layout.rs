@@ -1,3 +1,5 @@
+use std::ops::ControlFlow;
+
 use crate::{anynode::AnyNode, drawable::Drawable, models::*};
 
 /**
@@ -75,6 +77,12 @@ pub(crate) enum NodeValue<State> {
         spacing: f32,
     },
     Stack(Vec<NodeValue<State>>),
+    Wrapping {
+        axis: Axis,
+        elements: Vec<NodeValue<State>>,
+        axis_spacing: f32,
+        off_axis_spacing: f32,
+    },
     Group(Vec<NodeValue<State>>),
     Offset {
         offset_x: f32,
@@ -105,7 +113,9 @@ impl<State> NodeValue<State> {
             NodeValue::Stack(elements) => {
                 elements.iter().for_each(|el| el.draw(state));
             }
-            NodeValue::Column { elements, .. } | NodeValue::Row { elements, .. } => {
+            NodeValue::Column { elements, .. }
+            | NodeValue::Row { elements, .. }
+            | NodeValue::Wrapping { elements, .. } => {
                 elements.iter().rev().for_each(|el| el.draw(state));
             }
             NodeValue::Space => (),
@@ -129,11 +139,76 @@ impl<State> NodeValue<State> {
                 child.layout(inner_area);
             }
             NodeValue::Column { elements, spacing } => {
-                layout_axis(elements, spacing, available_area, Orientation::Vertical)
+                layout_axis(elements, *spacing, available_area, Axis::Vertical)
             }
             NodeValue::Row { elements, spacing } => {
-                layout_axis(elements, spacing, available_area, Orientation::Horizontal)
+                layout_axis(elements, *spacing, available_area, Axis::Horizontal)
             }
+            NodeValue::Wrapping {
+                axis,
+                elements,
+                axis_spacing,
+                off_axis_spacing,
+            } => match axis {
+                Axis::Horizontal => {
+                    let mut rows: Vec<Vec<usize>> = vec![];
+                    let mut current_consumed = 0.;
+                    let mut current_row: Vec<usize> = vec![];
+                    for (i, element) in elements.iter().enumerate() {
+                        if element_fits(element, &mut current_consumed, available_area, false) {
+                            current_row.push(i);
+                        } else {
+                            unreachable!()
+                        }
+                        if i + 1 < elements.len()
+                            && !element_fits(
+                                &elements[i + 1],
+                                &mut current_consumed,
+                                available_area,
+                                true,
+                            )
+                        {
+                            let mut new_row = vec![];
+                            new_row.append(&mut current_row);
+                            rows.push(new_row);
+                            current_consumed = 0.;
+                        }
+                    }
+                    let mut new_row = vec![];
+                    new_row.append(&mut current_row);
+                    rows.push(new_row);
+
+                    let mut removable: Vec<Option<NodeValue<State>>> =
+                        elements.drain(..).map(Some).collect();
+                    let row_nodes: Vec<NodeValue<State>> = rows
+                        .iter()
+                        .map(|row| NodeValue::Row {
+                            elements: (|| {
+                                let Some(first) = row.first() else {
+                                    return vec![];
+                                };
+                                let Some(last) = row.last() else {
+                                    return vec![];
+                                };
+                                if removable.len() > *last {
+                                    (*first..=*last)
+                                        .map(|i| removable[i].take().unwrap())
+                                        .collect()
+                                } else {
+                                    vec![]
+                                }
+                            })(),
+                            spacing: 0.,
+                        })
+                        .collect();
+                    *self = NodeValue::Column {
+                        elements: row_nodes,
+                        spacing: 0.,
+                    };
+                    self.layout(available_area);
+                }
+                Axis::Vertical => todo!(),
+            },
             NodeValue::Stack(children) => {
                 for child in children {
                     child.layout(available_area)
@@ -225,16 +300,40 @@ impl<State> NodeValue<State> {
     }
 }
 
-enum Orientation {
+fn element_fits<State>(
+    element: &NodeValue<State>,
+    current_consumed: &mut f32,
+    available_area: Area,
+    test: bool,
+) -> bool {
+    if let NodeValue::Explicit {
+        options,
+        element: _,
+    } = element
+    {
+        if let Some(bound) = options.width.or(options.width_max) {
+            if *current_consumed + bound <= available_area.width {
+                if !test {
+                    *current_consumed += bound;
+                }
+            } else {
+                return false;
+            }
+        }
+    }
+    true
+}
+
+pub(crate) enum Axis {
     Horizontal,
     Vertical,
 }
 
 fn layout_axis<State>(
-    elements: &mut [NodeValue<State>],
-    spacing: &f32,
+    elements: &mut Vec<NodeValue<State>>,
+    spacing: f32,
     available_area: Area,
-    orientation: Orientation,
+    orientation: Axis,
 ) {
     let sizes: Vec<Option<f32>> = elements
         .iter()
@@ -243,14 +342,14 @@ fn layout_axis<State>(
                 options,
                 element: _,
             } => {
-                if (matches!(orientation, Orientation::Horizontal) && options.x_relative)
-                    || (matches!(orientation, Orientation::Vertical) && options.y_relative)
+                if (matches!(orientation, Axis::Horizontal) && options.x_relative)
+                    || (matches!(orientation, Axis::Vertical) && options.y_relative)
                 {
                     None
                 } else {
                     match orientation {
-                        Orientation::Horizontal => options.width,
-                        Orientation::Vertical => options.height,
+                        Axis::Horizontal => options.width,
+                        Axis::Vertical => options.height,
                     }
                 }
             }
@@ -259,18 +358,18 @@ fn layout_axis<State>(
         .map(|size| {
             let Some(size) = size else { return size };
             match orientation {
-                Orientation::Horizontal => Some(size.min(available_area.width)),
-                Orientation::Vertical => Some(size.min(available_area.height)),
+                Axis::Horizontal => Some(size.min(available_area.width)),
+                Axis::Vertical => Some(size.min(available_area.height)),
             }
         })
         .collect();
 
     let element_count = sizes.len();
 
-    let total_spacing = *spacing * (element_count as i32 - 1).max(0) as f32;
+    let total_spacing = spacing * (element_count as i32 - 1).max(0) as f32;
     let available_size = match orientation {
-        Orientation::Horizontal => available_area.width,
-        Orientation::Vertical => available_area.height,
+        Axis::Horizontal => available_area.width,
+        Axis::Vertical => available_area.height,
     } - total_spacing;
 
     let explicit_consumed = sizes.iter().filter_map(|&s| s).sum::<f32>();
@@ -279,8 +378,8 @@ fn layout_axis<State>(
     let default_size = remaining / unconstrained_sizes as f32;
 
     let mut current_pos = match orientation {
-        Orientation::Horizontal => available_area.x,
-        Orientation::Vertical => available_area.y,
+        Axis::Horizontal => available_area.x,
+        Axis::Vertical => available_area.y,
     };
 
     for (i, child) in elements.iter_mut().enumerate() {
@@ -290,13 +389,13 @@ fn layout_axis<State>(
             .unwrap_or(default_size);
 
         let area = match orientation {
-            Orientation::Horizontal => Area {
+            Axis::Horizontal => Area {
                 x: current_pos,
                 y: available_area.y,
                 width: child_size,
                 height: available_area.height,
             },
-            Orientation::Vertical => Area {
+            Axis::Vertical => Area {
                 x: available_area.x,
                 y: current_pos,
                 width: available_area.width,
@@ -306,6 +405,6 @@ fn layout_axis<State>(
 
         child.layout(area);
 
-        current_pos += child_size + *spacing;
+        current_pos += child_size + spacing;
     }
 }

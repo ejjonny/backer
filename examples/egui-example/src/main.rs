@@ -24,15 +24,19 @@ fn my_layout_fn(ui: &mut Ui) -> Node<Ui> {
     column_spaced(
         10.,
         vec![
-            draw_a(ui),
-            row_spaced(
-                10.,
-                vec![
-                    draw_b(ui).size(Size::new().width(180.).x_align(XAlign::Leading)),
-                    column_spaced(10., vec![draw_a(ui), draw_b(ui), draw_c(ui)]),
-                ],
+            // draw_a(ui),
+            wrapping_row(
+                (0..50)
+                    .flat_map(|_| {
+                        vec![
+                            draw_a(ui).size(Size::new().width(40.).height(40.)),
+                            draw_b(ui).size(Size::new().width(40.).height(40.)),
+                            draw_c(ui).size(Size::new().width(40.).height(40.)),
+                        ]
+                    })
+                    .collect(),
             ),
-            draw_c(ui),
+            space(), // draw_c(ui),
         ],
     )
     .pad(10.)

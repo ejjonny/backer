@@ -1,7 +1,7 @@
 use crate::{
     anynode::AnyNode,
     drawable::Drawable,
-    layout::{Node, NodeValue},
+    layout::{Axis, Node, NodeValue},
     models::*,
 };
 use std::{any::Any, rc::Rc};
@@ -69,6 +69,17 @@ pub fn row_spaced<U>(spacing: f32, elements: Vec<Node<U>>) -> Node<U> {
 pub fn stack<U>(elements: Vec<Node<U>>) -> Node<U> {
     Node {
         inner: NodeValue::Stack(filter_empty(ungroup(elements))),
+    }
+}
+
+pub fn wrapping_row<U>(elements: Vec<Node<U>>) -> Node<U> {
+    Node {
+        inner: NodeValue::Wrapping {
+            axis: Axis::Horizontal,
+            elements: filter_empty(ungroup(elements)),
+            axis_spacing: 0.,
+            off_axis_spacing: 0.,
+        },
     }
 }
 /// Defines a node that can be drawn

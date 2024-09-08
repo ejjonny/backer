@@ -39,6 +39,12 @@ impl<State> Clone for NodeValue<State> {
                 scoped: scoped.clone(),
             },
             NodeValue::Empty => NodeValue::Empty,
+            NodeValue::Wrapping {
+                axis,
+                elements,
+                axis_spacing,
+                off_axis_spacing,
+            } => todo!(),
         }
     }
 }
