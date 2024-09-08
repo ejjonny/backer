@@ -13,7 +13,7 @@ _This library **only** implements layout & would be most useful along with a GUI
 
 ### Goals
 
-- Declarative API: The code should reflect the structure it defines
+- Declarative API: The code should look like the structure it defines
 - Minimal interface: No confusing overloads or magic, cascading effects
 - Single pass layout: Each node should be visited once - no back-tracking
 - Easy integration & compatibility: Backer should work with just about any UI library with a bit of glue - so it isn't really fine-tuned for any specific UI solution.
