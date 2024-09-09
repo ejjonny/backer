@@ -2,6 +2,8 @@ use backer::Layout;
 use backer::Node;
 use backer::{models::*, nodes::*};
 use eframe::egui;
+use egui::ScrollArea;
+use egui::Vec2b;
 use egui::{Color32, Pos2, Rect, RichText, Stroke, Ui};
 
 fn main() -> eframe::Result {
@@ -29,6 +31,7 @@ fn my_layout_fn(ui: &mut Ui) -> Node<Ui> {
                 10.,
                 vec![
                     draw_b(ui).min_width(200.),
+                    draw_scroll(ui),
                     column_spaced(10., vec![draw_a(ui), draw_b(ui), draw_c(ui)]),
                 ],
             ),
@@ -52,6 +55,21 @@ fn draw_c(ui: &mut Ui) -> Node<Ui> {
 
 fn labeled_rect(ui: &mut Ui, text: String, color: Color32) -> Node<Ui> {
     stack(vec![draw_rect(color, true), draw_label(ui, text)])
+}
+
+fn draw_scroll(_ui: &mut Ui) -> Node<Ui> {
+    draw(move |area, ui: &mut Ui| {
+        ui.allocate_ui_at_rect(rect(area), |ui| {
+            ScrollArea::vertical().show_viewport(ui, |ui, scroll_rect| {
+                ui.set_min_height(1000.);
+                ui.set_width(area.width);
+                let mut a = area;
+                a.y -= scroll_rect.min.y;
+                ui.painter()
+                    .rect_stroke(rect(a), 5., Stroke::new(3., Color32::RED));
+            });
+        });
+    })
 }
 
 fn draw_label(ui: &mut Ui, text: String) -> Node<Ui> {
