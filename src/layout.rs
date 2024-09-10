@@ -1,3 +1,5 @@
+use std::{f64::consts::PI, ops::RangeInclusive};
+
 use crate::{anynode::AnyNode, drawable::Drawable, models::*};
 
 /**
@@ -123,6 +125,68 @@ impl<State> NodeValue<State> {
         }
     }
 
+    pub(crate) fn sizes(&mut self) -> SizeConstraints {
+        match self {
+            NodeValue::Padding { amounts, element } => {
+                // element.sizes().accumulate(SizeConstraints {
+                //     width: Constraint::Specific(amounts.trailing + amounts.leading),
+                //     height: Constraint::Specific(amounts.bottom + amounts.top),
+                // })
+                element.sizes().accumulate(SizeConstraints {
+                    width: Constraint::Range {
+                        lower: Some(amounts.trailing + amounts.leading),
+                        upper: None,
+                    },
+                    height: Constraint::Range {
+                        lower: Some(amounts.bottom + amounts.top),
+                        upper: None,
+                    },
+                })
+            }
+            NodeValue::Column { elements, .. } => elements.iter_mut().fold(
+                SizeConstraints {
+                    width: Constraint::None,
+                    height: Constraint::None,
+                },
+                |current, element| SizeConstraints {
+                    width: current.width.combine(element.sizes().width),
+                    height: current.height.accumulate(element.sizes().height),
+                },
+            ),
+            NodeValue::Row { elements, .. } => elements.iter_mut().fold(
+                SizeConstraints {
+                    width: Constraint::None,
+                    height: Constraint::None,
+                },
+                |current, element| SizeConstraints {
+                    width: current.width.accumulate(element.sizes().width),
+                    height: current.height.combine(element.sizes().height),
+                },
+            ),
+            NodeValue::Stack(elements) => {
+                let cumulative_size = SizeConstraints {
+                    width: Constraint::None,
+                    height: Constraint::None,
+                };
+                for element in elements {
+                    cumulative_size.combine(element.sizes());
+                }
+                cumulative_size
+            }
+            NodeValue::Explicit { options, element } => {
+                element.sizes().combine(SizeConstraints::from(*options))
+            }
+            NodeValue::Offset { .. } => {
+                todo!()
+            }
+            NodeValue::Scope { .. } => todo!(),
+            _ => SizeConstraints {
+                width: Constraint::None,
+                height: Constraint::None,
+            },
+        }
+    }
+
     pub(crate) fn layout(&mut self, available_area: Area) {
         match self {
             NodeValue::Padding {
@@ -239,54 +303,155 @@ enum Orientation {
     Vertical,
 }
 
+#[derive(Clone, Copy, Debug)]
+struct SizeConstraints {
+    width: Constraint,
+    height: Constraint,
+}
+
+#[derive(Clone, Copy, Debug)]
+enum Constraint {
+    None,
+    // Specific(f32),
+    Range {
+        lower: Option<f32>,
+        upper: Option<f32>,
+    },
+}
+
+impl SizeConstraints {
+    fn combine(self, other: Self) -> Self {
+        SizeConstraints {
+            width: self.width.combine(other.width),
+            height: self.height.combine(other.height),
+        }
+    }
+    fn accumulate(self, other: Self) -> Self {
+        SizeConstraints {
+            width: self.width.accumulate(other.width),
+            height: self.height.accumulate(other.height),
+        }
+    }
+}
+
+impl Constraint {
+    fn combine(self, other: Self) -> Self {
+        match (self, other) {
+            (Constraint::None, Constraint::None) => Constraint::None,
+            (value, Constraint::None) | (Constraint::None, value) => value,
+            // (Constraint::Specific(a), Constraint::Specific(b)) => Constraint::Specific(a.max(b)),
+            // (Constraint::Specific(a), Constraint::Range { .. })
+            // | (Constraint::Range { .. }, Constraint::Specific(a)) => Constraint::Specific(a),
+            (
+                Constraint::Range {
+                    lower: a_lower,
+                    upper: a_upper,
+                },
+                Constraint::Range {
+                    lower: b_lower,
+                    upper: b_upper,
+                },
+            ) => {
+                let lower = if let (Some(a), Some(b)) = (a_lower, b_lower) {
+                    Some(a.min(b))
+                } else {
+                    None
+                };
+                let upper = if let (Some(a), Some(b)) = (a_upper, b_upper) {
+                    Some(a.max(b))
+                } else {
+                    None
+                };
+                Constraint::Range { lower, upper }
+            }
+        }
+    }
+    fn accumulate(self, other: Self) -> Self {
+        match (self, other) {
+            (Constraint::None, Constraint::None) => Constraint::None,
+            (value, Constraint::None) | (Constraint::None, value) => value,
+            // (Constraint::Specific(a), Constraint::Specific(b)) => Constraint::Range {
+            //     lower: Some(a + b),
+            //     upper: None,
+            // },
+            // (Constraint::Specific(a), Constraint::Range { lower, upper })
+            // | (Constraint::Range { lower, upper }, Constraint::Specific(a)) => Constraint::Range {
+            //     lower: match lower {
+            //         Some(l) => Some(l + a),
+            //         None => Some(a),
+            //     },
+            //     upper: match upper {
+            //         Some(u) => Some(u + a),
+            //         None => Some(a),
+            //     },
+            // },
+            (
+                Constraint::Range {
+                    lower: a_lower,
+                    upper: a_upper,
+                },
+                Constraint::Range {
+                    lower: b_lower,
+                    upper: b_upper,
+                },
+            ) => {
+                let lower = if let (Some(a), Some(b)) = (a_lower, b_lower) {
+                    Some(a + b)
+                } else {
+                    None
+                };
+                let upper = if let (Some(a), Some(b)) = (a_upper, b_upper) {
+                    Some(a + b)
+                } else {
+                    None
+                };
+                Constraint::Range { lower, upper }
+            }
+        }
+    }
+}
+
+impl From<Size> for SizeConstraints {
+    fn from(value: Size) -> Self {
+        SizeConstraints {
+            width: if value.width.is_some() {
+                Constraint::Range {
+                    lower: value.width,
+                    upper: value.width,
+                }
+            } else if value.width_min.is_some() || value.width_max.is_some() {
+                Constraint::Range {
+                    lower: value.width_min,
+                    upper: value.width_max,
+                }
+            } else {
+                Constraint::None
+            },
+            height: if value.height.is_some() {
+                Constraint::Range {
+                    lower: value.height,
+                    upper: value.height,
+                }
+            } else if value.height_min.is_some() || value.height_max.is_some() {
+                Constraint::Range {
+                    lower: value.height_min,
+                    upper: value.height_max,
+                }
+            } else {
+                Constraint::None
+            },
+        }
+    }
+}
+
 fn layout_axis<State>(
     elements: &mut [NodeValue<State>],
     spacing: &f32,
     available_area: Area,
     orientation: Orientation,
 ) {
-    let sizes: Vec<Option<f32>> = elements
-        .iter_mut()
-        .map(|element| match element {
-            NodeValue::Explicit {
-                options,
-                element: _,
-            } => match orientation {
-                Orientation::Horizontal => {
-                    if let Some(width) = options.width {
-                        if options.x_relative {
-                            options.width = None;
-                            return Some(width * available_area.width);
-                        } else {
-                            return Some(width);
-                        }
-                    }
-                    None
-                }
-                Orientation::Vertical => {
-                    if let Some(height) = options.height {
-                        if options.y_relative {
-                            options.height = None;
-                            return Some(height * available_area.height);
-                        } else {
-                            return Some(height);
-                        }
-                    }
-                    None
-                }
-            },
-            _ => None,
-        })
-        .map(|size| {
-            let Some(size) = size else { return size };
-            match orientation {
-                Orientation::Horizontal => Some(size.min(available_area.width)),
-                Orientation::Vertical => Some(size.min(available_area.height)),
-            }
-        })
-        .collect();
-
-    let element_count = sizes.len();
+    let sizes: Vec<SizeConstraints> = elements.iter_mut().map(|element| element.sizes()).collect();
+    let element_count = elements.len();
 
     let total_spacing = *spacing * (element_count as i32 - 1).max(0) as f32;
     let available_size = match orientation {
@@ -294,22 +459,55 @@ fn layout_axis<State>(
         Orientation::Vertical => available_area.height,
     } - total_spacing;
 
-    let explicit_consumed = sizes.iter().filter_map(|&s| s).sum::<f32>();
-    let remaining = available_size - explicit_consumed;
-    let unconstrained_sizes = sizes.iter().filter(|&s| s.is_none()).count();
-    let default_size = remaining / unconstrained_sizes as f32;
+    let default_size = available_size / element_count as f32;
+
+    let mut pool = 0.;
+    let mut final_sizes: Vec<Option<f32>> = elements.iter().map(|_| Option::<f32>::None).collect();
+
+    for (i, constraint) in sizes.iter().enumerate() {
+        let constraint = match orientation {
+            Orientation::Horizontal => constraint.width,
+            Orientation::Vertical => constraint.height,
+        };
+        if let Constraint::Range { lower, upper } = constraint {
+            if let Some(lower) = lower {
+                if default_size < lower {
+                    pool += default_size - lower;
+                    final_sizes[i] = lower.into();
+                    continue;
+                }
+            }
+            if let Some(upper) = upper {
+                if default_size > upper {
+                    pool += default_size - upper;
+                    final_sizes[i] = upper.into();
+                    continue;
+                }
+            }
+            final_sizes[i] = default_size.into();
+        }
+    }
+
+    let unconstrained_count = final_sizes.iter().filter(|&s| s.is_none()).count() as f32;
+
+    let new_default = if unconstrained_count > 0. {
+        (default_size) + (pool / unconstrained_count)
+    } else {
+        0.
+    }
+    .max(0.);
+    final_sizes.iter_mut().for_each(|size| {
+        if size.is_none() {
+            *size = Some(new_default);
+        }
+    });
 
     let mut current_pos = match orientation {
         Orientation::Horizontal => available_area.x,
         Orientation::Vertical => available_area.y,
     };
-
     for (i, child) in elements.iter_mut().enumerate() {
-        let child_size = sizes
-            .get(i)
-            .unwrap_or(&Some(default_size))
-            .unwrap_or(default_size);
-
+        let child_size = final_sizes[i].unwrap();
         let area = match orientation {
             Orientation::Horizontal => Area {
                 x: current_pos,
