@@ -1,5 +1,3 @@
-use std::{f64::consts::PI, ops::RangeInclusive};
-
 use crate::{anynode::AnyNode, drawable::Drawable, models::*};
 
 /**
@@ -128,10 +126,6 @@ impl<State> NodeValue<State> {
     pub(crate) fn sizes(&mut self) -> SizeConstraints {
         match self {
             NodeValue::Padding { amounts, element } => {
-                // element.sizes().accumulate(SizeConstraints {
-                //     width: Constraint::Specific(amounts.trailing + amounts.leading),
-                //     height: Constraint::Specific(amounts.bottom + amounts.top),
-                // })
                 element.sizes().accumulate(SizeConstraints {
                     width: Constraint::Range {
                         lower: Some(amounts.trailing + amounts.leading),
@@ -298,21 +292,21 @@ impl<State> NodeValue<State> {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
 enum Orientation {
     Horizontal,
     Vertical,
 }
 
-#[derive(Clone, Copy, Debug)]
-struct SizeConstraints {
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct SizeConstraints {
     width: Constraint,
     height: Constraint,
 }
 
-#[derive(Clone, Copy, Debug)]
-enum Constraint {
+#[derive(Debug, Clone, Copy)]
+pub(crate) enum Constraint {
     None,
-    // Specific(f32),
     Range {
         lower: Option<f32>,
         upper: Option<f32>,
@@ -339,9 +333,6 @@ impl Constraint {
         match (self, other) {
             (Constraint::None, Constraint::None) => Constraint::None,
             (value, Constraint::None) | (Constraint::None, value) => value,
-            // (Constraint::Specific(a), Constraint::Specific(b)) => Constraint::Specific(a.max(b)),
-            // (Constraint::Specific(a), Constraint::Range { .. })
-            // | (Constraint::Range { .. }, Constraint::Specific(a)) => Constraint::Specific(a),
             (
                 Constraint::Range {
                     lower: a_lower,
@@ -370,21 +361,6 @@ impl Constraint {
         match (self, other) {
             (Constraint::None, Constraint::None) => Constraint::None,
             (value, Constraint::None) | (Constraint::None, value) => value,
-            // (Constraint::Specific(a), Constraint::Specific(b)) => Constraint::Range {
-            //     lower: Some(a + b),
-            //     upper: None,
-            // },
-            // (Constraint::Specific(a), Constraint::Range { lower, upper })
-            // | (Constraint::Range { lower, upper }, Constraint::Specific(a)) => Constraint::Range {
-            //     lower: match lower {
-            //         Some(l) => Some(l + a),
-            //         None => Some(a),
-            //     },
-            //     upper: match upper {
-            //         Some(u) => Some(u + a),
-            //         None => Some(a),
-            //     },
-            // },
             (
                 Constraint::Range {
                     lower: a_lower,
@@ -463,6 +439,7 @@ fn layout_axis<State>(
 
     let mut pool = 0.;
     let mut final_sizes: Vec<Option<f32>> = elements.iter().map(|_| Option::<f32>::None).collect();
+    let mut room: Vec<f32> = elements.iter().map(|_| 0.).collect();
 
     for (i, constraint) in sizes.iter().enumerate() {
         let constraint = match orientation {
@@ -472,9 +449,12 @@ fn layout_axis<State>(
         if let Constraint::Range { lower, upper } = constraint {
             if let Some(lower) = lower {
                 if default_size < lower {
+                    dbg!("}}}}}}}");
                     pool += default_size - lower;
                     final_sizes[i] = lower.into();
                     continue;
+                } else {
+                    room[i] = -(default_size - lower);
                 }
             }
             if let Some(upper) = upper {
@@ -482,11 +462,15 @@ fn layout_axis<State>(
                     pool += default_size - upper;
                     final_sizes[i] = upper.into();
                     continue;
+                } else {
+                    room[i] = -(default_size - upper);
                 }
             }
             final_sizes[i] = default_size.into();
         }
     }
+
+    dbg!(&room);
 
     let unconstrained_count = final_sizes.iter().filter(|&s| s.is_none()).count() as f32;
 
@@ -496,6 +480,7 @@ fn layout_axis<State>(
         0.
     }
     .max(0.);
+
     final_sizes.iter_mut().for_each(|size| {
         if size.is_none() {
             *size = Some(new_default);
