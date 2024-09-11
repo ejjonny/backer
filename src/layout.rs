@@ -170,7 +170,7 @@ impl<State> NodeValue<State> {
                 cumulative_size
             }
             NodeValue::Explicit { options, element } => {
-                element.sizes().combine(SizeConstraints::from(*options))
+                element.sizes().wrap(SizeConstraints::from(*options))
             }
             NodeValue::Offset { .. } => {
                 todo!()
@@ -328,6 +328,12 @@ impl SizeConstraints {
             height: self.height.combine(other.height),
         }
     }
+    fn wrap(self, other: Self) -> Self {
+        SizeConstraints {
+            width: self.width.wrap(other.width),
+            height: self.height.wrap(other.height),
+        }
+    }
     fn accumulate(self, other: Self) -> Self {
         SizeConstraints {
             width: self.width.accumulate(other.width),
@@ -348,6 +354,19 @@ impl Constraint {
         let upper = match (self.upper, other.upper) {
             (None, None) => None,
             (None, Some(_)) | (Some(_), None) => None,
+            (Some(bound_a), Some(bound_b)) => Some(bound_a.max(bound_b)),
+        };
+        Constraint { lower, upper }
+    }
+    fn wrap(self, other: Self) -> Self {
+        let lower = match (self.lower, other.lower) {
+            (None, None) => None,
+            (None, Some(a)) | (Some(a), None) => Some(a),
+            (Some(bound_a), Some(bound_b)) => Some(bound_a.max(bound_b)),
+        };
+        let upper = match (self.upper, other.upper) {
+            (None, None) => None,
+            (None, Some(a)) | (Some(a), None) => Some(a),
             (Some(bound_a), Some(bound_b)) => Some(bound_a.max(bound_b)),
         };
         Constraint { lower, upper }
