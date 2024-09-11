@@ -1,3 +1,5 @@
+use std::ops::RangeBounds;
+
 use crate::{layout::Node, layout::NodeValue, models::*};
 
 impl<U> Node<U> {
@@ -150,54 +152,40 @@ impl<U> Node<U> {
             options.y_relative = false;
         })
     }
-    /// Specifies a width for a node relative to the available width
-    pub fn rel_width(self, ratio: f32) -> Self {
+    /// Specifies bounds on a node's height
+    pub fn height_range<R>(self, range: R) -> Self
+    where
+        R: RangeBounds<f32>,
+    {
         self.wrap_or_update_explicit(|options| {
-            options.width = ratio.into();
-            options.x_relative = true;
+            match range.start_bound() {
+                std::ops::Bound::Included(bound) => options.height_min = Some(*bound),
+                std::ops::Bound::Excluded(bound) => options.height_min = Some(*bound),
+                std::ops::Bound::Unbounded => (),
+            }
+            match range.end_bound() {
+                std::ops::Bound::Included(bound) => options.height_max = Some(*bound),
+                std::ops::Bound::Excluded(bound) => options.height_max = Some(*bound),
+                std::ops::Bound::Unbounded => (),
+            }
         })
     }
-    /// Specifies a height for a node relative to the available height
-    pub fn rel_height(self, ratio: f32) -> Self {
+    /// Specifies bounds on a node's width
+    pub fn width_range<R>(self, range: R) -> Self
+    where
+        R: RangeBounds<f32>,
+    {
         self.wrap_or_update_explicit(|options| {
-            options.height = ratio.into();
-            options.y_relative = true;
-        })
-    }
-    /// Specifies a lower bound on a node's width
-    ///
-    /// When used inside a [crate::nodes::row] this will not impact row layout.
-    /// If you'd like to impact row layout use [Node::width] or [Node::relative_width]
-    pub fn min_width(self, width: f32) -> Self {
-        self.wrap_or_update_explicit(|options| {
-            options.width_min = width.into();
-        })
-    }
-    /// Specifies a lower bound on a node's height
-    ///
-    /// When used inside a [crate::nodes::column] this will not impact column layout.
-    /// If you'd like to impact column layout use [Node::height] or [Node::relative_height]
-    pub fn min_height(self, height: f32) -> Self {
-        self.wrap_or_update_explicit(|options| {
-            options.height_min = height.into();
-        })
-    }
-    /// Specifies an upper bound on a node's width
-    ///
-    /// When used inside a [crate::nodes::row] this will not impact row layout.
-    /// If you'd like to impact row layout use [Node::width] or [Node::relative_width]
-    pub fn max_width(self, width: f32) -> Self {
-        self.wrap_or_update_explicit(|options| {
-            options.width_max = width.into();
-        })
-    }
-    /// Specifies an upper bound on a node's height
-    ///
-    /// When used inside a [crate::nodes::column] this will not impact column layout.
-    /// If you'd like to impact column layout use [Node::height] or [Node::relative_height]
-    pub fn max_height(self, height: f32) -> Self {
-        self.wrap_or_update_explicit(|options| {
-            options.height_max = height.into();
+            match range.start_bound() {
+                std::ops::Bound::Included(bound) => options.width_min = Some(*bound),
+                std::ops::Bound::Excluded(bound) => options.width_min = Some(*bound),
+                std::ops::Bound::Unbounded => (),
+            }
+            match range.end_bound() {
+                std::ops::Bound::Included(bound) => options.width_max = Some(*bound),
+                std::ops::Bound::Excluded(bound) => options.width_max = Some(*bound),
+                std::ops::Bound::Unbounded => (),
+            }
         })
     }
     /// Specifies an alignment along the x axis.

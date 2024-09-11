@@ -28,7 +28,7 @@ fn my_layout_fn(ui: &mut Ui) -> Node<Ui> {
             row_spaced(
                 10.,
                 vec![
-                    draw_b(ui).min_width(200.),
+                    draw_b(ui).width_range(200.0..),
                     column_spaced(10., vec![draw_a(ui), draw_b(ui), draw_c(ui)]),
                 ],
             ),
