@@ -152,20 +152,6 @@ impl<U> Node<U> {
             options.y_relative = false;
         })
     }
-    /// Specifies a width for a node relative to the available width
-    pub fn rel_width(self, ratio: f32) -> Self {
-        self.wrap_or_update_explicit(|options| {
-            options.width = ratio.into();
-            options.x_relative = true;
-        })
-    }
-    /// Specifies a height for a node relative to the available height
-    pub fn rel_height(self, ratio: f32) -> Self {
-        self.wrap_or_update_explicit(|options| {
-            options.height = ratio.into();
-            options.y_relative = true;
-        })
-    }
     /// Specifies bounds on a node's height
     pub fn height_range<R>(self, range: R) -> Self
     where

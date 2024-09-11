@@ -1,5 +1,4 @@
 use core::f32;
-use std::f64::INFINITY;
 
 use crate::{anynode::AnyNode, drawable::Drawable, models::*};
 
@@ -451,7 +450,6 @@ fn layout_axis<State>(
             Orientation::Vertical => constraint.height,
         };
         if let Constraint::Range { lower, upper } = constraint {
-            // dbg!(&constraint, default_size);
             if let Some(lower) = lower {
                 if default_size < lower {
                     pool += default_size - lower;
@@ -612,7 +610,7 @@ mod tests {
                 draw(|a, _| {
                     assert_eq!(a, Area::new(0., 0., 100., 10.));
                 })
-                .rel_height(0.1),
+                .height(10.),
                 draw(|a, _| {
                     assert_eq!(a, Area::new(0., 10., 100., 90.));
                 }),
@@ -642,7 +640,7 @@ mod tests {
                 draw(|a, _| {
                     assert_eq!(a, Area::new(0., 90., 100., 10.));
                 })
-                .rel_height(0.1),
+                .height(10.),
             ])
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
@@ -681,19 +679,19 @@ mod tests {
                 draw(|a, _| {
                     assert_eq!(a, Area::new(0., 0., 10., 20.));
                 })
-                .rel_width(0.1)
-                .rel_height(0.2)
+                .width(10.)
+                .height(20.)
                 .y_align(YAlign::Top),
                 draw(|a, _| {
                     assert_eq!(a, Area::new(10., 40., 10., 20.));
                 })
-                .rel_width(0.1)
-                .rel_height(0.2),
+                .width(10.)
+                .height(20.),
                 draw(|a, _| {
                     assert_eq!(a, Area::new(20., 80., 10., 20.));
                 })
-                .rel_width(0.1)
-                .rel_height(0.2)
+                .width(10.)
+                .height(20.)
                 .y_align(YAlign::Bottom),
                 draw(|a, _| {
                     assert_eq!(a, Area::new(30., 0., 70., 100.));
@@ -737,19 +735,19 @@ mod tests {
                 draw(|a, _| {
                     assert_eq!(a, Area::new(70., 0., 10., 20.));
                 })
-                .rel_width(0.1)
-                .rel_height(0.2)
+                .width(10.)
+                .height(20.)
                 .y_align(YAlign::Top),
                 draw(|a, _| {
                     assert_eq!(a, Area::new(80., 40., 10., 20.));
                 })
-                .rel_width(0.1)
-                .rel_height(0.2),
+                .width(10.)
+                .height(20.),
                 draw(|a, _| {
                     assert_eq!(a, Area::new(90., 80., 10., 20.));
                 })
-                .rel_width(0.1)
-                .rel_height(0.2)
+                .width(10.)
+                .height(20.)
                 .y_align(YAlign::Bottom),
             ])
         })
@@ -777,32 +775,32 @@ mod tests {
                 draw(|a, _| {
                     assert_eq!(a, Area::new(0., 0., 10., 20.));
                 })
-                .rel_width(0.1)
-                .rel_height(0.2)
+                .width(10.)
+                .height(20.)
                 .align(Align::TopLeading),
                 draw(|a, _| {
                     assert_eq!(a, Area::new(45., 0., 10., 20.));
                 })
-                .rel_width(0.1)
-                .rel_height(0.2)
+                .width(10.)
+                .height(20.)
                 .align(Align::TopCenter),
                 draw(|a, _| {
                     assert_eq!(a, Area::new(90., 0., 10., 20.));
                 })
-                .rel_width(0.1)
-                .rel_height(0.2)
+                .width(10.)
+                .height(20.)
                 .align(Align::TopTrailing),
                 draw(|a, _| {
                     assert_eq!(a, Area::new(90., 40., 10., 20.));
                 })
-                .rel_width(0.1)
-                .rel_height(0.2)
+                .width(10.)
+                .height(20.)
                 .align(Align::CenterTrailing),
                 draw(|a, _| {
                     assert_eq!(a, Area::new(90., 80., 10., 20.));
                 })
-                .rel_width(0.1)
-                .rel_height(0.2)
+                .width(10.)
+                .height(20.)
                 .align(Align::BottomTrailing),
                 draw(|a, _| {
                     assert_eq!(a, Area::new(45., 80., 10., 20.));
