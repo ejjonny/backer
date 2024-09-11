@@ -129,11 +129,11 @@ impl<State> NodeValue<State> {
         match self {
             NodeValue::Padding { amounts, element } => {
                 element.sizes().accumulate(SizeConstraints {
-                    width: Constraint::Range {
+                    width: Constraint {
                         lower: Some(amounts.trailing + amounts.leading),
                         upper: None,
                     },
-                    height: Constraint::Range {
+                    height: Constraint {
                         lower: Some(amounts.bottom + amounts.top),
                         upper: None,
                     },
@@ -141,8 +141,8 @@ impl<State> NodeValue<State> {
             }
             NodeValue::Column { elements, .. } => elements.iter_mut().fold(
                 SizeConstraints {
-                    width: Constraint::None,
-                    height: Constraint::None,
+                    width: Constraint::none(),
+                    height: Constraint::none(),
                 },
                 |current, element| SizeConstraints {
                     width: current.width.combine(element.sizes().width),
@@ -151,8 +151,8 @@ impl<State> NodeValue<State> {
             ),
             NodeValue::Row { elements, .. } => elements.iter_mut().fold(
                 SizeConstraints {
-                    width: Constraint::None,
-                    height: Constraint::None,
+                    width: Constraint::none(),
+                    height: Constraint::none(),
                 },
                 |current, element| SizeConstraints {
                     width: current.width.accumulate(element.sizes().width),
@@ -161,8 +161,8 @@ impl<State> NodeValue<State> {
             ),
             NodeValue::Stack(elements) => {
                 let cumulative_size = SizeConstraints {
-                    width: Constraint::None,
-                    height: Constraint::None,
+                    width: Constraint::none(),
+                    height: Constraint::none(),
                 };
                 for element in elements {
                     cumulative_size.combine(element.sizes());
@@ -177,8 +177,8 @@ impl<State> NodeValue<State> {
             }
             NodeValue::Scope { .. } => todo!(),
             _ => SizeConstraints {
-                width: Constraint::None,
-                height: Constraint::None,
+                width: Constraint::none(),
+                height: Constraint::none(),
             },
         }
     }
@@ -300,19 +300,25 @@ enum Orientation {
     Vertical,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub(crate) struct SizeConstraints {
     width: Constraint,
     height: Constraint,
 }
 
-#[derive(Debug, Clone, Copy)]
-pub(crate) enum Constraint {
-    None,
-    Range {
-        lower: Option<f32>,
-        upper: Option<f32>,
-    },
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub(crate) struct Constraint {
+    lower: Option<f32>,
+    upper: Option<f32>,
+}
+
+impl Constraint {
+    fn none() -> Self {
+        Self {
+            lower: None,
+            upper: None,
+        }
+    }
 }
 
 impl SizeConstraints {
@@ -332,60 +338,32 @@ impl SizeConstraints {
 
 impl Constraint {
     fn combine(self, other: Self) -> Self {
-        match (self, other) {
-            (Constraint::None, Constraint::None) => Constraint::None,
-            (value, Constraint::None) | (Constraint::None, value) => value,
-            (
-                Constraint::Range {
-                    lower: a_lower,
-                    upper: a_upper,
-                },
-                Constraint::Range {
-                    lower: b_lower,
-                    upper: b_upper,
-                },
-            ) => {
-                let lower = if let (Some(a), Some(b)) = (a_lower, b_lower) {
-                    Some(a.min(b))
-                } else {
-                    None
-                };
-                let upper = if let (Some(a), Some(b)) = (a_upper, b_upper) {
-                    Some(a.max(b))
-                } else {
-                    None
-                };
-                Constraint::Range { lower, upper }
-            }
-        }
+        // This always takes the bigger bound
+        let lower = match (self.lower, other.lower) {
+            (None, None) => None,
+            (None, Some(a)) | (Some(a), None) => Some(a),
+            (Some(bound_a), Some(bound_b)) => Some(bound_a.max(bound_b)),
+        };
+        // In terms of upper constraints - no constraint is biggest
+        let upper = match (self.upper, other.upper) {
+            (None, None) => None,
+            (None, Some(_)) | (Some(_), None) => None,
+            (Some(bound_a), Some(bound_b)) => Some(bound_a.max(bound_b)),
+        };
+        Constraint { lower, upper }
     }
     fn accumulate(self, other: Self) -> Self {
-        match (self, other) {
-            (Constraint::None, Constraint::None) => Constraint::None,
-            (value, Constraint::None) | (Constraint::None, value) => value,
-            (
-                Constraint::Range {
-                    lower: a_lower,
-                    upper: a_upper,
-                },
-                Constraint::Range {
-                    lower: b_lower,
-                    upper: b_upper,
-                },
-            ) => {
-                let lower = if let (Some(a), Some(b)) = (a_lower, b_lower) {
-                    Some(a + b)
-                } else {
-                    None
-                };
-                let upper = if let (Some(a), Some(b)) = (a_upper, b_upper) {
-                    Some(a + b)
-                } else {
-                    None
-                };
-                Constraint::Range { lower, upper }
-            }
-        }
+        let lower = if let (Some(a), Some(b)) = (self.lower, other.lower) {
+            Some(a + b)
+        } else {
+            None
+        };
+        let upper = if let (Some(a), Some(b)) = (self.upper, other.upper) {
+            Some(a + b)
+        } else {
+            None
+        };
+        Constraint { lower, upper }
     }
 }
 
@@ -393,30 +371,36 @@ impl From<Size> for SizeConstraints {
     fn from(value: Size) -> Self {
         SizeConstraints {
             width: if value.width.is_some() {
-                Constraint::Range {
+                Constraint {
                     lower: value.width,
                     upper: value.width,
                 }
             } else if value.width_min.is_some() || value.width_max.is_some() {
-                Constraint::Range {
+                Constraint {
                     lower: value.width_min,
                     upper: value.width_max,
                 }
             } else {
-                Constraint::None
+                Constraint {
+                    lower: None,
+                    upper: None,
+                }
             },
             height: if value.height.is_some() {
-                Constraint::Range {
+                Constraint {
                     lower: value.height,
                     upper: value.height,
                 }
             } else if value.height_min.is_some() || value.height_max.is_some() {
-                Constraint::Range {
+                Constraint {
                     lower: value.height_min,
                     upper: value.height_max,
                 }
             } else {
-                Constraint::None
+                Constraint {
+                    lower: None,
+                    upper: None,
+                }
             },
         }
     }
@@ -449,35 +433,32 @@ fn layout_axis<State>(
             Orientation::Horizontal => constraint.width,
             Orientation::Vertical => constraint.height,
         };
-        if let Constraint::Range { lower, upper } = constraint {
-            if let Some(lower) = lower {
-                if default_size < lower {
-                    pool += default_size - lower;
-                    final_sizes[i] = lower.into();
-                    continue;
-                } else {
-                    room_to_shrink[i] = -(default_size - lower);
-                }
+        let Constraint { lower, upper } = constraint;
+        if let Some(lower) = lower {
+            if default_size < lower {
+                pool += default_size - lower;
+                final_sizes[i] = lower.into();
+                continue;
             } else {
-                // Effectively, this means the element can shrink to 0
-                room_to_shrink[i] = -default_size;
-            }
-            if let Some(upper) = upper {
-                if default_size > upper {
-                    pool += default_size - upper;
-                    final_sizes[i] = upper.into();
-                    continue;
-                } else {
-                    positive_room[i] = -(default_size - upper);
-                }
-            } else {
-                // Effectively, this means the element can expand any amount
-                positive_room[i] = default_size * 2.;
+                room_to_shrink[i] = -(default_size - lower);
             }
         } else {
+            // Effectively, this means the element can shrink to 0
             room_to_shrink[i] = -default_size;
+        }
+        if let Some(upper) = upper {
+            if default_size > upper {
+                pool += default_size - upper;
+                final_sizes[i] = upper.into();
+                continue;
+            } else {
+                positive_room[i] = -(default_size - upper);
+            }
+        } else {
+            // Effectively, this means the element can expand any amount
             positive_room[i] = default_size * 2.;
         }
+
         final_sizes[i] = default_size.into();
     }
 
@@ -880,5 +861,110 @@ mod tests {
             )
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
+    }
+    #[test]
+    fn test_row_with_constrained_item() {
+        Layout::new(|()| {
+            row(vec![
+                draw(|a, _| {
+                    assert_eq!(a, Area::new(0., 0., 30., 100.));
+                })
+                .width(30.),
+                draw(|a, _| {
+                    assert_eq!(a, Area::new(30., 0., 70., 100.));
+                }),
+            ])
+        })
+        .draw(Area::new(0., 0., 100., 100.), &mut ());
+    }
+
+    #[test]
+    fn test_nested_row_with_constrained_item() {
+        Layout::new(|()| {
+            row(vec![
+                row(vec![
+                    draw(|a, _| {
+                        assert_eq!(a, Area::new(0., 0., 20., 100.));
+                    })
+                    .width(20.),
+                    draw(|a, _| {
+                        assert_eq!(a, Area::new(20., 0., 30., 100.));
+                    }),
+                ])
+                .width(50.),
+                draw(|a, _| {
+                    assert_eq!(a, Area::new(50., 0., 50., 100.));
+                }),
+            ])
+        })
+        .draw(Area::new(0., 0., 100., 100.), &mut ());
+    }
+
+    #[test]
+    fn test_stack_with_constrained_item() {
+        Layout::new(|()| {
+            stack(vec![
+                draw(|a, _| {
+                    assert_eq!(a, Area::new(0., 0., 100., 100.));
+                }),
+                draw(|a, _| {
+                    assert_eq!(a, Area::new(25., 25., 50., 50.));
+                })
+                .width(50.)
+                .height(50.),
+            ])
+        })
+        .draw(Area::new(0., 0., 100., 100.), &mut ());
+    }
+
+    #[test]
+    fn test_row_with_multiple_constrained_items() {
+        Layout::new(|()| {
+            row(vec![
+                draw(|a, _| {
+                    assert_eq!(a, Area::new(0., 0., 20., 100.));
+                })
+                .width(20.),
+                draw(|a, _| {
+                    assert_eq!(a, Area::new(20., 25., 30., 50.));
+                })
+                .width(30.)
+                .height(50.),
+                draw(|a, _| {
+                    assert_eq!(a, Area::new(50., 0., 25., 100.));
+                }),
+                draw(|a, _| {
+                    assert_eq!(a, Area::new(75., 0., 25., 100.));
+                }),
+            ])
+        })
+        .draw(Area::new(0., 0., 100., 100.), &mut ());
+    }
+
+    #[test]
+    fn test_idk() {
+        assert_eq!(
+            row::<()>(vec![space(), space().height(30.)]).inner.sizes(),
+            SizeConstraints {
+                width: Constraint {
+                    lower: None,
+                    upper: None
+                },
+                height: Constraint {
+                    lower: Some(30.),
+                    upper: None
+                }
+            }
+        );
+        // dbg!(row::<()>(vec![space(), space().height(30.)])
+        //     .pad(0.)
+        //     .inner
+        //     .sizes());
+        // dbg!(column::<()>(vec![
+        //     row(vec![space(), space().height(30.)]).pad(0.),
+        //     row(vec![space(), space().height(30.)]),
+        // ])
+        // .inner
+        // .sizes());
     }
 }

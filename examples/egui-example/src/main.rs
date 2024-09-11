@@ -21,7 +21,19 @@ fn main() -> eframe::Result {
 }
 
 fn my_layout_fn(ui: &mut Ui) -> Node<Ui> {
-    row(vec![draw_a(ui), draw_b(ui), draw_c(ui)]).pad(10.)
+    column(vec![
+        row(vec![
+            // draw_a(ui).height(20.),
+            draw_b(ui).height(10.),
+            draw_c(ui).height(30.),
+        ]),
+        row(vec![
+            // draw_a(ui).height(20.),
+            draw_b(ui),
+            draw_c(ui).height(30.),
+        ])
+        .pad(0.),
+    ])
 }
 
 fn draw_a(ui: &mut Ui) -> Node<Ui> {
