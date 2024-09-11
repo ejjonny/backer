@@ -125,7 +125,7 @@ impl<State> NodeValue<State> {
         }
     }
 
-    pub(crate) fn sizes(&mut self) -> SizeConstraints {
+    pub(crate) fn sizes(&self) -> SizeConstraints {
         match self {
             NodeValue::Padding { amounts, element } => {
                 element.sizes().accumulate(SizeConstraints {
@@ -139,7 +139,7 @@ impl<State> NodeValue<State> {
                     },
                 })
             }
-            NodeValue::Column { elements, .. } => elements.iter_mut().fold(
+            NodeValue::Column { elements, .. } => elements.iter().fold(
                 SizeConstraints {
                     width: Constraint::none(),
                     height: Constraint::none(),
@@ -149,7 +149,7 @@ impl<State> NodeValue<State> {
                     height: current.height.accumulate(element.sizes().height),
                 },
             ),
-            NodeValue::Row { elements, .. } => elements.iter_mut().fold(
+            NodeValue::Row { elements, .. } => elements.iter().fold(
                 SizeConstraints {
                     width: Constraint::none(),
                     height: Constraint::none(),
@@ -172,10 +172,8 @@ impl<State> NodeValue<State> {
             NodeValue::Explicit { options, element } => {
                 element.sizes().wrap(SizeConstraints::from(*options))
             }
-            NodeValue::Offset { .. } => {
-                todo!()
-            }
-            NodeValue::Scope { .. } => todo!(),
+            NodeValue::Offset { element, .. } => element.sizes(),
+            NodeValue::Scope { scoped, .. } => scoped.sizes(),
             _ => SizeConstraints {
                 width: Constraint::none(),
                 height: Constraint::none(),
