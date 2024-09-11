@@ -25,14 +25,10 @@ fn my_layout_fn(ui: &mut Ui) -> Node<Ui> {
         10.,
         vec![
             draw_a(ui),
-            row_spaced(
-                10.,
-                vec![
-                    draw_b(ui).min_width(200.),
-                    column_spaced(10., vec![draw_a(ui), draw_b(ui), draw_c(ui)]),
-                ],
-            ),
-            draw_c(ui),
+            draw_b(ui).min_height(20.),
+            draw_c(ui).max_height(30.),
+            draw_a(ui),
+            draw_b(ui).min_height(20.),
         ],
     )
     .pad(10.)

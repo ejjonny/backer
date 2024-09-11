@@ -1,3 +1,6 @@
+use core::f32;
+use std::f64::INFINITY;
+
 use crate::{anynode::AnyNode, drawable::Drawable, models::*};
 
 /**
@@ -439,7 +442,8 @@ fn layout_axis<State>(
 
     let mut pool = 0.;
     let mut final_sizes: Vec<Option<f32>> = elements.iter().map(|_| Option::<f32>::None).collect();
-    let mut room: Vec<f32> = elements.iter().map(|_| 0.).collect();
+    let mut positive_room: Vec<f32> = elements.iter().map(|_| 0.).collect();
+    let mut room_to_shrink: Vec<f32> = elements.iter().map(|_| 0.).collect();
 
     for (i, constraint) in sizes.iter().enumerate() {
         let constraint = match orientation {
@@ -449,13 +453,15 @@ fn layout_axis<State>(
         if let Constraint::Range { lower, upper } = constraint {
             if let Some(lower) = lower {
                 if default_size < lower {
-                    dbg!("}}}}}}}");
                     pool += default_size - lower;
                     final_sizes[i] = lower.into();
                     continue;
                 } else {
-                    room[i] = -(default_size - lower);
+                    room_to_shrink[i] = -(default_size - lower);
                 }
+            } else {
+                // Effectively, this means the element can shrink to 0
+                room_to_shrink[i] = -default_size;
             }
             if let Some(upper) = upper {
                 if default_size > upper {
@@ -463,29 +469,81 @@ fn layout_axis<State>(
                     final_sizes[i] = upper.into();
                     continue;
                 } else {
-                    room[i] = -(default_size - upper);
+                    positive_room[i] = -(default_size - upper);
                 }
+            } else {
+                // Effectively, this means the element can expand any amount
+                positive_room[i] = default_size * 2.;
             }
-            final_sizes[i] = default_size.into();
+        } else {
+            room_to_shrink[i] = -default_size;
+            positive_room[i] = default_size * 2.;
         }
+        final_sizes[i] = default_size.into();
     }
 
-    dbg!(&room);
-
-    let unconstrained_count = final_sizes.iter().filter(|&s| s.is_none()).count() as f32;
-
-    let new_default = if unconstrained_count > 0. {
-        (default_size) + (pool / unconstrained_count)
-    } else {
-        0.
+    fn room_available(room: &[f32]) -> bool {
+        room.iter().filter(|r| r.abs() > 0.).count() as f32 > 0.
     }
-    .max(0.);
 
-    final_sizes.iter_mut().for_each(|size| {
-        if size.is_none() {
-            *size = Some(new_default);
+    let limit = 0;
+    let mut i = 0;
+    loop {
+        if i > limit {
+            break;
         }
-    });
+        i += 1;
+        let pool_empty = pool.abs() < 0.1;
+        if !pool_empty && pool.is_sign_positive() && room_available(&positive_room) {
+            // We need to use more room
+            let mut enumerated_room: Vec<(usize, f32)> = positive_room
+                .iter()
+                .enumerate()
+                .map(|(i, v)| (i, *v))
+                .collect();
+            enumerated_room.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap().reverse());
+            let distribution_candidates =
+                positive_room.iter().filter(|r| r.abs() > 0.).count() as f32;
+            let distribution_amount =
+                (pool / distribution_candidates).min(enumerated_room.first().unwrap().1);
+            pool -= distribution_amount * distribution_candidates;
+            enumerated_room
+                .iter()
+                .filter(|r| r.1 != 0.)
+                .for_each(|&(i, _)| {
+                    positive_room[i] -= distribution_amount;
+                    if let Some(size) = &mut final_sizes[i] {
+                        *size += distribution_amount
+                    }
+                });
+        } else if !pool_empty && pool.is_sign_negative() && room_available(&room_to_shrink) {
+            // We need to use less room
+            let mut enumerated_room: Vec<(usize, f32)> = room_to_shrink
+                .iter()
+                .enumerate()
+                .map(|(i, v)| (i, *v))
+                .collect();
+            enumerated_room.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
+            let distribution_candidates = room_to_shrink
+                .iter()
+                .filter(|r| r.abs() > 0. && r.is_sign_negative())
+                .count() as f32;
+            let distribution_amount =
+                (pool / distribution_candidates).max(enumerated_room.first().unwrap().1);
+            pool -= distribution_amount * distribution_candidates;
+            enumerated_room
+                .iter()
+                .filter(|r| r.1 != 0.)
+                .for_each(|&(i, _)| {
+                    room_to_shrink[i] -= distribution_amount;
+                    if let Some(size) = &mut final_sizes[i] {
+                        *size += distribution_amount
+                    }
+                });
+        } else {
+            break;
+        }
+    }
 
     let mut current_pos = match orientation {
         Orientation::Horizontal => available_area.x,
