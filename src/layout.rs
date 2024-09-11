@@ -160,12 +160,12 @@ impl<State> NodeValue<State> {
                 },
             ),
             NodeValue::Stack(elements) => {
-                let cumulative_size = SizeConstraints {
+                let mut cumulative_size = SizeConstraints {
                     width: Constraint::none(),
                     height: Constraint::none(),
                 };
                 for element in elements {
-                    cumulative_size.combine(element.sizes());
+                    cumulative_size = cumulative_size.combine(element.sizes());
                 }
                 cumulative_size
             }
@@ -966,19 +966,19 @@ mod tests {
             }
         );
         assert_eq!(
-            row::<()>(vec![space().height(40.), space().height_range(30.0..35.)])
+            column::<()>(vec![space(), space().width(10.)])
                 .inner
                 .sizes(),
             SizeConstraints {
-                width: Constraint::none(),
-                height: Constraint {
-                    lower: Some(40.),
+                width: Constraint {
+                    lower: Some(10.),
                     upper: None
-                }
+                },
+                height: Constraint::none()
             }
         );
         assert_eq!(
-            column::<()>(vec![space().width(20.).height(50.), space().width(10.)])
+            column::<()>(vec![space().width(20.), space().width(10.)])
                 .inner
                 .sizes(),
             SizeConstraints {
@@ -986,8 +986,32 @@ mod tests {
                     lower: Some(20.),
                     upper: None
                 },
+                height: Constraint::none()
+            }
+        );
+        assert_eq!(
+            stack::<()>(vec![space(), space().height(10.)])
+                .inner
+                .sizes(),
+            SizeConstraints {
+                width: Constraint::none(),
                 height: Constraint {
-                    lower: Some(50.),
+                    lower: Some(10.),
+                    upper: None
+                }
+            }
+        );
+        assert_eq!(
+            stack::<()>(vec![space().height(20.), space().width(10.)])
+                .inner
+                .sizes(),
+            SizeConstraints {
+                width: Constraint {
+                    lower: Some(10.),
+                    upper: None
+                },
+                height: Constraint {
+                    lower: Some(20.),
                     upper: None
                 }
             }
