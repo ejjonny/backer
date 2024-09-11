@@ -487,7 +487,7 @@ fn layout_axis<State>(
         room.iter().filter(|r| r.abs() > 0.).count() as f32 > 0.
     }
 
-    let limit = 1;
+    let limit = 4;
     let mut i = 0;
     loop {
         if i > limit {
