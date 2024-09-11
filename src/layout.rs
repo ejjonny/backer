@@ -353,15 +353,15 @@ impl Constraint {
         Constraint { lower, upper }
     }
     fn accumulate(self, other: Self) -> Self {
-        let lower = if let (Some(a), Some(b)) = (self.lower, other.lower) {
-            Some(a + b)
-        } else {
-            None
+        let lower = match (self.lower, other.lower) {
+            (None, None) => None,
+            (None, Some(a)) | (Some(a), None) => Some(a),
+            (Some(bound_a), Some(bound_b)) => Some(bound_a.max(bound_b)),
         };
-        let upper = if let (Some(a), Some(b)) = (self.upper, other.upper) {
-            Some(a + b)
-        } else {
-            None
+        let upper = match (self.upper, other.upper) {
+            (None, None) => None,
+            (None, Some(bound)) | (Some(bound), None) => Some(bound),
+            (Some(bound_a), Some(bound_b)) => Some(bound_a + bound_b),
         };
         Constraint { lower, upper }
     }
@@ -942,29 +942,55 @@ mod tests {
     }
 
     #[test]
-    fn test_idk() {
+    fn test_constraint_combination() {
         assert_eq!(
             row::<()>(vec![space(), space().height(30.)]).inner.sizes(),
             SizeConstraints {
-                width: Constraint {
-                    lower: None,
-                    upper: None
-                },
+                width: Constraint::none(),
                 height: Constraint {
                     lower: Some(30.),
                     upper: None
                 }
             }
         );
-        // dbg!(row::<()>(vec![space(), space().height(30.)])
-        //     .pad(0.)
-        //     .inner
-        //     .sizes());
-        // dbg!(column::<()>(vec![
-        //     row(vec![space(), space().height(30.)]).pad(0.),
-        //     row(vec![space(), space().height(30.)]),
-        // ])
-        // .inner
-        // .sizes());
+        assert_eq!(
+            row::<()>(vec![space().height(40.), space().height(30.)])
+                .inner
+                .sizes(),
+            SizeConstraints {
+                width: Constraint::none(),
+                height: Constraint {
+                    lower: Some(40.),
+                    upper: None
+                }
+            }
+        );
+        assert_eq!(
+            row::<()>(vec![space().height(40.), space().height_range(30.0..35.)])
+                .inner
+                .sizes(),
+            SizeConstraints {
+                width: Constraint::none(),
+                height: Constraint {
+                    lower: Some(40.),
+                    upper: None
+                }
+            }
+        );
+        assert_eq!(
+            column::<()>(vec![space().width(20.).height(50.), space().width(10.)])
+                .inner
+                .sizes(),
+            SizeConstraints {
+                width: Constraint {
+                    lower: Some(20.),
+                    upper: None
+                },
+                height: Constraint {
+                    lower: Some(50.),
+                    upper: None
+                }
+            }
+        );
     }
 }
