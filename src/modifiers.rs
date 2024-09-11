@@ -1,3 +1,5 @@
+use std::ops::RangeBounds;
+
 use crate::{layout::Node, layout::NodeValue, models::*};
 
 impl<U> Node<U> {
@@ -186,9 +188,21 @@ impl<U> Node<U> {
     ///
     /// When used inside a [crate::nodes::row] this will not impact row layout.
     /// If you'd like to impact row layout use [Node::width] or [Node::relative_width]
-    pub fn max_width(self, width: f32) -> Self {
+    pub fn width_range<R>(self, range: R) -> Self
+    where
+        R: RangeBounds<f32>,
+    {
         self.wrap_or_update_explicit(|options| {
-            options.width_max = width.into();
+            match range.start_bound() {
+                std::ops::Bound::Included(bound) => options.width_min = Some(*bound),
+                std::ops::Bound::Excluded(bound) => options.width_min = Some(*bound),
+                std::ops::Bound::Unbounded => (),
+            }
+            match range.end_bound() {
+                std::ops::Bound::Included(bound) => options.width_max = Some(*bound),
+                std::ops::Bound::Excluded(bound) => options.width_max = Some(*bound),
+                std::ops::Bound::Unbounded => (),
+            }
         })
     }
     /// Specifies an upper bound on a node's height

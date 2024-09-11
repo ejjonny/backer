@@ -451,6 +451,7 @@ fn layout_axis<State>(
             Orientation::Vertical => constraint.height,
         };
         if let Constraint::Range { lower, upper } = constraint {
+            // dbg!(&constraint, default_size);
             if let Some(lower) = lower {
                 if default_size < lower {
                     pool += default_size - lower;
@@ -485,8 +486,9 @@ fn layout_axis<State>(
     fn room_available(room: &[f32]) -> bool {
         room.iter().filter(|r| r.abs() > 0.).count() as f32 > 0.
     }
+    // dbg!(&final_sizes);
 
-    let limit = 0;
+    let limit = 1;
     let mut i = 0;
     loop {
         if i > limit {
@@ -522,8 +524,9 @@ fn layout_axis<State>(
                 .iter()
                 .enumerate()
                 .map(|(i, v)| (i, *v))
+                .filter(|(_, v)| *v != 0.)
                 .collect();
-            enumerated_room.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
+            enumerated_room.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap().reverse());
             let distribution_candidates = room_to_shrink
                 .iter()
                 .filter(|r| r.abs() > 0. && r.is_sign_negative())
@@ -531,15 +534,14 @@ fn layout_axis<State>(
             let distribution_amount =
                 (pool / distribution_candidates).max(enumerated_room.first().unwrap().1);
             pool -= distribution_amount * distribution_candidates;
-            enumerated_room
-                .iter()
-                .filter(|r| r.1 != 0.)
-                .for_each(|&(i, _)| {
+            enumerated_room.iter().for_each(|&(i, _)| {
+                if room_to_shrink[i].abs() > 0. && room_to_shrink[i].is_sign_negative() {
                     room_to_shrink[i] -= distribution_amount;
                     if let Some(size) = &mut final_sizes[i] {
                         *size += distribution_amount
                     }
-                });
+                }
+            });
         } else {
             break;
         }
