@@ -350,10 +350,6 @@ fn layout_axis<State>(
         }
 
         if let Some(lower) = lower {
-            // if default_size < lower {
-            //     pool += default_size - lower;
-            //     final_size = Some(lower);
-            // }
             if default_size >= lower {
                 room_to_shrink[i] = -(final_size.unwrap_or(default_size) - lower);
             }
@@ -361,12 +357,8 @@ fn layout_axis<State>(
             // Effectively, this means the element can shrink to 0
             room_to_shrink[i] = -default_size;
         }
+
         if let Some(upper) = upper {
-            // if default_size > upper {
-            //     pool += default_size - upper;
-            //     final_size = Some(upper);
-            // }
-            // else {
             if default_size <= upper {
                 room_to_grow[i] = -(final_size.unwrap_or(default_size) - upper);
             }
@@ -375,13 +367,6 @@ fn layout_axis<State>(
             room_to_grow[i] = default_size * 2.;
         }
 
-        // if let Some(final_size) = final_size {
-        //     room_to_grow[i] = -(final_size - upper.unwrap_or(final_size));
-        //     room_to_shrink[i] = -(final_size - lower.unwrap_or(final_size));
-        // } else {
-        //     room_to_grow[i] = -(default_size - upper.unwrap_or(default_size));
-        //     room_to_shrink[i] = -(default_size - lower.unwrap_or(default_size));
-        // }
         final_sizes[i] = final_size.unwrap_or(default_size).into();
     }
 
