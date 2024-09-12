@@ -129,10 +129,10 @@ impl<State> NodeValue<State> {
         }
     }
 
-    pub(crate) fn sizes(&self) -> SizeConstraints {
+    pub(crate) fn constraints(&self) -> SizeConstraints {
         match self {
             NodeValue::Padding { amounts, element } => {
-                element.sizes().combine_sum(SizeConstraints {
+                element.constraints().combine_sum(SizeConstraints {
                     width: Constraint {
                         lower: Some(amounts.trailing + amounts.leading),
                         upper: None,
@@ -151,8 +151,8 @@ impl<State> NodeValue<State> {
                 |current, element| SizeConstraints {
                     width: current
                         .width
-                        .combine_adjacent_priority(element.sizes().width),
-                    height: current.height.combine_sum(element.sizes().height),
+                        .combine_adjacent_priority(element.constraints().width),
+                    height: current.height.combine_sum(element.constraints().height),
                 },
             ),
             NodeValue::Row { elements, .. } => elements.iter().fold(
@@ -161,10 +161,10 @@ impl<State> NodeValue<State> {
                     height: Constraint::none(),
                 },
                 |current, element| SizeConstraints {
-                    width: current.width.combine_sum(element.sizes().width),
+                    width: current.width.combine_sum(element.constraints().width),
                     height: current
                         .height
-                        .combine_adjacent_priority(element.sizes().height),
+                        .combine_adjacent_priority(element.constraints().height),
                 },
             ),
             NodeValue::Stack(elements) => {
@@ -173,15 +173,16 @@ impl<State> NodeValue<State> {
                     height: Constraint::none(),
                 };
                 for element in elements {
-                    cumulative_size = cumulative_size.combine_adjacent_priority(element.sizes());
+                    cumulative_size =
+                        cumulative_size.combine_adjacent_priority(element.constraints());
                 }
                 cumulative_size
             }
             NodeValue::Explicit { options, element } => element
-                .sizes()
+                .constraints()
                 .combine_equal_priority(SizeConstraints::from(*options)),
-            NodeValue::Offset { element, .. } => element.sizes(),
-            NodeValue::Scope { scoped, .. } => scoped.sizes(),
+            NodeValue::Offset { element, .. } => element.constraints(),
+            NodeValue::Scope { scoped, .. } => scoped.constraints(),
             _ => SizeConstraints {
                 width: Constraint::none(),
                 height: Constraint::none(),
@@ -312,7 +313,10 @@ fn layout_axis<State>(
     available_area: Area,
     orientation: Orientation,
 ) {
-    let sizes: Vec<SizeConstraints> = elements.iter_mut().map(|element| element.sizes()).collect();
+    let sizes: Vec<SizeConstraints> = elements
+        .iter_mut()
+        .map(|element| element.constraints())
+        .collect();
     let element_count = elements.len();
 
     let total_spacing = *spacing * (element_count as i32 - 1).max(0) as f32;
@@ -853,7 +857,9 @@ mod tests {
     #[test]
     fn test_constraint_combination() {
         assert_eq!(
-            row::<()>(vec![space(), space().height(30.)]).inner.sizes(),
+            row::<()>(vec![space(), space().height(30.)])
+                .inner
+                .constraints(),
             SizeConstraints {
                 width: Constraint::none(),
                 height: Constraint {
@@ -865,7 +871,7 @@ mod tests {
         assert_eq!(
             row::<()>(vec![space().height(40.), space().height(30.)])
                 .inner
-                .sizes(),
+                .constraints(),
             SizeConstraints {
                 width: Constraint::none(),
                 height: Constraint {
@@ -877,7 +883,7 @@ mod tests {
         assert_eq!(
             column::<()>(vec![space(), space().width(10.)])
                 .inner
-                .sizes(),
+                .constraints(),
             SizeConstraints {
                 width: Constraint {
                     lower: Some(10.),
@@ -889,7 +895,7 @@ mod tests {
         assert_eq!(
             column::<()>(vec![space().width(20.), space().width(10.)])
                 .inner
-                .sizes(),
+                .constraints(),
             SizeConstraints {
                 width: Constraint {
                     lower: Some(20.),
@@ -901,7 +907,7 @@ mod tests {
         assert_eq!(
             stack::<()>(vec![space(), space().height(10.)])
                 .inner
-                .sizes(),
+                .constraints(),
             SizeConstraints {
                 width: Constraint::none(),
                 height: Constraint {
@@ -913,7 +919,7 @@ mod tests {
         assert_eq!(
             stack::<()>(vec![space().height(20.), space().width(10.)])
                 .inner
-                .sizes(),
+                .constraints(),
             SizeConstraints {
                 width: Constraint {
                     lower: Some(10.),
