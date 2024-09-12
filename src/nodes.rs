@@ -140,11 +140,11 @@ pub fn scope<U, V: 'static>(scope: impl Fn(&mut U) -> &mut V + 'static, node: No
                             .inner
                             .draw(scope(state))
                     }),
-                    sizes: |any| {
+                    constraints: |any| {
                         any.downcast_ref::<Node<V>>()
                             .expect("Invalid downcast")
                             .inner
-                            .sizes()
+                            .constraints()
                     },
                 },
             },

@@ -1,6 +1,10 @@
+use crate::{
+    anynode::AnyNode,
+    constraints::{Constraint, SizeConstraints},
+    drawable::Drawable,
+    models::*,
+};
 use core::f32;
-
-use crate::{anynode::AnyNode, drawable::Drawable, models::*};
 
 /**
 The root object used to store & calculate a layout
@@ -125,10 +129,10 @@ impl<State> NodeValue<State> {
         }
     }
 
-    pub(crate) fn sizes(&self) -> SizeConstraints {
+    pub(crate) fn constraints(&self) -> SizeConstraints {
         match self {
             NodeValue::Padding { amounts, element } => {
-                element.sizes().accumulate(SizeConstraints {
+                element.constraints().combine_sum(SizeConstraints {
                     width: Constraint {
                         lower: Some(amounts.trailing + amounts.leading),
                         upper: None,
@@ -145,8 +149,10 @@ impl<State> NodeValue<State> {
                     height: Constraint::none(),
                 },
                 |current, element| SizeConstraints {
-                    width: current.width.combine(element.sizes().width),
-                    height: current.height.accumulate(element.sizes().height),
+                    width: current
+                        .width
+                        .combine_adjacent_priority(element.constraints().width),
+                    height: current.height.combine_sum(element.constraints().height),
                 },
             ),
             NodeValue::Row { elements, .. } => elements.iter().fold(
@@ -155,8 +161,10 @@ impl<State> NodeValue<State> {
                     height: Constraint::none(),
                 },
                 |current, element| SizeConstraints {
-                    width: current.width.accumulate(element.sizes().width),
-                    height: current.height.combine(element.sizes().height),
+                    width: current.width.combine_sum(element.constraints().width),
+                    height: current
+                        .height
+                        .combine_adjacent_priority(element.constraints().height),
                 },
             ),
             NodeValue::Stack(elements) => {
@@ -165,15 +173,16 @@ impl<State> NodeValue<State> {
                     height: Constraint::none(),
                 };
                 for element in elements {
-                    cumulative_size = cumulative_size.combine(element.sizes());
+                    cumulative_size =
+                        cumulative_size.combine_adjacent_priority(element.constraints());
                 }
                 cumulative_size
             }
-            NodeValue::Explicit { options, element } => {
-                element.sizes().wrap(SizeConstraints::from(*options))
-            }
-            NodeValue::Offset { element, .. } => element.sizes(),
-            NodeValue::Scope { scoped, .. } => scoped.sizes(),
+            NodeValue::Explicit { options, element } => element
+                .constraints()
+                .combine_equal_priority(SizeConstraints::from(*options)),
+            NodeValue::Offset { element, .. } => element.constraints(),
+            NodeValue::Scope { scoped, .. } => scoped.constraints(),
             _ => SizeConstraints {
                 width: Constraint::none(),
                 height: Constraint::none(),
@@ -298,138 +307,16 @@ enum Orientation {
     Vertical,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub(crate) struct SizeConstraints {
-    width: Constraint,
-    height: Constraint,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub(crate) struct Constraint {
-    lower: Option<f32>,
-    upper: Option<f32>,
-}
-
-impl Constraint {
-    fn none() -> Self {
-        Self {
-            lower: None,
-            upper: None,
-        }
-    }
-}
-
-impl SizeConstraints {
-    fn combine(self, other: Self) -> Self {
-        SizeConstraints {
-            width: self.width.combine(other.width),
-            height: self.height.combine(other.height),
-        }
-    }
-    fn wrap(self, other: Self) -> Self {
-        SizeConstraints {
-            width: self.width.wrap(other.width),
-            height: self.height.wrap(other.height),
-        }
-    }
-    fn accumulate(self, other: Self) -> Self {
-        SizeConstraints {
-            width: self.width.accumulate(other.width),
-            height: self.height.accumulate(other.height),
-        }
-    }
-}
-
-impl Constraint {
-    fn combine(self, other: Self) -> Self {
-        // This always takes the bigger bound
-        let lower = match (self.lower, other.lower) {
-            (None, None) => None,
-            (None, Some(a)) | (Some(a), None) => Some(a),
-            (Some(bound_a), Some(bound_b)) => Some(bound_a.max(bound_b)),
-        };
-        // In terms of upper constraints - no constraint is biggest
-        let upper = match (self.upper, other.upper) {
-            (None, None) => None,
-            (None, Some(_)) | (Some(_), None) => None,
-            (Some(bound_a), Some(bound_b)) => Some(bound_a.max(bound_b)),
-        };
-        Constraint { lower, upper }
-    }
-    fn wrap(self, other: Self) -> Self {
-        let lower = match (self.lower, other.lower) {
-            (None, None) => None,
-            (None, Some(a)) | (Some(a), None) => Some(a),
-            (Some(bound_a), Some(bound_b)) => Some(bound_a.max(bound_b)),
-        };
-        let upper = match (self.upper, other.upper) {
-            (None, None) => None,
-            (None, Some(a)) | (Some(a), None) => Some(a),
-            (Some(bound_a), Some(bound_b)) => Some(bound_a.max(bound_b)),
-        };
-        Constraint { lower, upper }
-    }
-    fn accumulate(self, other: Self) -> Self {
-        let lower = match (self.lower, other.lower) {
-            (None, None) => None,
-            (None, Some(a)) | (Some(a), None) => Some(a),
-            (Some(bound_a), Some(bound_b)) => Some(bound_a.max(bound_b)),
-        };
-        let upper = match (self.upper, other.upper) {
-            (None, None) => None,
-            (None, Some(bound)) | (Some(bound), None) => Some(bound),
-            (Some(bound_a), Some(bound_b)) => Some(bound_a + bound_b),
-        };
-        Constraint { lower, upper }
-    }
-}
-
-impl From<Size> for SizeConstraints {
-    fn from(value: Size) -> Self {
-        SizeConstraints {
-            width: if value.width.is_some() {
-                Constraint {
-                    lower: value.width,
-                    upper: value.width,
-                }
-            } else if value.width_min.is_some() || value.width_max.is_some() {
-                Constraint {
-                    lower: value.width_min,
-                    upper: value.width_max,
-                }
-            } else {
-                Constraint {
-                    lower: None,
-                    upper: None,
-                }
-            },
-            height: if value.height.is_some() {
-                Constraint {
-                    lower: value.height,
-                    upper: value.height,
-                }
-            } else if value.height_min.is_some() || value.height_max.is_some() {
-                Constraint {
-                    lower: value.height_min,
-                    upper: value.height_max,
-                }
-            } else {
-                Constraint {
-                    lower: None,
-                    upper: None,
-                }
-            },
-        }
-    }
-}
-
 fn layout_axis<State>(
     elements: &mut [NodeValue<State>],
     spacing: &f32,
     available_area: Area,
     orientation: Orientation,
 ) {
-    let sizes: Vec<SizeConstraints> = elements.iter_mut().map(|element| element.sizes()).collect();
+    let sizes: Vec<SizeConstraints> = elements
+        .iter_mut()
+        .map(|element| element.constraints())
+        .collect();
     let element_count = elements.len();
 
     let total_spacing = *spacing * (element_count as i32 - 1).max(0) as f32;
@@ -442,7 +329,7 @@ fn layout_axis<State>(
 
     let mut pool = 0.;
     let mut final_sizes: Vec<Option<f32>> = elements.iter().map(|_| Option::<f32>::None).collect();
-    let mut positive_room: Vec<f32> = elements.iter().map(|_| 0.).collect();
+    let mut room_to_grow: Vec<f32> = elements.iter().map(|_| 0.).collect();
     let mut room_to_shrink: Vec<f32> = elements.iter().map(|_| 0.).collect();
 
     for (i, constraint) in sizes.iter().enumerate() {
@@ -450,36 +337,44 @@ fn layout_axis<State>(
             Orientation::Horizontal => constraint.width,
             Orientation::Vertical => constraint.height,
         };
+        let mut final_size = Option::<f32>::None;
         let Constraint { lower, upper } = constraint;
+
         if let Some(lower) = lower {
             if default_size < lower {
                 pool += default_size - lower;
-                final_sizes[i] = lower.into();
-                continue;
-            } else {
-                room_to_shrink[i] = -(default_size - lower);
+                final_size = Some(lower);
+            }
+        }
+        if let Some(upper) = upper {
+            if default_size > upper {
+                pool += default_size - upper;
+                final_size = Some(upper);
+            }
+        }
+
+        if let Some(lower) = lower {
+            if default_size >= lower {
+                room_to_shrink[i] = -(final_size.unwrap_or(default_size) - lower);
             }
         } else {
             // Effectively, this means the element can shrink to 0
             room_to_shrink[i] = -default_size;
         }
+
         if let Some(upper) = upper {
-            if default_size > upper {
-                pool += default_size - upper;
-                final_sizes[i] = upper.into();
-                continue;
-            } else {
-                positive_room[i] = -(default_size - upper);
+            if default_size <= upper {
+                room_to_grow[i] = -(final_size.unwrap_or(default_size) - upper);
             }
         } else {
             // Effectively, this means the element can expand any amount
-            positive_room[i] = default_size * 2.;
+            room_to_grow[i] = default_size * 2.;
         }
 
-        final_sizes[i] = default_size.into();
+        final_sizes[i] = final_size.unwrap_or(default_size).into();
     }
 
-    fn room_available(room: &[f32]) -> bool {
+    fn can_accommodate(room: &[f32]) -> bool {
         room.iter().filter(|r| r.abs() > 0.).count() as f32 > 0.
     }
 
@@ -491,16 +386,16 @@ fn layout_axis<State>(
         }
         i += 1;
         let pool_empty = pool.abs() < 0.1;
-        if !pool_empty && pool.is_sign_positive() && room_available(&positive_room) {
+        if !pool_empty && pool.is_sign_positive() && can_accommodate(&room_to_grow) {
             // We need to use more room
-            let mut enumerated_room: Vec<(usize, f32)> = positive_room
+            let mut enumerated_room: Vec<(usize, f32)> = room_to_grow
                 .iter()
                 .enumerate()
                 .map(|(i, v)| (i, *v))
                 .filter(|(_, v)| *v != 0.)
                 .collect();
             enumerated_room.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
-            let distribution_candidates = positive_room
+            let distribution_candidates = room_to_grow
                 .iter()
                 .filter(|r| r.abs() > 0. && r.is_sign_positive())
                 .count() as f32;
@@ -508,14 +403,14 @@ fn layout_axis<State>(
                 (pool / distribution_candidates).min(enumerated_room.first().unwrap().1);
             pool -= distribution_amount * distribution_candidates;
             enumerated_room.iter().for_each(|&(i, _)| {
-                if positive_room[i].abs() > 0. && positive_room[i].is_sign_positive() {
-                    positive_room[i] -= distribution_amount;
+                if room_to_grow[i].abs() > 0. && room_to_grow[i].is_sign_positive() {
+                    room_to_grow[i] -= distribution_amount;
                     if let Some(size) = &mut final_sizes[i] {
                         *size += distribution_amount
                     }
                 }
             });
-        } else if !pool_empty && pool.is_sign_negative() && room_available(&room_to_shrink) {
+        } else if !pool_empty && pool.is_sign_negative() && can_accommodate(&room_to_shrink) {
             // We need to use less room
             let mut enumerated_room: Vec<(usize, f32)> = room_to_shrink
                 .iter()
@@ -547,7 +442,8 @@ fn layout_axis<State>(
     let mut current_pos = match orientation {
         Orientation::Horizontal => available_area.x,
         Orientation::Vertical => available_area.y,
-    };
+    } + (pool * 0.5);
+
     for (i, child) in elements.iter_mut().enumerate() {
         let child_size = final_sizes[i].unwrap();
         let area = match orientation {
@@ -961,7 +857,9 @@ mod tests {
     #[test]
     fn test_constraint_combination() {
         assert_eq!(
-            row::<()>(vec![space(), space().height(30.)]).inner.sizes(),
+            row::<()>(vec![space(), space().height(30.)])
+                .inner
+                .constraints(),
             SizeConstraints {
                 width: Constraint::none(),
                 height: Constraint {
@@ -973,7 +871,7 @@ mod tests {
         assert_eq!(
             row::<()>(vec![space().height(40.), space().height(30.)])
                 .inner
-                .sizes(),
+                .constraints(),
             SizeConstraints {
                 width: Constraint::none(),
                 height: Constraint {
@@ -985,7 +883,7 @@ mod tests {
         assert_eq!(
             column::<()>(vec![space(), space().width(10.)])
                 .inner
-                .sizes(),
+                .constraints(),
             SizeConstraints {
                 width: Constraint {
                     lower: Some(10.),
@@ -997,7 +895,7 @@ mod tests {
         assert_eq!(
             column::<()>(vec![space().width(20.), space().width(10.)])
                 .inner
-                .sizes(),
+                .constraints(),
             SizeConstraints {
                 width: Constraint {
                     lower: Some(20.),
@@ -1009,7 +907,7 @@ mod tests {
         assert_eq!(
             stack::<()>(vec![space(), space().height(10.)])
                 .inner
-                .sizes(),
+                .constraints(),
             SizeConstraints {
                 width: Constraint::none(),
                 height: Constraint {
@@ -1021,7 +919,7 @@ mod tests {
         assert_eq!(
             stack::<()>(vec![space().height(20.), space().width(10.)])
                 .inner
-                .sizes(),
+                .constraints(),
             SizeConstraints {
                 width: Constraint {
                     lower: Some(10.),

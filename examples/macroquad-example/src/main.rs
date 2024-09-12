@@ -140,7 +140,7 @@ fn text<U>(string: &'static str, font_size: f32, color: Color) -> Node<U> {
             color,
         );
     })
-    .width(dimensions.width)
+    .width_range(200.0..)
     .height(dimensions.height)
 }
 
