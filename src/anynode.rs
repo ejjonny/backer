@@ -1,4 +1,4 @@
-use crate::{layout::SizeConstraints, models::Area};
+use crate::{constraints::SizeConstraints, models::Area};
 use std::{any::Any, fmt, rc::Rc};
 
 type AnyDrawFn<State> = Rc<dyn Fn(&dyn Any, &mut State)>;

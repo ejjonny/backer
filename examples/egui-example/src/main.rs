@@ -23,17 +23,9 @@ fn main() -> eframe::Result {
 fn my_layout_fn(ui: &mut Ui) -> Node<Ui> {
     column_spaced(
         10.,
-        vec![
-            draw_a(ui),
-            row_spaced(
-                10.,
-                vec![
-                    draw_b(ui).width_range(200.0..),
-                    column_spaced(10., vec![draw_a(ui), draw_b(ui), draw_c(ui)]),
-                ],
-            ),
-            draw_c(ui),
-        ],
+        (0..30)
+            .map(|_| row_spaced(10., (0..30).map(|_| draw_a(ui)).collect()))
+            .collect(),
     )
     .pad(10.)
 }
