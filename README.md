@@ -11,11 +11,12 @@ Dependency free & framework-agnostic. Backer can be used in an index-based layou
 
 _This library **only** implements layout & would be most useful along with a GUI library that can do GUI things (like [macroquad](https://github.com/not-fl3/macroquad) or [egui](https://github.com/emilk/egui))._
 
-### Goals
+### Features ✨
 
 - Declarative API: The code should look like the structure it defines
 - Minimal interface: No confusing overloads or magic, cascading effects
-- Single pass layout: Each node should be visited once - no back-tracking
+- Intuitive constraints: Backer adheres to & smoothly resolves size constraints with an advanced algorithm
+- Performant: Layout can be comfortably recalculated every frame
 - Easy integration & compatibility: Backer should work with just about any UI library with a bit of glue - so it isn't really fine-tuned for any specific UI solution.
 
 This project intends to be a flexible layout tool & not much else.
@@ -76,6 +77,7 @@ Backer relies on simple rules that can compose to create complex, flexible layou
     )
     .pad(10.)
 ```
+
 </details>
 
 # Quick Start
@@ -135,6 +137,6 @@ layout.draw(available_area, &mut my_state);
 
 ## Status
 
-The crate is currently usable but is very new! Currently lacks testing & will likely publish breaking changes often.
+The crate is currently usable but is very new! Currently lacks extensive testing & will likely publish breaking changes often.
 
 Contributions are always welcome 🤗
