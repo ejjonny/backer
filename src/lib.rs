@@ -17,6 +17,7 @@ mod constraints;
 mod debug;
 mod drawable;
 mod layout;
+mod layout_tests;
 mod modifiers;
 
 pub use layout::{Layout, Node};
