@@ -294,16 +294,14 @@ impl<State> NodeValue<State> {
                         .unwrap_or(available_area.height.max(0.))
                         .max(height_min.unwrap_or(0.)),
                 );
-                // let x = match explicit_x_align.or(x_align).unwrap_or(XAlign::Center) {
-                let x = match explicit_x_align.unwrap_or(XAlign::Center) {
+                let x = match explicit_x_align.or(x_align).unwrap_or(XAlign::Center) {
                     XAlign::Leading => available_area.x,
                     XAlign::Trailing => available_area.x + (available_area.width - explicit_width),
                     XAlign::Center => {
                         available_area.x + (available_area.width * 0.5) - (explicit_width * 0.5)
                     }
                 };
-                // let y = match explicit_y_align.or(y_align).unwrap_or(YAlign::Center) {
-                let y = match explicit_y_align.unwrap_or(YAlign::Center) {
+                let y = match explicit_y_align.or(y_align).unwrap_or(YAlign::Center) {
                     YAlign::Top => available_area.y,
                     YAlign::Bottom => available_area.y + (available_area.height - explicit_height),
                     YAlign::Center => {

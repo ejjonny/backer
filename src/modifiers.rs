@@ -192,66 +192,55 @@ impl<U> Node<U> {
     ///
     /// This will only have an effect if the node is constrained to be smaller than the area that is available,
     /// otherwise, there's no wiggle room.
-    pub fn x_align(self, align: XAlign) -> Self {
-        self.wrap_or_update_explicit(|options| {
-            options.x_align = Some(align);
-        })
+    pub fn x_align(mut self, align: XAlign) -> Self {
+        match self.inner {
+            NodeValue::Column {
+                align: ref mut col_align,
+                ..
+            } => *col_align = align,
+            _ => {
+                return self.wrap_or_update_explicit(|options| {
+                    options.x_align = Some(align);
+                })
+            }
+        }
+        self
     }
     /// Specifies an alignment along the y axis.
     ///
     /// This will only have an effect if the node is constrained to be smaller than the area that is available,
     /// otherwise, there's no wiggle room.
-    pub fn y_align(self, align: YAlign) -> Self {
-        self.wrap_or_update_explicit(|options| {
-            options.y_align = Some(align);
-        })
+    pub fn y_align(mut self, align: YAlign) -> Self {
+        match self.inner {
+            NodeValue::Row {
+                align: ref mut row_align,
+                ..
+            } => *row_align = align,
+            _ => {
+                return self.wrap_or_update_explicit(|options| {
+                    options.y_align = Some(align);
+                })
+            }
+        }
+        self
     }
     /// Specifies an alignment along both the x & y axis.
     ///
     /// This will only have an effect if the node is constrained along the axis to be smaller than the area that is available,
     /// otherwise, there's no wiggle room.
     pub fn align(self, align: Align) -> Self {
-        self.wrap_or_update_explicit(|options| {
-            match align {
-                Align::TopLeading => {
-                    options.y_align = YAlign::Top.into();
-                    options.x_align = XAlign::Leading.into();
-                }
-                Align::TopCenter => {
-                    options.y_align = YAlign::Top.into();
-                    options.x_align = XAlign::Center.into();
-                }
-                Align::TopTrailing => {
-                    options.y_align = YAlign::Top.into();
-                    options.x_align = XAlign::Trailing.into();
-                }
-                Align::CenterTrailing => {
-                    options.y_align = YAlign::Center.into();
-                    options.x_align = XAlign::Trailing.into();
-                }
-                Align::BottomTrailing => {
-                    options.y_align = YAlign::Bottom.into();
-                    options.x_align = XAlign::Trailing.into();
-                }
-                Align::BottomCenter => {
-                    options.y_align = YAlign::Bottom.into();
-                    options.x_align = XAlign::Center.into();
-                }
-                Align::BottomLeading => {
-                    options.y_align = YAlign::Bottom.into();
-                    options.x_align = XAlign::Leading.into();
-                }
-                Align::CenterLeading => {
-                    options.y_align = YAlign::Center.into();
-                    options.x_align = XAlign::Leading.into();
-                }
-                Align::CenterCenter => {
-                    options.y_align = YAlign::Center.into();
-                    options.x_align = XAlign::Center.into();
-                }
-            }
-            .into()
-        })
+        let (x_align, y_align) = match align {
+            Align::TopLeading => (XAlign::Leading, YAlign::Top),
+            Align::TopCenter => (XAlign::Center, YAlign::Top),
+            Align::TopTrailing => (XAlign::Trailing, YAlign::Top),
+            Align::CenterTrailing => (XAlign::Trailing, YAlign::Center),
+            Align::BottomTrailing => (XAlign::Trailing, YAlign::Bottom),
+            Align::BottomCenter => (XAlign::Center, YAlign::Bottom),
+            Align::BottomLeading => (XAlign::Leading, YAlign::Bottom),
+            Align::CenterLeading => (XAlign::Leading, YAlign::Center),
+            Align::CenterCenter => (XAlign::Center, YAlign::Center),
+        };
+        self.x_align(x_align).y_align(y_align)
     }
 
     /// Shhhh
@@ -261,16 +250,6 @@ impl<U> Node<U> {
 
     fn wrap_or_update_explicit(mut self, update: impl Fn(&mut Size)) -> Self {
         match self.inner {
-            NodeValue::Column { ref mut align, .. } => {
-                let mut options = Size::new();
-                update(&mut options);
-                *align = options.x_align.unwrap_or(*align);
-            }
-            NodeValue::Row { ref mut align, .. } => {
-                let mut options = Size::new();
-                update(&mut options);
-                *align = options.y_align.unwrap_or(*align);
-            }
             NodeValue::Explicit {
                 ref mut options,
                 element: _,
@@ -280,7 +259,7 @@ impl<U> Node<U> {
             _ => {
                 let mut options = Size::new();
                 update(&mut options);
-                self = Node {
+                return Node {
                     inner: NodeValue::Explicit {
                         options,
                         element: Box::new(self.inner),

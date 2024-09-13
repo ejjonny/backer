@@ -141,18 +141,26 @@ impl eframe::App for MyApp {
                                     .color(Color32::WHITE),
                                 ),
                               ],
-                            ),
+                            )
+                            .x_align(XAlign::Leading),
+                            draw(|area, state: &mut State| {
+                              state.ui.painter().rect_stroke(
+                                rect(area),
+                                10.,
+                                Stroke::new(3., Color32::from_rgb(50, 50, 50)),
+                              );
+                            }),
                             draw_label(
                               state.ui,
                               RichText::new("EXPIRES IN: 3h 2m")
                                 .color(Color32::from_rgb(200, 200, 200))
                                 .size(10.),
                             )
-                            // .x_align(XAlign::Leading)
+                            .x_align(XAlign::Leading)
                             .pad_leading(3.),
                           ],
                         )
-                        // .x_align(XAlign::Leading)
+                        .x_align(XAlign::Leading)
                         .width_range(150.0..),
                         space(),
                         draw(|area, state: &mut State| {
