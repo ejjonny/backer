@@ -11,19 +11,23 @@ impl<State> Clone for NodeValue<State> {
                 elements,
                 spacing,
                 align,
+                off_axis_align,
             } => NodeValue::Column {
                 elements: elements.clone(),
                 spacing: *spacing,
                 align: *align,
+                off_axis_align: *off_axis_align,
             },
             NodeValue::Row {
                 elements,
                 spacing,
                 align,
+                off_axis_align,
             } => NodeValue::Row {
                 elements: elements.clone(),
                 spacing: *spacing,
                 align: *align,
+                off_axis_align: *off_axis_align,
             },
             NodeValue::Stack(elements) => NodeValue::Stack(elements.clone()),
             NodeValue::Offset {

@@ -84,12 +84,14 @@ pub(crate) enum NodeValue<State> {
     Column {
         elements: Vec<NodeValue<State>>,
         spacing: f32,
-        align: XAlign,
+        align: YAlign,
+        off_axis_align: XAlign,
     },
     Row {
         elements: Vec<NodeValue<State>>,
         spacing: f32,
-        align: YAlign,
+        align: XAlign,
+        off_axis_align: YAlign,
     },
     Stack(Vec<NodeValue<State>>),
     Group(Vec<NodeValue<State>>),
@@ -243,25 +245,27 @@ impl<State> NodeValue<State> {
                 elements,
                 spacing,
                 align,
+                off_axis_align,
             } => layout_axis(
                 elements,
                 spacing,
                 available_area,
                 Orientation::Vertical,
+                *off_axis_align,
                 *align,
-                y_align.unwrap_or(YAlign::Center),
             ),
             NodeValue::Row {
                 elements,
                 spacing,
                 align,
+                off_axis_align,
             } => layout_axis(
                 elements,
                 spacing,
                 available_area,
                 Orientation::Horizontal,
-                x_align.unwrap_or(XAlign::Center),
                 *align,
+                *off_axis_align,
             ),
             NodeValue::Stack(children) => {
                 for child in children {
@@ -522,9 +526,17 @@ fn layout_axis<State>(
     }
 
     let mut current_pos = match orientation {
-        Orientation::Horizontal => available_area.x,
-        Orientation::Vertical => available_area.y,
-    } + (pool * 0.5);
+        Orientation::Horizontal => match x_align {
+            XAlign::Leading => available_area.x,
+            XAlign::Center => available_area.x + (pool * 0.5),
+            XAlign::Trailing => available_area.x + pool,
+        },
+        Orientation::Vertical => match y_align {
+            YAlign::Top => available_area.y,
+            YAlign::Center => available_area.y + (pool * 0.5),
+            YAlign::Bottom => available_area.y + pool,
+        },
+    };
 
     for (i, child) in elements.iter_mut().enumerate() {
         let child_size = final_sizes[i].unwrap();
