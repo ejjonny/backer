@@ -243,7 +243,7 @@ impl<U> Node<U> {
         self.x_align(x_align).y_align(y_align)
     }
 
-    /// Shhhh
+    /// Constrains the node's height to `ratio` of width
     pub fn aspect(self, ratio: f32) -> Self {
         self.wrap_or_update_explicit(|options| options.aspect = Some(ratio))
     }
