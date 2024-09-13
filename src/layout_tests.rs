@@ -351,4 +351,94 @@ mod tests {
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
     }
+    #[test]
+    fn test_aspect_ratio() {
+        Layout::new(|()| {
+            draw(|a, _| {
+                assert_eq!(a, Area::new(0., 0., 100., 100.));
+            })
+            .aspect(1.)
+        })
+        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        Layout::new(|()| {
+            draw(|a, _| {
+                assert_eq!(a, Area::new(25., 0., 50., 100.));
+            })
+            .aspect(0.5)
+        })
+        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        Layout::new(|()| {
+            draw(|a, _| {
+                assert_eq!(a, Area::new(0., 0., 50., 100.));
+            })
+            .aspect(0.5)
+            .x_align(XAlign::Leading)
+        })
+        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        Layout::new(|()| {
+            draw(|a, _| {
+                assert_eq!(a, Area::new(50., 0., 50., 100.));
+            })
+            .aspect(0.5)
+            .x_align(XAlign::Trailing)
+        })
+        .draw(Area::new(0., 0., 100., 100.), &mut ());
+
+        Layout::new(|()| {
+            draw(|a, _| {
+                assert_eq!(a, Area::new(0., 25., 100., 50.));
+            })
+            .aspect(2.)
+        })
+        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        Layout::new(|()| {
+            draw(|a, _| {
+                assert_eq!(a, Area::new(0., 0., 100., 50.));
+            })
+            .aspect(2.)
+            .y_align(YAlign::Top)
+        })
+        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        Layout::new(|()| {
+            draw(|a, _| {
+                assert_eq!(a, Area::new(0., 50., 100., 50.));
+            })
+            .aspect(2.)
+            .y_align(YAlign::Bottom)
+        })
+        .draw(Area::new(0., 0., 100., 100.), &mut ());
+    }
+    #[test]
+    fn test_aspect_ratio_in_seq() {
+        Layout::new(|()| {
+            row(vec![draw(|a, _| {
+                assert_eq!(a, Area::new(0., 0., 100., 100.));
+            })
+            .aspect(1.)])
+        })
+        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        Layout::new(|()| {
+            stack(vec![draw(|a, _| {
+                assert_eq!(a, Area::new(25., 0., 50., 100.));
+            })
+            .aspect(0.5)])
+        })
+        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        Layout::new(|()| {
+            column(vec![draw(|a, _| {
+                assert_eq!(a, Area::new(0., -50., 100., 200.));
+            })
+            .aspect(0.5)
+            .x_align(XAlign::Leading)])
+        })
+        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        Layout::new(|()| {
+            stack(vec![draw(|a, _| {
+                assert_eq!(a, Area::new(50., 0., 50., 100.));
+            })
+            .aspect(0.5)
+            .x_align(XAlign::Trailing)])
+        })
+        .draw(Area::new(0., 0., 100., 100.), &mut ());
+    }
 }

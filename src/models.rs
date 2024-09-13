@@ -88,8 +88,6 @@ pub(crate) struct Size {
     pub(crate) height_max: Option<f32>,
     pub(crate) x_align: Option<XAlign>,
     pub(crate) y_align: Option<YAlign>,
-    pub(crate) x_relative: bool,
-    pub(crate) y_relative: bool,
     pub(crate) aspect: Option<f32>,
 }
 
@@ -111,8 +109,6 @@ impl Size {
             height_max: None,
             x_align: None,
             y_align: None,
-            x_relative: false,
-            y_relative: false,
             aspect: None,
         }
     }

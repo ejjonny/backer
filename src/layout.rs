@@ -294,14 +294,14 @@ impl<State> NodeValue<State> {
                     height_max,
                     x_align: explicit_x_align,
                     y_align: explicit_y_align,
-                    x_relative,
-                    y_relative,
-                    aspect: _,
+                    aspect,
                 } = options;
-                let explicit_width = if *x_relative {
-                    available_area.width * width.unwrap_or(1.0)
+                let explicit_width = if let Some(width) = width {
+                    *width
+                } else if let Some(aspect) = &aspect {
+                    height.unwrap_or(available_area.height) * *aspect
                 } else {
-                    width.unwrap_or(available_area.width)
+                    available_area.width
                 }
                 .clamp(
                     width_min.unwrap_or(0.).min(width_max.unwrap_or(0.)),
@@ -309,10 +309,12 @@ impl<State> NodeValue<State> {
                         .unwrap_or(available_area.width.max(0.))
                         .max(width_min.unwrap_or(0.)),
                 );
-                let explicit_height = if *y_relative {
-                    available_area.height * height.unwrap_or(1.0)
+                let explicit_height = if let Some(height) = height {
+                    *height
+                } else if let Some(aspect) = &aspect {
+                    width.unwrap_or(available_area.width) / *aspect
                 } else {
-                    height.unwrap_or(available_area.height)
+                    available_area.height
                 }
                 .clamp(
                     height_min.unwrap_or(0.).min(height_max.unwrap_or(0.)),
