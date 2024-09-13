@@ -40,7 +40,7 @@ Backer relies on simple rules that can compose to create complex, flexible layou
         vec![
             // Custom draw nodes
             draw_a(ui),
-            draw_b(ui).size(Size::new().height(150.).width(50.).y_align(YAlign::Bottom)),
+            draw_b(ui).height(150.).width(50.).y_align(YAlign::Bottom),
             draw_c(ui),
         ],
     )
@@ -50,12 +50,10 @@ Backer relies on simple rules that can compose to create complex, flexible layou
         10.,
         vec![
             draw_a(ui),
-            draw_b(ui).size(
-                Size::new()
-                    .height(100.)
-                    .width(150.)
-                    .x_align(XAlign::Leading),
-            ),
+            draw_b(ui)
+                .height(100.)
+                .width(150.)
+                .x_align(XAlign::Leading),
             draw_c(ui),
         ],
     )
@@ -137,6 +135,6 @@ layout.draw(available_area, &mut my_state);
 
 ## Status
 
-The crate is currently usable but is very new! Currently lacks extensive testing & will likely publish breaking changes often.
+The crate is currently usable but is very new! Breaking changes may be relatively frequent as the crate matures.
 
 Contributions are always welcome 🤗
