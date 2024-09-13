@@ -57,7 +57,7 @@ impl<State> Layout<State> {
     /// Calculates layout and draws all draw nodes in the tree
     pub fn draw(&self, area: Area, state: &mut State) {
         let mut layout = (self.tree)(state);
-        layout.inner.layout(area);
+        layout.inner.layout(area, None, None);
         layout.inner.draw(state);
     }
 }
@@ -84,10 +84,12 @@ pub(crate) enum NodeValue<State> {
     Column {
         elements: Vec<NodeValue<State>>,
         spacing: f32,
+        align: XAlign,
     },
     Row {
         elements: Vec<NodeValue<State>>,
         spacing: f32,
+        align: YAlign,
     },
     Stack(Vec<NodeValue<State>>),
     Group(Vec<NodeValue<State>>),
@@ -197,7 +199,12 @@ impl<State> NodeValue<State> {
         }
     }
 
-    pub(crate) fn layout(&mut self, available_area: Area) {
+    pub(crate) fn layout(
+        &mut self,
+        available_area: Area,
+        x_align: Option<XAlign>,
+        y_align: Option<YAlign>,
+    ) {
         match self {
             NodeValue::Padding {
                 amounts,
@@ -209,17 +216,35 @@ impl<State> NodeValue<State> {
                     width: available_area.width - amounts.trailing - amounts.leading,
                     height: available_area.height - amounts.bottom - amounts.top,
                 };
-                child.layout(inner_area);
+                child.layout(inner_area, None, None);
             }
-            NodeValue::Column { elements, spacing } => {
-                layout_axis(elements, spacing, available_area, Orientation::Vertical)
-            }
-            NodeValue::Row { elements, spacing } => {
-                layout_axis(elements, spacing, available_area, Orientation::Horizontal)
-            }
+            NodeValue::Column {
+                elements,
+                spacing,
+                align,
+            } => layout_axis(
+                elements,
+                spacing,
+                available_area,
+                Orientation::Vertical,
+                *align,
+                y_align.unwrap_or(YAlign::Center),
+            ),
+            NodeValue::Row {
+                elements,
+                spacing,
+                align,
+            } => layout_axis(
+                elements,
+                spacing,
+                available_area,
+                Orientation::Horizontal,
+                x_align.unwrap_or(XAlign::Center),
+                *align,
+            ),
             NodeValue::Stack(children) => {
                 for child in children {
-                    child.layout(available_area)
+                    child.layout(available_area, None, None)
                 }
             }
             NodeValue::Draw(drawable) => {
@@ -241,8 +266,8 @@ impl<State> NodeValue<State> {
                     height,
                     height_min,
                     height_max,
-                    x_align,
-                    y_align,
+                    x_align: explicit_x_align,
+                    y_align: explicit_y_align,
                     x_relative,
                     y_relative,
                     aspect: _,
@@ -269,38 +294,48 @@ impl<State> NodeValue<State> {
                         .unwrap_or(available_area.height.max(0.))
                         .max(height_min.unwrap_or(0.)),
                 );
-                let x = match x_align {
+                // let x = match explicit_x_align.or(x_align).unwrap_or(XAlign::Center) {
+                let x = match explicit_x_align.unwrap_or(XAlign::Center) {
                     XAlign::Leading => available_area.x,
                     XAlign::Trailing => available_area.x + (available_area.width - explicit_width),
                     XAlign::Center => {
                         available_area.x + (available_area.width * 0.5) - (explicit_width * 0.5)
                     }
                 };
-                let y = match y_align {
+                // let y = match explicit_y_align.or(y_align).unwrap_or(YAlign::Center) {
+                let y = match explicit_y_align.unwrap_or(YAlign::Center) {
                     YAlign::Top => available_area.y,
                     YAlign::Bottom => available_area.y + (available_area.height - explicit_height),
                     YAlign::Center => {
                         available_area.y + (available_area.height * 0.5) - (explicit_height * 0.5)
                     }
                 };
-                child.layout(Area {
-                    x: x.max(available_area.x),
-                    y: y.max(available_area.y),
-                    width: explicit_width,
-                    height: explicit_height,
-                });
+                child.layout(
+                    Area {
+                        x: x.max(available_area.x),
+                        y: y.max(available_area.y),
+                        width: explicit_width,
+                        height: explicit_height,
+                    },
+                    None,
+                    None,
+                );
             }
             NodeValue::Offset {
                 offset_x,
                 offset_y,
                 element,
             } => {
-                element.layout(Area {
-                    x: available_area.x + *offset_x,
-                    y: available_area.y + *offset_y,
-                    width: available_area.width,
-                    height: available_area.height,
-                });
+                element.layout(
+                    Area {
+                        x: available_area.x + *offset_x,
+                        y: available_area.y + *offset_y,
+                        width: available_area.width,
+                        height: available_area.height,
+                    },
+                    None,
+                    None,
+                );
             }
             NodeValue::Space => (),
             NodeValue::Scope { scoped } => scoped.layout(available_area),
@@ -320,6 +355,8 @@ fn layout_axis<State>(
     spacing: &f32,
     available_area: Area,
     orientation: Orientation,
+    x_align: XAlign,
+    y_align: YAlign,
 ) {
     let sizes: Vec<SizeConstraints> = elements
         .iter_mut()
@@ -487,7 +524,7 @@ fn layout_axis<State>(
             },
         };
 
-        child.layout(area);
+        child.layout(area, None, None);
 
         current_pos += child_size + *spacing;
     }

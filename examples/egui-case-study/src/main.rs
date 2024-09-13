@@ -148,11 +148,12 @@ impl eframe::App for MyApp {
                                 .color(Color32::from_rgb(200, 200, 200))
                                 .size(10.),
                             )
-                            .x_align(XAlign::Leading)
+                            // .x_align(XAlign::Leading)
                             .pad_leading(3.),
                           ],
                         )
-                        .width_range(100.0..),
+                        // .x_align(XAlign::Leading)
+                        .width_range(150.0..),
                         space(),
                         draw(|area, state: &mut State| {
                           if state
@@ -287,6 +288,11 @@ fn draw_label<'a>(ui: &'_ mut Ui, text: RichText) -> Node<State<'a>> {
   let galley = label.layout_in_ui(ui).1.rect;
   let text_area = area_from(galley);
   draw(move |area, state: &mut State| {
+    state.ui.painter().rect_stroke(
+      rect(area),
+      10.,
+      Stroke::new(3., Color32::from_rgb(50, 50, 50)),
+    );
     state.ui.put(rect(area), egui::Label::new(text.clone()));
   })
   .width(text_area.width)
