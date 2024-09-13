@@ -251,6 +251,11 @@ impl<U> Node<U> {
         })
     }
 
+    /// Shhhh
+    pub fn aspect(self, ratio: f32) -> Self {
+        self.wrap_or_update_explicit(|options| options.aspect = Some(ratio))
+    }
+
     fn wrap_or_update_explicit(mut self, update: impl Fn(&mut Size)) -> Self {
         if let NodeValue::Explicit {
             ref mut options, ..

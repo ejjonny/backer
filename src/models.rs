@@ -90,6 +90,7 @@ pub(crate) struct Size {
     pub(crate) y_align: YAlign,
     pub(crate) x_relative: bool,
     pub(crate) y_relative: bool,
+    pub(crate) aspect: Option<f32>,
 }
 
 impl Default for Size {
@@ -112,6 +113,7 @@ impl Size {
             y_align: YAlign::Center,
             x_relative: false,
             y_relative: false,
+            aspect: None,
         }
     }
 }

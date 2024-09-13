@@ -141,36 +141,42 @@ impl<State> NodeValue<State> {
                         lower: Some(amounts.bottom + amounts.top),
                         upper: None,
                     },
+                    aspect: None,
                 })
             }
             NodeValue::Column { elements, .. } => elements.iter().fold(
                 SizeConstraints {
                     width: Constraint::none(),
                     height: Constraint::none(),
+                    aspect: None,
                 },
                 |current, element| SizeConstraints {
                     width: current
                         .width
                         .combine_adjacent_priority(element.constraints().width),
                     height: current.height.combine_sum(element.constraints().height),
+                    aspect: None,
                 },
             ),
             NodeValue::Row { elements, .. } => elements.iter().fold(
                 SizeConstraints {
                     width: Constraint::none(),
                     height: Constraint::none(),
+                    aspect: None,
                 },
                 |current, element| SizeConstraints {
                     width: current.width.combine_sum(element.constraints().width),
                     height: current
                         .height
                         .combine_adjacent_priority(element.constraints().height),
+                    aspect: None,
                 },
             ),
             NodeValue::Stack(elements) => {
                 let mut cumulative_size = SizeConstraints {
                     width: Constraint::none(),
                     height: Constraint::none(),
+                    aspect: None,
                 };
                 for element in elements {
                     cumulative_size =
@@ -186,6 +192,7 @@ impl<State> NodeValue<State> {
             _ => SizeConstraints {
                 width: Constraint::none(),
                 height: Constraint::none(),
+                aspect: None,
             },
         }
     }
@@ -238,6 +245,7 @@ impl<State> NodeValue<State> {
                     y_align,
                     x_relative,
                     y_relative,
+                    aspect: _,
                 } = options;
                 let explicit_width = if *x_relative {
                     available_area.width * width.unwrap_or(1.0)
@@ -332,13 +340,31 @@ fn layout_axis<State>(
     let mut room_to_grow: Vec<f32> = elements.iter().map(|_| 0.).collect();
     let mut room_to_shrink: Vec<f32> = elements.iter().map(|_| 0.).collect();
 
-    for (i, constraint) in sizes.iter().enumerate() {
+    for (i, size_constraint) in sizes.iter().enumerate() {
         let constraint = match orientation {
-            Orientation::Horizontal => constraint.width,
-            Orientation::Vertical => constraint.height,
+            Orientation::Horizontal => size_constraint.width,
+            Orientation::Vertical => size_constraint.height,
         };
         let mut final_size = Option::<f32>::None;
-        let Constraint { lower, upper } = constraint;
+        let Constraint {
+            mut lower,
+            mut upper,
+        } = constraint;
+
+        if let Some(aspect) = size_constraint.aspect {
+            match orientation {
+                Orientation::Horizontal => {
+                    let value = available_area.height * aspect;
+                    lower = Some(value);
+                    upper = Some(value);
+                }
+                Orientation::Vertical => {
+                    let value = available_area.width / aspect;
+                    lower = Some(value);
+                    upper = Some(value);
+                }
+            }
+        }
 
         if let Some(lower) = lower {
             if default_size < lower {
@@ -865,7 +891,8 @@ mod tests {
                 height: Constraint {
                     lower: Some(30.),
                     upper: None
-                }
+                },
+                aspect: None
             }
         );
         assert_eq!(
@@ -877,7 +904,8 @@ mod tests {
                 height: Constraint {
                     lower: Some(40.),
                     upper: None
-                }
+                },
+                aspect: None
             }
         );
         assert_eq!(
@@ -889,7 +917,8 @@ mod tests {
                     lower: Some(10.),
                     upper: None
                 },
-                height: Constraint::none()
+                height: Constraint::none(),
+                aspect: None
             }
         );
         assert_eq!(
@@ -901,7 +930,8 @@ mod tests {
                     lower: Some(20.),
                     upper: None
                 },
-                height: Constraint::none()
+                height: Constraint::none(),
+                aspect: None
             }
         );
         assert_eq!(
@@ -913,7 +943,8 @@ mod tests {
                 height: Constraint {
                     lower: Some(10.),
                     upper: None
-                }
+                },
+                aspect: None
             }
         );
         assert_eq!(
@@ -928,7 +959,8 @@ mod tests {
                 height: Constraint {
                     lower: Some(20.),
                     upper: None
-                }
+                },
+                aspect: None
             }
         );
     }

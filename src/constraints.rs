@@ -4,6 +4,7 @@ use crate::models::Size;
 pub(crate) struct SizeConstraints {
     pub(crate) width: Constraint,
     pub(crate) height: Constraint,
+    pub(crate) aspect: Option<f32>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -26,18 +27,21 @@ impl SizeConstraints {
         SizeConstraints {
             width: self.width.combine_adjacent_priority(other.width),
             height: self.height.combine_adjacent_priority(other.height),
+            aspect: None,
         }
     }
     pub(crate) fn combine_equal_priority(self, other: Self) -> Self {
         SizeConstraints {
             width: self.width.combine_equal_priority(other.width),
             height: self.height.combine_equal_priority(other.height),
+            aspect: self.aspect.or(other.aspect),
         }
     }
     pub(crate) fn combine_sum(self, other: Self) -> Self {
         SizeConstraints {
             width: self.width.combine_sum(other.width),
             height: self.height.combine_sum(other.height),
+            aspect: None,
         }
     }
 }
@@ -121,6 +125,7 @@ impl From<Size> for SizeConstraints {
                     upper: None,
                 }
             },
+            aspect: value.aspect,
         }
     }
 }
