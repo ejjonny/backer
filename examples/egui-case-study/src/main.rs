@@ -90,6 +90,7 @@ impl eframe::App for MyApp {
           };
           let mut area = area_from(scroll_rect);
           area.y = -area.y;
+          area.width = viewport.width();
           Layout::new(|state: &mut State| {
             column_spaced(
               10.,
