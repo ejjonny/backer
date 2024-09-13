@@ -37,10 +37,10 @@ impl SizeConstraints {
             aspect: self.aspect.or(other.aspect),
         }
     }
-    pub(crate) fn combine_sum(self, other: Self) -> Self {
+    pub(crate) fn combine_sum(self, other: Self, spacing: f32) -> Self {
         SizeConstraints {
-            width: self.width.combine_sum(other.width),
-            height: self.height.combine_sum(other.height),
+            width: self.width.combine_sum(other.width, spacing),
+            height: self.height.combine_sum(other.height, spacing),
             aspect: None,
         }
     }
@@ -75,16 +75,16 @@ impl Constraint {
         };
         Constraint { lower, upper }
     }
-    pub(crate) fn combine_sum(self, other: Self) -> Self {
+    pub(crate) fn combine_sum(self, other: Self, spacing: f32) -> Self {
         let lower = match (self.lower, other.lower) {
             (None, None) => None,
-            (None, Some(a)) | (Some(a), None) => Some(a),
-            (Some(bound_a), Some(bound_b)) => Some(bound_a.max(bound_b)),
+            (None, Some(bound)) | (Some(bound), None) => Some(bound + spacing),
+            (Some(bound_a), Some(bound_b)) => Some(bound_a + bound_b + spacing),
         };
         let upper = match (self.upper, other.upper) {
             (None, None) => None,
-            (None, Some(bound)) | (Some(bound), None) => Some(bound),
-            (Some(bound_a), Some(bound_b)) => Some(bound_a + bound_b),
+            (None, Some(_)) | (Some(_), None) => None,
+            (Some(bound_a), Some(bound_b)) => Some(bound_a + bound_b + spacing),
         };
         Constraint { lower, upper }
     }

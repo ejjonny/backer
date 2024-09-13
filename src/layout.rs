@@ -133,8 +133,8 @@ impl<State> NodeValue<State> {
 
     pub(crate) fn constraints(&self) -> SizeConstraints {
         match self {
-            NodeValue::Padding { amounts, element } => {
-                element.constraints().combine_sum(SizeConstraints {
+            NodeValue::Padding { amounts, element } => element.constraints().combine_sum(
+                SizeConstraints {
                     width: Constraint {
                         lower: Some(amounts.trailing + amounts.leading),
                         upper: None,
@@ -144,28 +144,43 @@ impl<State> NodeValue<State> {
                         upper: None,
                     },
                     aspect: None,
-                })
-            }
-            NodeValue::Column { elements, .. } => elements.iter().fold(
-                SizeConstraints {
-                    width: Constraint::none(),
-                    height: Constraint::none(),
-                    aspect: None,
                 },
-                |current, element| SizeConstraints {
-                    width: current
-                        .width
-                        .combine_adjacent_priority(element.constraints().width),
-                    height: current.height.combine_sum(element.constraints().height),
-                    aspect: None,
-                },
+                0.,
             ),
-            NodeValue::Row { elements, .. } => elements
+            NodeValue::Column {
+                elements, spacing, ..
+            } => elements
                 .iter()
                 .fold(Option::<SizeConstraints>::None, |current, element| {
                     if let Some(current) = current {
                         Some(SizeConstraints {
-                            width: current.width.combine_sum(element.constraints().width),
+                            width: current
+                                .width
+                                .combine_adjacent_priority(element.constraints().width),
+                            height: current
+                                .height
+                                .combine_sum(element.constraints().height, *spacing),
+                            aspect: None,
+                        })
+                    } else {
+                        Some(element.constraints())
+                    }
+                })
+                .unwrap_or(SizeConstraints {
+                    width: Constraint::none(),
+                    height: Constraint::none(),
+                    aspect: None,
+                }),
+            NodeValue::Row {
+                elements, spacing, ..
+            } => elements
+                .iter()
+                .fold(Option::<SizeConstraints>::None, |current, element| {
+                    if let Some(current) = current {
+                        Some(SizeConstraints {
+                            width: current
+                                .width
+                                .combine_sum(element.constraints().width, *spacing),
                             height: current
                                 .height
                                 .combine_adjacent_priority(element.constraints().height),
@@ -514,18 +529,64 @@ fn layout_axis<State>(
     for (i, child) in elements.iter_mut().enumerate() {
         let child_size = final_sizes[i].unwrap();
         let area = match orientation {
-            Orientation::Horizontal => Area {
-                x: current_pos,
-                y: available_area.y,
-                width: child_size,
-                height: available_area.height,
-            },
-            Orientation::Vertical => Area {
-                x: available_area.x,
-                y: current_pos,
-                width: available_area.width,
-                height: child_size,
-            },
+            Orientation::Horizontal => {
+                if let NodeValue::Explicit { .. } = child {
+                    Area {
+                        x: current_pos,
+                        y: available_area.y,
+                        width: child_size,
+                        height: available_area.height,
+                    }
+                } else {
+                    let height = match (sizes[i].height.lower, sizes[i].height.upper) {
+                        (None, None) => available_area.height,
+                        (None, Some(upper)) => available_area.height.min(upper),
+                        (Some(lower), None) => available_area.height.max(lower),
+                        (Some(lower), Some(upper)) => available_area.height.clamp(lower, upper),
+                    };
+                    Area {
+                        x: current_pos,
+                        y: match y_align {
+                            YAlign::Top => available_area.y,
+                            YAlign::Bottom => available_area.y + (available_area.height - height),
+                            YAlign::Center => {
+                                available_area.y + (available_area.height * 0.5) - (height * 0.5)
+                            }
+                        },
+                        width: child_size,
+                        height,
+                    }
+                }
+            }
+            Orientation::Vertical => {
+                if let NodeValue::Explicit { .. } = child {
+                    Area {
+                        x: available_area.x,
+                        y: current_pos,
+                        width: available_area.width,
+                        height: child_size,
+                    }
+                } else {
+                    let width = match (sizes[i].width.lower, sizes[i].width.upper) {
+                        (None, None) => available_area.width,
+                        (None, Some(upper)) => available_area.width.min(upper),
+                        (Some(lower), None) => available_area.width.max(lower),
+                        (Some(lower), Some(upper)) => available_area.width.clamp(lower, upper),
+                    };
+                    Area {
+                        x: match x_align {
+                            XAlign::Leading => available_area.x,
+                            XAlign::Trailing => available_area.x + (available_area.width - width),
+                            XAlign::Center => {
+                                available_area.x + (available_area.width * 0.5) - (width * 0.5)
+                            }
+                        },
+                        y: current_pos,
+                        width,
+                        height: child_size,
+                    }
+                }
+            }
         };
 
         child.layout(area, Some(x_align), Some(y_align));
@@ -944,7 +1005,7 @@ mod tests {
                 width: Constraint::none(),
                 height: Constraint {
                     lower: Some(40.),
-                    upper: None
+                    upper: Some(40.)
                 },
                 aspect: None
             }
@@ -969,7 +1030,7 @@ mod tests {
             SizeConstraints {
                 width: Constraint {
                     lower: Some(20.),
-                    upper: None
+                    upper: Some(20.)
                 },
                 height: Constraint::none(),
                 aspect: None

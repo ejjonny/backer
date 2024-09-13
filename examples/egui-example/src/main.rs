@@ -21,18 +21,21 @@ fn main() -> eframe::Result {
 }
 
 fn my_layout_fn(ui: &mut Ui) -> Node<Ui> {
-    column_spaced(
+    row_spaced(
         10.,
         vec![
-            draw_a(ui),
-            row_spaced(
+            // draw_a(ui),
+            draw_rect(Color32::RED, true),
+            column_spaced(
                 10.,
                 vec![
-                    draw_b(ui).width_range(20.0..),
-                    column_spaced(10., vec![draw_a(ui), draw_b(ui), draw_c(ui)]),
+                    draw_rect(Color32::RED, true).height(200.),
+                    draw_rect(Color32::RED, true)
+                        .width(20.)
+                        .x_align(XAlign::Leading),
                 ],
             ),
-            draw_c(ui),
+            // draw_c(ui),
         ],
     )
     .pad(10.)

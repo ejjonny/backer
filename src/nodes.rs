@@ -68,6 +68,35 @@ pub fn row_spaced<U>(spacing: f32, elements: Vec<Node<U>>) -> Node<U> {
             align: YAlign::Center,
         },
     }
+    // let elements = filter_empty(ungroup(elements));
+    // let size = elements.iter().fold(Size::new(), |mut current, el| {
+    //     if let NodeValue::Explicit {
+    //         options:
+    //             Size {
+    //                 width_min,
+    //                 width_max,
+    //                 ..
+    //             },
+    //         ..
+    //     } = el
+    //     {
+    //         current.width_min = current.width_min.map(|w| w + width_min.unwrap_or(0.));
+    //         current.width_max = current.width_max.map(|w| w + width_max.unwrap_or(0.));
+    //         current
+    //     } else {
+    //         current
+    //     }
+    // });
+    // Node {
+    //     inner: NodeValue::Explicit {
+    //         options: size,
+    //         element: Box::new(NodeValue::Row {
+    //             elements,
+    //             spacing,
+    //             align: YAlign::Center,
+    //         }),
+    //     },
+    // }
 }
 /// Defines a sequence of elements to be laid out on top of each other.
 pub fn stack<U>(elements: Vec<Node<U>>) -> Node<U> {
