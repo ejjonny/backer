@@ -7,13 +7,23 @@ impl<State> Clone for NodeValue<State> {
                 amounts: *amounts,
                 element: element.clone(),
             },
-            NodeValue::Column { elements, spacing } => NodeValue::Column {
+            NodeValue::Column {
+                elements,
+                spacing,
+                align,
+            } => NodeValue::Column {
                 elements: elements.clone(),
                 spacing: *spacing,
+                align: *align,
             },
-            NodeValue::Row { elements, spacing } => NodeValue::Row {
+            NodeValue::Row {
+                elements,
+                spacing,
+                align,
+            } => NodeValue::Row {
                 elements: elements.clone(),
                 spacing: *spacing,
+                align: *align,
             },
             NodeValue::Stack(elements) => NodeValue::Stack(elements.clone()),
             NodeValue::Offset {

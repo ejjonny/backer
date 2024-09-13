@@ -9,15 +9,25 @@ impl<State> fmt::Debug for NodeValue<State> {
                 .field("amounts", amounts)
                 .field("element", element)
                 .finish(),
-            NodeValue::Column { elements, spacing } => f
+            NodeValue::Column {
+                elements,
+                spacing,
+                align,
+            } => f
                 .debug_struct("Column")
                 .field("elements", elements)
                 .field("spacing", spacing)
+                .field("align", align)
                 .finish(),
-            NodeValue::Row { elements, spacing } => f
+            NodeValue::Row {
+                elements,
+                spacing,
+                align,
+            } => f
                 .debug_struct("Row")
                 .field("elements", elements)
                 .field("spacing", spacing)
+                .field("align", align)
                 .finish(),
             NodeValue::Stack(elements) => f.debug_tuple("Stack").field(elements).finish(),
             NodeValue::Group(elements) => f.debug_tuple("Group").field(elements).finish(),
