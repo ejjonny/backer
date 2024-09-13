@@ -142,14 +142,12 @@ impl<U> Node<U> {
     pub fn width(self, width: f32) -> Self {
         self.wrap_or_update_explicit(|options| {
             options.width = width.into();
-            options.x_relative = false;
         })
     }
     /// Specifies an explicit height for a node
     pub fn height(self, height: f32) -> Self {
         self.wrap_or_update_explicit(|options| {
             options.height = height.into();
-            options.y_relative = false;
         })
     }
     /// Specifies bounds on a node's height
