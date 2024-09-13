@@ -13,21 +13,25 @@ impl<State> fmt::Debug for NodeValue<State> {
                 elements,
                 spacing,
                 align,
+                off_axis_align,
             } => f
                 .debug_struct("Column")
                 .field("elements", elements)
                 .field("spacing", spacing)
                 .field("align", align)
+                .field("off_axis_align", off_axis_align)
                 .finish(),
             NodeValue::Row {
                 elements,
                 spacing,
                 align,
+                off_axis_align,
             } => f
                 .debug_struct("Row")
                 .field("elements", elements)
                 .field("spacing", spacing)
                 .field("align", align)
+                .field("off_axis_align", off_axis_align)
                 .finish(),
             NodeValue::Stack(elements) => f.debug_tuple("Stack").field(elements).finish(),
             NodeValue::Group(elements) => f.debug_tuple("Group").field(elements).finish(),

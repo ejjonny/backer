@@ -195,9 +195,13 @@ impl<U> Node<U> {
     pub fn x_align(mut self, align: XAlign) -> Self {
         match self.inner {
             NodeValue::Column {
-                align: ref mut col_align,
+                off_axis_align: ref mut col_align,
                 ..
             } => *col_align = align,
+            NodeValue::Row {
+                align: ref mut row_align,
+                ..
+            } => *row_align = align,
             _ => {
                 return self.wrap_or_update_explicit(|options| {
                     options.x_align = Some(align);
@@ -213,9 +217,13 @@ impl<U> Node<U> {
     pub fn y_align(mut self, align: YAlign) -> Self {
         match self.inner {
             NodeValue::Row {
-                align: ref mut row_align,
+                off_axis_align: ref mut row_align,
                 ..
             } => *row_align = align,
+            NodeValue::Column {
+                align: ref mut col_align,
+                ..
+            } => *col_align = align,
             _ => {
                 return self.wrap_or_update_explicit(|options| {
                     options.y_align = Some(align);
