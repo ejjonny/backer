@@ -5,8 +5,8 @@ use backer::{
 };
 use eframe::egui;
 use egui::{
-  Button, Color32, Frame, Image, Layout as EguiLayout, Margin, Pos2, Rect, RichText, ScrollArea,
-  Stroke, Ui, Vec2,
+  Button, Color32, Frame, Image, Layout as EguiLayout, Margin, Pos2, Rect, RichText, Stroke, Ui,
+  Vec2,
 };
 
 fn main() -> eframe::Result {
@@ -196,7 +196,7 @@ impl eframe::App for MyApp {
             self.show_backer = true
           }
           let bounties = &self.items;
-          for Item in bounties.iter() {
+          for bounty in bounties.iter() {
             Frame::group(ui.style())
               .rounding(10.)
               .outer_margin(Margin::same(3.))
@@ -213,11 +213,11 @@ impl eframe::App for MyApp {
                     ui.add_space(5.);
                     ui.horizontal(|ui| {
                       ui.label(
-                        RichText::new(Item.title.as_str())
+                        RichText::new(bounty.title.as_str())
                           .color(Color32::WHITE)
                           .size(18.),
                       );
-                      ui.label(RichText::new(format!("{}XP", Item.points)).color(Color32::WHITE));
+                      ui.label(RichText::new(format!("{}XP", bounty.points)).color(Color32::WHITE));
                     });
                     ui.horizontal(|ui| {
                       ui.add_space(5.);
