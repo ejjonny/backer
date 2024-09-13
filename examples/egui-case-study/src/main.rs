@@ -1,0 +1,294 @@
+use backer::{
+  models::{Area, XAlign},
+  nodes::{column_spaced, draw, empty, group, row, row_spaced, space, stack},
+  Layout, Node,
+};
+use eframe::egui;
+use egui::{
+  Button, Color32, Frame, Image, Label, Layout as EguiLayout, Margin, Pos2, Rect, RichText,
+  ScrollArea, Stroke, Ui, Vec2,
+};
+
+fn main() -> eframe::Result {
+  let options = eframe::NativeOptions {
+    viewport: egui::ViewportBuilder::default().with_inner_size([320.0, 240.0]),
+    ..Default::default()
+  };
+  eframe::run_native(
+    "My egui App",
+    options,
+    Box::new(|cc| {
+      egui_extras::install_image_loaders(&cc.egui_ctx);
+      Ok(Box::<MyApp>::default())
+    }),
+  )
+}
+
+struct MyApp {
+  bounties: Vec<Bounty>,
+}
+
+struct Bounty {
+  title: String,
+  points: i32,
+  redeemed: bool,
+  out_of_guesses: bool,
+}
+
+impl Default for MyApp {
+  fn default() -> Self {
+    MyApp {
+      bounties: vec![
+        Bounty {
+          title: "Bounty 1".to_string(),
+          points: 6000000,
+          redeemed: true,
+          out_of_guesses: false,
+        },
+        Bounty {
+          title: "Bounty 2".to_string(),
+          points: 6000,
+          redeemed: false,
+          out_of_guesses: false,
+        },
+        Bounty {
+          title: "Bounty 3".to_string(),
+          points: 80,
+          redeemed: false,
+          out_of_guesses: true,
+        },
+      ],
+    }
+  }
+}
+
+fn area_from(rect: Rect) -> Area {
+  Area {
+    x: rect.min.x,
+    y: rect.min.y,
+    width: rect.max.x - rect.min.x,
+    height: rect.max.y - rect.min.y,
+  }
+}
+
+fn rect(area: Area) -> Rect {
+  Rect {
+    min: Pos2::new(area.x, area.y),
+    max: Pos2::new(area.x + area.width, area.y + area.height),
+  }
+}
+
+struct State<'a> {
+  ui: &'a mut Ui,
+  bounties: &'a mut Vec<Bounty>,
+}
+impl eframe::App for MyApp {
+  fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+    egui::CentralPanel::default().show(ctx, |ui| {
+      let viewport = ctx.input(|i| i.screen_rect());
+      let available_area = area_from(viewport);
+      let mut state = State {
+        ui,
+        bounties: &mut self.bounties,
+      };
+      Layout::new(|state: &mut State| {
+        column_spaced(
+          10.,
+          vec![
+            group(
+              state
+                .bounties
+                .iter()
+                .enumerate()
+                .map(|(i, bounty)| {
+                  stack(vec![
+                    draw(|area, state: &mut State| {
+                      state.ui.painter().rect_stroke(
+                        rect(area),
+                        10.,
+                        Stroke::new(3., Color32::from_rgb(50, 50, 50)),
+                      );
+                    }),
+                    row_spaced(
+                      10.,
+                      vec![
+                        draw(|area, state: &mut State| {
+                          state.ui.put(
+                            rect(area),
+                            Image::new(egui::include_image!("../frs.png"))
+                              .show_loading_spinner(true)
+                              .fit_to_exact_size(egui::Vec2::new(area.width, area.height))
+                              .rounding(4.),
+                          );
+                        })
+                        .aspect(1.),
+                        column_spaced(
+                          5.,
+                          vec![
+                            row_spaced(
+                              10.,
+                              vec![
+                                draw_label(
+                                  state.ui,
+                                  RichText::new(state.bounties[i].title.as_str())
+                                    .color(Color32::WHITE)
+                                    .size(18.),
+                                )
+                                .x_align(XAlign::Leading),
+                                draw_label(
+                                  state.ui,
+                                  RichText::new(format!("{}XP", bounty.points))
+                                    .color(Color32::WHITE),
+                                ),
+                              ],
+                            ),
+                            draw_label(
+                              state.ui,
+                              RichText::new("EXPIRES IN: 3h 2m")
+                                .color(Color32::from_rgb(200, 200, 200))
+                                .size(10.),
+                            )
+                            .x_align(XAlign::Leading)
+                            .pad_leading(3.),
+                          ],
+                        )
+                        .width_range(100.0..),
+                        space(),
+                        draw(|area, state: &mut State| {
+                          if state
+                            .ui
+                            .put(
+                              rect(area),
+                              Button::new(RichText::new("Open").color(Color32::WHITE))
+                                .fill(Color32::from_rgb(150, 0, 150))
+                                .rounding(4.),
+                            )
+                            .clicked()
+                          {
+                            dbg!("Click");
+                          }
+                        })
+                        .aspect(1.),
+                      ],
+                    )
+                    .pad(10.),
+                  ])
+                  .height(60.)
+                })
+                .collect(),
+            ),
+            space(),
+          ],
+        )
+        .pad(10.)
+      })
+      .draw(available_area, &mut state);
+
+      // ScrollArea::vertical()
+      //     .max_width(f32::INFINITY)
+      //     .show(ui, |ui| {
+      // ui.vertical_centered_justified(|ui| {
+      //     let bounties = &self.bounties;
+      //     if bounties.is_empty() {
+      //         ui.columns(1, |columns| {
+      //             columns[0].horizontal(|ui| {
+      //                 ui.with_layout(EguiLayout::top_down(egui::Align::Center), |ui| {
+      //                     ui.heading("nothing here...\ncityhunt might not be available in your city yet");
+      //                 });
+      //             });
+      //         });
+      //     }
+      //     for bounty in bounties.iter() {
+      //         Frame::group(ui.style())
+      //             .rounding(10.)
+      //             .outer_margin(Margin::same(3.))
+      //             .show(ui, |ui| {
+      //                 ui.set_width(ui.available_width());
+      //                 ui.horizontal(|ui| {
+      //                         ui.add(
+      //                             Image::new(egui::include_image!("../frs.png"))
+      //                                 .show_loading_spinner(true)
+      //                                 .fit_to_exact_size(egui::Vec2::new(45., 45.))
+      //                                 .rounding(4.),
+      //                         );
+      //                     ui.vertical(|ui| {
+      //                         ui.add_space(5.);
+      //                         ui.horizontal(|ui| {
+      //                             ui.label(
+      //                                 RichText::new(bounty.title.as_str())
+      //                                     .color(Color32::WHITE)
+      //                                     .size(18.),
+      //                             );
+      //                             ui.label(
+      //                                 RichText::new(format!(
+      //                                     "{}XP",
+      //                                     bounty.points
+      //                                 ))
+      //                                 .color(Color32::WHITE),
+      //                             );
+      //                         });
+      //                         ui.horizontal(|ui| {
+      //                             ui.add_space(5.);
+      //                             ui.label(
+      //                                 RichText::new(
+      //                                     "EXPIRES IN: 3h 2m")
+      //                                 .color(Color32::from_rgb(200, 200, 200))
+      //                                 .size(10.),
+      //                             );
+      //                         });
+      //                     });
+      //                     ui.with_layout(
+      //                         EguiLayout::right_to_left(egui::Align::Center),
+      //                         |ui| {
+      //                             if bounty.redeemed {
+      //                                 ui.label(
+      //                                     RichText::new(format!(
+      //                                         "+{}XP",
+      //                                         bounty.points
+      //                                     ))
+      //                                     .color(Color32::WHITE),
+      //                                 );
+      //                             } else if bounty.out_of_guesses {
+      //                                 ui.label(
+      //                                     RichText::new("Out of guesses")
+      //                                         .color(Color32::WHITE),
+      //                                 );
+      //                             } else {
+      //                                 #[allow(clippy::collapsible_if)]
+      //                                 if ui
+      //                                     .add(
+      //                                         Button::new(
+      //                                             RichText::new("Open")
+      //                                                 .color(Color32::WHITE),
+      //                                         )
+      //                                         .fill(Color32::from_rgb(150, 0, 150))
+      //                                         .min_size(Vec2::new(45., 45.))
+      //                                         .rounding(4.),
+      //                                     )
+      //                                     .clicked()
+      //                                 {
+      //                                     dbg!("Click");
+      //                                 }
+      //                             }
+      //                         },
+      //                     );
+      //                 });
+      //             });
+      //     }
+      //     ui.add_space(5.);
+      // });
+      // });
+    });
+  }
+}
+
+fn draw_label<'a>(ui: &'_ mut Ui, text: RichText) -> Node<State<'a>> {
+  let label = egui::Label::new(text.clone());
+  let galley = label.layout_in_ui(ui).1.rect;
+  let text_area = area_from(galley);
+  draw(move |area, state: &mut State| {
+    state.ui.put(rect(area), egui::Label::new(text.clone()));
+  })
+  .width(text_area.width)
+  .height(text_area.height)
+}

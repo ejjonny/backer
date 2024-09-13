@@ -1,0 +1,11 @@
+[package]
+name = "egui-case-study"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+backer = { path = "../backer" }
+eframe = "0.28.1"
+egui = { version = "0.28.1" }
+egui_extras = { version = "0.28.1", features = ["default", "image"] }
+hound = "3.5.1"
