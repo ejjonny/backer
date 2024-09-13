@@ -25,11 +25,11 @@ fn main() -> eframe::Result {
 }
 
 struct MyApp {
-  bounties: Vec<Bounty>,
+  items: Vec<Item>,
   show_backer: bool,
 }
 
-struct Bounty {
+struct Item {
   title: String,
   points: i32,
 }
@@ -37,17 +37,17 @@ struct Bounty {
 impl Default for MyApp {
   fn default() -> Self {
     MyApp {
-      bounties: vec![
-        Bounty {
-          title: "Bounty 1".to_string(),
+      items: vec![
+        Item {
+          title: "Item 1".to_string(),
           points: 6000000,
         },
-        Bounty {
-          title: "Bounty 2".to_string(),
+        Item {
+          title: "Item 2".to_string(),
           points: 6000,
         },
-        Bounty {
-          title: "Bounty 3".to_string(),
+        Item {
+          title: "Item 3".to_string(),
           points: 80,
         },
       ],
@@ -74,7 +74,7 @@ fn rect(area: Area) -> Rect {
 
 struct State<'a> {
   ui: &'a mut Ui,
-  bounties: &'a mut Vec<Bounty>,
+  bounties: &'a mut Vec<Item>,
   backer_on: &'a mut bool,
 }
 impl eframe::App for MyApp {
@@ -85,7 +85,7 @@ impl eframe::App for MyApp {
       if self.show_backer {
         let mut state = State {
           ui,
-          bounties: &mut self.bounties,
+          bounties: &mut self.items,
           backer_on: &mut self.show_backer,
         };
         Layout::new(|state: &mut State| {
@@ -101,19 +101,19 @@ impl eframe::App for MyApp {
                   *state.backer_on = false
                 }
               })
-              .height(20.),
+              .height(15.),
               group(
                 state
                   .bounties
                   .iter()
                   .enumerate()
-                  .map(|(i, bounty)| {
+                  .map(|(i, item)| {
                     stack(vec![
                       draw(|area, state: &mut State| {
                         state.ui.painter().rect_stroke(
                           rect(area),
                           10.,
-                          Stroke::new(3., Color32::from_rgb(50, 50, 50)),
+                          Stroke::new(2., Color32::from_rgb(50, 50, 50)),
                         );
                       }),
                       row_spaced(
@@ -130,7 +130,7 @@ impl eframe::App for MyApp {
                           })
                           .aspect(1.),
                           column_spaced(
-                            5.,
+                            3.,
                             vec![
                               row_spaced(
                                 10.,
@@ -144,7 +144,7 @@ impl eframe::App for MyApp {
                                   .x_align(XAlign::Leading),
                                   draw_label(
                                     state.ui,
-                                    RichText::new(format!("{}XP", bounty.points))
+                                    RichText::new(format!("{}XP", item.points))
                                       .color(Color32::WHITE),
                                   ),
                                 ],
@@ -160,7 +160,7 @@ impl eframe::App for MyApp {
                             ],
                           )
                           .x_align(XAlign::Leading)
-                          .width_range(150.0..),
+                          .width_range(120.0..),
                           draw(|area, state: &mut State| {
                             if state
                               .ui
@@ -178,9 +178,9 @@ impl eframe::App for MyApp {
                           .aspect(1.),
                         ],
                       )
-                      .pad(10.),
+                      .pad(7.),
                     ])
-                    .height(60.)
+                    .height(58.)
                   })
                   .collect(),
               ),
@@ -195,8 +195,8 @@ impl eframe::App for MyApp {
           if ui.button("Backer On").clicked() {
             self.show_backer = true
           }
-          let bounties = &self.bounties;
-          for bounty in bounties.iter() {
+          let bounties = &self.items;
+          for Item in bounties.iter() {
             Frame::group(ui.style())
               .rounding(10.)
               .outer_margin(Margin::same(3.))
@@ -213,11 +213,11 @@ impl eframe::App for MyApp {
                     ui.add_space(5.);
                     ui.horizontal(|ui| {
                       ui.label(
-                        RichText::new(bounty.title.as_str())
+                        RichText::new(Item.title.as_str())
                           .color(Color32::WHITE)
                           .size(18.),
                       );
-                      ui.label(RichText::new(format!("{}XP", bounty.points)).color(Color32::WHITE));
+                      ui.label(RichText::new(format!("{}XP", Item.points)).color(Color32::WHITE));
                     });
                     ui.horizontal(|ui| {
                       ui.add_space(5.);
