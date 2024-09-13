@@ -160,20 +160,26 @@ impl<State> NodeValue<State> {
                     aspect: None,
                 },
             ),
-            NodeValue::Row { elements, .. } => elements.iter().fold(
-                SizeConstraints {
+            NodeValue::Row { elements, .. } => elements
+                .iter()
+                .fold(Option::<SizeConstraints>::None, |current, element| {
+                    if let Some(current) = current {
+                        Some(SizeConstraints {
+                            width: current.width.combine_sum(element.constraints().width),
+                            height: current
+                                .height
+                                .combine_adjacent_priority(element.constraints().height),
+                            aspect: None,
+                        })
+                    } else {
+                        Some(element.constraints())
+                    }
+                })
+                .unwrap_or(SizeConstraints {
                     width: Constraint::none(),
                     height: Constraint::none(),
                     aspect: None,
-                },
-                |current, element| SizeConstraints {
-                    width: current.width.combine_sum(element.constraints().width),
-                    height: current
-                        .height
-                        .combine_adjacent_priority(element.constraints().height),
-                    aspect: None,
-                },
-            ),
+                }),
             NodeValue::Stack(elements) => {
                 let mut cumulative_size = SizeConstraints {
                     width: Constraint::none(),
@@ -522,7 +528,7 @@ fn layout_axis<State>(
             },
         };
 
-        child.layout(area, None, None);
+        child.layout(area, Some(x_align), Some(y_align));
 
         current_pos += child_size + *spacing;
     }
