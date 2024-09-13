@@ -42,6 +42,7 @@ fn my_layout_fn(state: &mut MyState) -> Node<MyState> {
 struct MyState {}
 ```
  */
+#[derive(Debug, Clone)]
 pub struct Layout<State> {
     tree: fn(&mut State) -> Node<State>,
 }
