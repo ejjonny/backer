@@ -325,7 +325,7 @@ fn icon(image: impl Into<ImageSource<'static>> + 'static) -> Node<Ui> {
     })
 }
 
-fn multiline_label<S: AsRef<str> + 'static>(ui: &'_ mut Ui, text: S, size: f32) -> Node<Ui> {
+fn multiline_label<S: AsRef<str> + 'static>(_ui: &'_ mut Ui, text: S, size: f32) -> Node<Ui> {
     draw(move |area, ui: &mut Ui| {
         let layout_job = LayoutJob::single_section(
             text.as_ref().to_string(),
