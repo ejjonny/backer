@@ -31,7 +31,7 @@ jobs:
         run: |
           set -euxo pipefail
 
-          trunk build --release --public-url ./backer
+          trunk build --release
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
