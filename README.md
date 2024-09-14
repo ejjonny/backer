@@ -23,11 +23,10 @@ This project intends to be a flexible layout tool & not much else.
 
 ## Preview
 
+Check out the [demo site](https://ejjonny.github.io/backer/): a mock page showcasing layout capabilities in a realistic interface.
+
 Backer relies on simple rules that can compose to create complex, flexible layouts.
 
-![align](https://github.com/user-attachments/assets/ee335c64-64b1-430f-9b1b-5069e97ef3e7)
-![column](https://github.com/user-attachments/assets/38984680-637f-447d-8358-e4df37158fa4)
-![complex](https://github.com/user-attachments/assets/fa8eb97c-e02c-44ad-8f25-f99f52131dd3)
 ![stretched](https://github.com/user-attachments/assets/81fd3e70-a504-49c7-92b6-f4c6b05a5371)
 
 <details>
