@@ -1,10 +1,9 @@
 #![warn(clippy::all, rust_2018_idioms)]
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
 
-// When compiling natively:
 #[cfg(not(target_arch = "wasm32"))]
 fn main() -> eframe::Result {
-    env_logger::init(); // Log to stderr (if you run with `RUST_LOG=debug`).
+    env_logger::init();
 
     let native_options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
@@ -17,9 +16,17 @@ fn main() -> eframe::Result {
         native_options,
         Box::new(|cc| {
             egui_extras::install_image_loaders(&cc.egui_ctx);
+            if is_mobile(&cc.egui_ctx) {
+                cc.egui_ctx.set_zoom_factor(0.5);
+            }
             Ok(Box::new(demo_site::TemplateApp::new()))
         }),
     )
+}
+
+fn is_mobile(ctx: &egui::Context) -> bool {
+    let screen_size = ctx.screen_rect().size();
+    screen_size.x < 550.0
 }
 
 // When compiling to web using trunk:
@@ -37,6 +44,9 @@ fn main() {
                 web_options,
                 Box::new(|cc| {
                     egui_extras::install_image_loaders(&cc.egui_ctx);
+                    if is_mobile(&cc.egui_ctx) {
+                        cc.egui_ctx.set_zoom_factor(0.5);
+                    }
                     Ok(Box::new(demo_site::TemplateApp::new()))
                 }),
             )
