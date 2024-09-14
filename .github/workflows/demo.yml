@@ -28,7 +28,7 @@ jobs:
         run: |
           set -euxo pipefail
 
-          cd examples/demo-site
+          cd backer/examples/demo-site
           trunk build --release
       - name: Checkout
         uses: actions/checkout@v4
@@ -37,7 +37,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: "examples/demo-site/dist"
+          path: "backer/examples/demo-site/dist"
       - name: Deploy to GitHub Pages
         if: github.ref == 'refs/heads/main'
         id: deployment
