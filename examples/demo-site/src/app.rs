@@ -234,7 +234,8 @@ fn main_view(ui: &mut Ui) -> Node<Ui> {
                                 stack(vec![
                                     rect(DEMO_FG, DEMO_BG, 5.),
                                     draw_label_color(ui, "@UserName", 12., DEMO_FG)
-                                        .x_align(XAlign::Leading),
+                                        .x_align(XAlign::Leading)
+                                        .pad(5. * SCALE),
                                 ])
                                 .height(25. * SCALE),
                                 draw_label_color(ui, "Bio", 12., DEMO_FG_SECONDARY),
