@@ -24,20 +24,20 @@ jobs:
     steps:
       - name: Install trunk
         uses: jetli/trunk-action@v0.5.0
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Build
+        working-directory: "examples/demo-site"
         run: |
           set -euxo pipefail
 
-          ls ./
           trunk build --release
-      - name: Checkout
-        uses: actions/checkout@v4
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: "backer/examples/demo-site/dist"
+          path: "examples/demo-site/dist"
       - name: Deploy to GitHub Pages
         if: github.ref == 'refs/heads/main'
         id: deployment
