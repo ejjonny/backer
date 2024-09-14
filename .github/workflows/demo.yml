@@ -28,7 +28,7 @@ jobs:
         run: |
           set -euxo pipefail
 
-          cd backer/examples/demo-site
+          ls -a
           trunk build --release
       - name: Checkout
         uses: actions/checkout@v4
