@@ -31,7 +31,7 @@ jobs:
         run: |
           set -euxo pipefail
 
-          trunk build --release --public-url ejjonny.github.io/backer
+          trunk build --release --public-url ./backer
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
