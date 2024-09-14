@@ -31,7 +31,7 @@ const DEMO_DESTRUCTIVE_SECONDARY: Color32 = Color32::from_rgb(210, 40, 40);
 const DEMO_HINT: Color32 = Color32::from_rgb(35, 35, 38);
 const DEMO_FG: Color32 = Color32::from_rgb(250, 250, 255);
 const DEMO_FG_SECONDARY: Color32 = Color32::from_rgb(180, 180, 183);
-const SCALE: f32 = 0.7;
+const SCALE: f32 = 0.5;
 
 fn my_layout_fn(ui: &mut Ui) -> Node<Ui> {
     stack(vec![
@@ -56,16 +56,23 @@ fn footer(ui: &mut Ui) -> Node<Ui> {
     row_spaced(
         20. * SCALE,
         vec![
-            draw_label_color(ui, "Game", 12., DEMO_FG_SECONDARY),
-            draw_label_color(ui, "Terms & Conditions", 12., DEMO_FG_SECONDARY),
-            draw_label_color(ui, "Privacy Policy", 12., DEMO_FG_SECONDARY),
+            row_spaced(
+                20. * SCALE,
+                vec![
+                    draw_label_color(ui, "Game", 12., DEMO_FG_SECONDARY),
+                    draw_label_color(ui, "Terms & Conditions", 12., DEMO_FG_SECONDARY),
+                    draw_label_color(ui, "Privacy Policy", 12., DEMO_FG_SECONDARY),
+                ],
+            )
+            .x_align(XAlign::Leading),
             space(),
             draw_label_color(
                 ui,
                 "© Backer 2021. All rights reserved",
                 12.,
                 DEMO_FG_SECONDARY,
-            ),
+            )
+            .width(300. * SCALE),
         ],
     )
     .pad(10. * SCALE)
