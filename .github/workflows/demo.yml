@@ -25,10 +25,10 @@ jobs:
       - name: Install trunk
         uses: jetli/trunk-action@v0.5.0
       - name: Build
-        working-directory: "examples/demo-site"
         run: |
           set -euxo pipefail
 
+          cd examples/demo-site
           trunk build --release
       - name: Checkout
         uses: actions/checkout@v4
