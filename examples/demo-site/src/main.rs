@@ -35,8 +35,10 @@ fn main() {
             .start(
                 "the_canvas_id",
                 web_options,
-                Box::new(|_| Ok(Box::new(demo_site::TemplateApp::new()))),
-            )
+                Box::new(|cc| {
+                    egui_extras::install_image_loaders(&cc.egui_ctx);
+                    Ok(Box::new(demo_site::TemplateApp::new()))
+                }),            )
             .await;
 
         // Remove the loading text and spinner:
