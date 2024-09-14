@@ -388,17 +388,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "atest"
-version = "0.1.0"
-dependencies = [
- "backer",
- "eframe",
- "egui",
- "egui_extras",
- "hound",
-]
-
-[[package]]
 name = "atomic-waker"
 version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -460,7 +449,7 @@ checksum = "0c4b4d0bd25bd0b74681c0ad21497610ce1b7c91b1022cd21c80c6fbdd9476b0"
 
 [[package]]
 name = "backer"
-version = "0.4.1"
+version = "0.5.1"
 
 [[package]]
 name = "bit-set"
@@ -957,6 +946,17 @@ dependencies = [
  "log",
  "nohash-hasher",
  "serde",
+]
+
+[[package]]
+name = "egui-case-study"
+version = "0.1.0"
+dependencies = [
+ "backer",
+ "eframe",
+ "egui",
+ "egui_extras",
+ "hound",
 ]
 
 [[package]]
