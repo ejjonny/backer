@@ -31,7 +31,7 @@ const DEMO_DESTRUCTIVE_SECONDARY: Color32 = Color32::from_rgb(210, 40, 40);
 const DEMO_HINT: Color32 = Color32::from_rgb(35, 35, 38);
 const DEMO_FG: Color32 = Color32::from_rgb(250, 250, 255);
 const DEMO_FG_SECONDARY: Color32 = Color32::from_rgb(180, 180, 183);
-const SCALE: f32 = 0.5;
+const SCALE: f32 = 1.0;
 
 fn my_layout_fn(ui: &mut Ui) -> Node<Ui> {
     stack(vec![
