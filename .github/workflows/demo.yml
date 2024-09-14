@@ -28,7 +28,7 @@ jobs:
         run: |
           set -euxo pipefail
 
-          ls -a
+          ls ./
           trunk build --release
       - name: Checkout
         uses: actions/checkout@v4
