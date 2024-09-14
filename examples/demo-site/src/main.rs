@@ -38,7 +38,8 @@ fn main() {
                 Box::new(|cc| {
                     egui_extras::install_image_loaders(&cc.egui_ctx);
                     Ok(Box::new(demo_site::TemplateApp::new()))
-                }),            )
+                }),
+            )
             .await;
 
         // Remove the loading text and spinner:
