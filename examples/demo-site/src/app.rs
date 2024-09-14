@@ -34,7 +34,7 @@ const DEMO_FG_SECONDARY: Color32 = Color32::from_rgb(180, 180, 183);
 
 fn my_layout_fn(ui: &mut Ui) -> Node<Ui> {
     stack(vec![
-        rect(Color32::TRANSPARENT, DEMO_HINT, 0.),
+        rect(Color32::TRANSPARENT, DEMO_BG, 0.),
         row(vec![
             side_bar(ui),
             row_divider(DEMO_GRAY).width(1.),
@@ -42,6 +42,7 @@ fn my_layout_fn(ui: &mut Ui) -> Node<Ui> {
                 header(ui),
                 col_divider(DEMO_GRAY).height(1.),
                 main_view(ui),
+                space(),
                 col_divider(DEMO_GRAY).height(1.),
                 footer(ui),
             ])
@@ -74,193 +75,179 @@ fn main_view(ui: &mut Ui) -> Node<Ui> {
     let profile_blurb = "Your public profile URL can be shared with anyone and allows them to immediately see your bases and activity in Backer.";
     let pic_blurb = "Upload a profile picture of yourself or the character you always wanted to be. Your avatar will be displayed all over the Backer world.";
     let info_blurb = "Tell the world about yourself. Information you add will be visible only in your profile, not for all users.";
-    stack(vec![
-        rect(DEMO_GRAY, DEMO_BG, 0.),
-        stack(vec![
-            rect(DEMO_GRAY, DEMO_HINT, 5.),
-            column_spaced(
-                10.,
-                vec![
-                    row_spaced(
-                        10.,
-                        vec![
-                            column_spaced(
-                                10.,
-                                vec![
-                                    draw_label(ui, "Public profile", 18.),
-                                    multiline_label(ui, profile_blurb, 10.).height(50.),
-                                ],
-                            )
-                            .align(Align::TopLeading)
-                            .width_range(300.0..),
-                            column_spaced(
-                                10.,
-                                vec![
-                                    stack(vec![
-                                        rect(DEMO_FG, DEMO_BG, 5.),
-                                        row_spaced(
-                                            10.,
-                                            vec![
-                                                draw_label_color(
-                                                    ui,
-                                                    "ejjonny.github.io/backer/username",
-                                                    12.,
-                                                    DEMO_FG_SECONDARY,
-                                                ),
-                                                icon(include_image!("../assets/copy.svg"))
-                                                    .aspect(1.),
-                                            ],
-                                        )
-                                        .pad(5.),
-                                    ])
-                                    .height(25.),
+    stack(vec![stack(vec![
+        rect(DEMO_GRAY, DEMO_HINT, 5.),
+        column_spaced(
+            10.,
+            vec![
+                row_spaced(
+                    10.,
+                    vec![
+                        column_spaced(
+                            10.,
+                            vec![
+                                draw_label(ui, "Public profile", 18.),
+                                multiline_label(ui, profile_blurb, 10.).height(50.),
+                            ],
+                        )
+                        .align(Align::TopLeading)
+                        .width_range(300.0..),
+                        column_spaced(
+                            10.,
+                            vec![
+                                stack(vec![
+                                    rect(DEMO_FG, DEMO_BG, 5.),
                                     row_spaced(
                                         10.,
                                         vec![
-                                            stack(vec![
-                                                rect(DEMO_FG, DEMO_BG, 5.),
-                                                row_spaced(
-                                                    10.,
-                                                    vec![
-                                                        icon(include_image!("../assets/share.svg"))
-                                                            .aspect(1.),
-                                                        draw_label_color(
-                                                            ui,
-                                                            "Share",
-                                                            12.,
-                                                            DEMO_FG_SECONDARY,
-                                                        ),
-                                                    ],
-                                                )
-                                                .pad(5.),
-                                            ])
-                                            .height(25.),
-                                            stack(vec![
-                                                rect(DEMO_FG, DEMO_BG, 5.),
-                                                row_spaced(
-                                                    10.,
-                                                    vec![
-                                                        icon(include_image!(
-                                                            "../assets/map-pin.svg"
-                                                        ))
-                                                        .aspect(1.),
-                                                        draw_label_color(
-                                                            ui,
-                                                            "View location",
-                                                            12.,
-                                                            DEMO_FG_SECONDARY,
-                                                        ),
-                                                    ],
-                                                )
-                                                .pad(5.),
-                                            ])
-                                            .height(25.),
-                                        ],
-                                    ),
-                                ],
-                            ),
-                        ],
-                    )
-                    .y_align(YAlign::Top),
-                    col_divider(DEMO_GRAY).height(1.),
-                    row_spaced(
-                        10.,
-                        vec![
-                            column_spaced(
-                                10.,
-                                vec![
-                                    draw_label(ui, "Edit PFP", 18.),
-                                    multiline_label(ui, pic_blurb, 10.).height(50.),
-                                ],
-                            )
-                            .align(Align::TopLeading)
-                            .width_range(300.0..),
-                            row_spaced(
-                                10.,
-                                vec![
-                                    rect(DEMO_FG, DEMO_BG, 100.).height(30.).width(30.),
-                                    column_spaced(
-                                        5.,
-                                        vec![
-                                            draw_label(ui, "@UserName", 12.),
                                             draw_label_color(
                                                 ui,
-                                                "Living, laughing, loving",
-                                                10.,
+                                                "ejjonny.github.io/backer/username",
+                                                12.,
                                                 DEMO_FG_SECONDARY,
                                             ),
+                                            icon(include_image!("../assets/copy.svg")).aspect(1.),
                                         ],
                                     )
-                                    .x_align(XAlign::Leading),
-                                    stack(vec![
-                                        rect(DEMO_FG, DEMO_BG, 5.),
-                                        draw_label_color(ui, "Upload", 12., DEMO_FG_SECONDARY)
+                                    .pad(5.),
+                                ])
+                                .height(25.),
+                                row_spaced(
+                                    10.,
+                                    vec![
+                                        stack(vec![
+                                            rect(DEMO_FG, DEMO_BG, 5.),
+                                            row_spaced(
+                                                10.,
+                                                vec![
+                                                    icon(include_image!("../assets/share.svg"))
+                                                        .aspect(1.),
+                                                    draw_label_color(
+                                                        ui,
+                                                        "Share",
+                                                        12.,
+                                                        DEMO_FG_SECONDARY,
+                                                    ),
+                                                ],
+                                            )
                                             .pad(5.),
-                                    ])
-                                    .height(25.),
-                                    stack(vec![
-                                        rect(DEMO_DESTRUCTIVE_SECONDARY, DEMO_BG, 5.),
-                                        draw_label_color(ui, "Remove", 12., DEMO_DESTRUCTIVE)
+                                        ])
+                                        .height(25.),
+                                        stack(vec![
+                                            rect(DEMO_FG, DEMO_BG, 5.),
+                                            row_spaced(
+                                                10.,
+                                                vec![
+                                                    icon(include_image!("../assets/map-pin.svg"))
+                                                        .aspect(1.),
+                                                    draw_label_color(
+                                                        ui,
+                                                        "View location",
+                                                        12.,
+                                                        DEMO_FG_SECONDARY,
+                                                    ),
+                                                ],
+                                            )
                                             .pad(5.),
-                                    ])
-                                    .height(25.),
-                                ],
-                            ),
-                        ],
-                    ),
-                    col_divider(DEMO_GRAY).height(1.),
-                    row_spaced(
-                        10.,
-                        vec![
-                            column_spaced(
-                                10.,
-                                vec![
-                                    draw_label(ui, "Edit personal information", 18.),
-                                    multiline_label(ui, info_blurb, 10.).height(50.),
-                                ],
-                            )
-                            .align(Align::TopLeading)
-                            .width_range(300.0..),
-                            column_spaced(
-                                5.,
-                                vec![
-                                    draw_label_color(ui, "Edit username", 12., DEMO_FG_SECONDARY),
-                                    stack(vec![
-                                        rect(DEMO_FG, DEMO_BG, 5.),
-                                        draw_label_color(ui, "@UserName", 12., DEMO_FG)
-                                            .x_align(XAlign::Leading)
-                                            .pad(5.),
-                                    ])
-                                    .height(25.),
-                                    draw_label_color(ui, "Bio", 12., DEMO_FG_SECONDARY),
-                                    stack(vec![
-                                        rect(DEMO_FG, DEMO_BG, 5.),
+                                        ])
+                                        .height(25.),
+                                    ],
+                                ),
+                            ],
+                        ),
+                    ],
+                )
+                .y_align(YAlign::Top),
+                col_divider(DEMO_GRAY).height(1.),
+                row_spaced(
+                    10.,
+                    vec![
+                        column_spaced(
+                            10.,
+                            vec![
+                                draw_label(ui, "Edit PFP", 18.),
+                                multiline_label(ui, pic_blurb, 10.).height(50.),
+                            ],
+                        )
+                        .align(Align::TopLeading)
+                        .width_range(300.0..),
+                        row_spaced(
+                            10.,
+                            vec![
+                                rect(DEMO_FG, DEMO_BG, 100.).height(30.).width(30.),
+                                column_spaced(
+                                    5.,
+                                    vec![
+                                        draw_label(ui, "@UserName", 12.),
                                         draw_label_color(
                                             ui,
                                             "Living, laughing, loving",
-                                            12.,
-                                            DEMO_FG,
-                                        )
+                                            10.,
+                                            DEMO_FG_SECONDARY,
+                                        ),
+                                    ],
+                                )
+                                .x_align(XAlign::Leading),
+                                stack(vec![
+                                    rect(DEMO_FG, DEMO_BG, 5.),
+                                    draw_label_color(ui, "Upload", 12., DEMO_FG_SECONDARY).pad(5.),
+                                ])
+                                .height(25.),
+                                stack(vec![
+                                    rect(DEMO_DESTRUCTIVE_SECONDARY, DEMO_BG, 5.),
+                                    draw_label_color(ui, "Remove", 12., DEMO_DESTRUCTIVE).pad(5.),
+                                ])
+                                .height(25.),
+                            ],
+                        ),
+                    ],
+                ),
+                col_divider(DEMO_GRAY).height(1.),
+                row_spaced(
+                    10.,
+                    vec![
+                        column_spaced(
+                            10.,
+                            vec![
+                                draw_label(ui, "Edit personal information", 18.),
+                                multiline_label(ui, info_blurb, 10.).height(50.),
+                            ],
+                        )
+                        .align(Align::TopLeading)
+                        .width_range(300.0..),
+                        column_spaced(
+                            5.,
+                            vec![
+                                draw_label_color(ui, "Edit username", 12., DEMO_FG_SECONDARY),
+                                stack(vec![
+                                    rect(DEMO_FG, DEMO_BG, 5.),
+                                    draw_label_color(ui, "@UserName", 12., DEMO_FG)
+                                        .x_align(XAlign::Leading)
+                                        .pad(5.),
+                                ])
+                                .height(25.),
+                                draw_label_color(ui, "Bio", 12., DEMO_FG_SECONDARY),
+                                stack(vec![
+                                    rect(DEMO_FG, DEMO_BG, 5.),
+                                    draw_label_color(ui, "Living, laughing, loving", 12., DEMO_FG)
                                         .align(Align::TopLeading)
                                         .pad(5.),
-                                    ])
-                                    .height(50.),
-                                ],
-                            )
-                            .x_align(XAlign::Leading),
-                        ],
-                    )
-                    .y_align(YAlign::Top),
-                    space(),
-                ],
-            )
-            .align(Align::TopLeading)
-            .pad_y(40.)
-            .pad_x(30.),
-            rect_stroke(DEMO_GRAY),
-        ])
-        .pad(20.),
+                                ])
+                                .height(50.),
+                            ],
+                        )
+                        .x_align(XAlign::Leading),
+                    ],
+                )
+                .y_align(YAlign::Top),
+            ],
+        )
+        .align(Align::TopLeading)
+        .pad_y(40.)
+        .pad_x(30.),
+        rect_stroke(DEMO_GRAY),
     ])
+    .pad(20.)])
 }
 
 fn side_bar(ui: &mut Ui) -> Node<Ui> {
