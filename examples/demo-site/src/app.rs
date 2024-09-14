@@ -31,7 +31,7 @@ const DEMO_DESTRUCTIVE_SECONDARY: Color32 = Color32::from_rgb(210, 40, 40);
 const DEMO_HINT: Color32 = Color32::from_rgb(35, 35, 38);
 const DEMO_FG: Color32 = Color32::from_rgb(250, 250, 255);
 const DEMO_FG_SECONDARY: Color32 = Color32::from_rgb(180, 180, 183);
-const SCALE: f32 = 0.5;
+const SCALE: f32 = 0.7;
 
 fn my_layout_fn(ui: &mut Ui) -> Node<Ui> {
     stack(vec![
@@ -414,7 +414,7 @@ fn row_divider(color: Color32) -> Node<Ui> {
 fn rect(stroke: Color32, fill: Color32, rounding: f32) -> Node<Ui> {
     draw(move |area, ui: &mut Ui| {
         ui.painter()
-            .rect_stroke(rect_from(area), rounding, Stroke::new(1., stroke));
+            .rect_stroke(rect_from(area), rounding * SCALE, Stroke::new(1., stroke));
         ui.painter().rect_filled(rect_from(area), rounding, fill);
     })
 }
@@ -422,7 +422,7 @@ fn rect(stroke: Color32, fill: Color32, rounding: f32) -> Node<Ui> {
 fn rect_stroke(color: Color32) -> Node<Ui> {
     draw(move |area, ui: &mut Ui| {
         ui.painter()
-            .rect_stroke(rect_from(area), 5., Stroke::new(1., color));
+            .rect_stroke(rect_from(area), 5. * SCALE, Stroke::new(1., color));
     })
 }
 
