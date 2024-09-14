@@ -5,7 +5,9 @@ use egui::{
 };
 
 #[derive(Default)]
-pub struct TemplateApp {}
+pub struct TemplateApp {
+    zoom_set: bool,
+}
 
 impl TemplateApp {
     pub fn new() -> Self {
@@ -15,6 +17,14 @@ impl TemplateApp {
 
 impl eframe::App for TemplateApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        if !self.zoom_set {
+            self.zoom_set = true;
+            if is_mobile(ctx) {
+                ctx.set_zoom_factor(0.5);
+            } else {
+                ctx.set_zoom_factor(1.0);
+            }
+        }
         egui::CentralPanel::default().show(ctx, |ui| {
             let layout = Layout::new(my_layout_fn);
             let viewport = ctx.input(|i| i.screen_rect());
@@ -22,6 +32,11 @@ impl eframe::App for TemplateApp {
             layout.draw(available_area, ui);
         });
     }
+}
+
+fn is_mobile(ctx: &egui::Context) -> bool {
+    let screen_size = ctx.screen_rect().size();
+    screen_size.x < 550.0
 }
 
 const DEMO_BG: Color32 = Color32::from_rgb(25, 25, 27);

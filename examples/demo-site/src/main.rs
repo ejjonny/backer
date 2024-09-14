@@ -16,17 +16,9 @@ fn main() -> eframe::Result {
         native_options,
         Box::new(|cc| {
             egui_extras::install_image_loaders(&cc.egui_ctx);
-            if is_mobile(&cc.egui_ctx) {
-                cc.egui_ctx.set_zoom_factor(0.5);
-            }
             Ok(Box::new(demo_site::TemplateApp::new()))
         }),
     )
-}
-
-fn is_mobile(ctx: &egui::Context) -> bool {
-    let screen_size = ctx.screen_rect().size();
-    screen_size.x < 550.0
 }
 
 // When compiling to web using trunk:
@@ -44,9 +36,6 @@ fn main() {
                 web_options,
                 Box::new(|cc| {
                     egui_extras::install_image_loaders(&cc.egui_ctx);
-                    if is_mobile(&cc.egui_ctx) {
-                        cc.egui_ctx.set_zoom_factor(0.5);
-                    }
                     Ok(Box::new(demo_site::TemplateApp::new()))
                 }),
             )
