@@ -1,8 +1,7 @@
 use backer::{models::*, nodes::*, Layout, Node};
-use eframe::glow::CLEAR;
 use egui::{
-    include_image, text::LayoutJob, vec2, Align as EguiAlign, Button, Color32, Image, ImageSource,
-    Label, Pos2, Rect, RichText, Sense, Stroke, TextBuffer, Ui, Widget,
+    include_image, text::LayoutJob, Align as EguiAlign, Color32, Image, ImageSource, Label, Pos2,
+    Rect, Stroke, Ui,
 };
 
 #[derive(Default)]
@@ -35,7 +34,7 @@ const DEMO_FG_SECONDARY: Color32 = Color32::from_rgb(180, 180, 183);
 
 fn my_layout_fn(ui: &mut Ui) -> Node<Ui> {
     stack(vec![
-        rect(Color32::TRANSPARENT, DEMO_BG, 0.),
+        rect(Color32::TRANSPARENT, DEMO_HINT, 0.),
         row(vec![
             side_bar(ui),
             row_divider(DEMO_GRAY).width(1.),
@@ -76,19 +75,22 @@ fn main_view(ui: &mut Ui) -> Node<Ui> {
     let pic_blurb = "Upload a profile picture of yourself or the character you always wanted to be. Your avatar will be displayed all over the Backer world.";
     let info_blurb = "Tell the world about yourself. Information you add will be visible only in your profile, not for all users.";
     stack(vec![
-        rect(DEMO_GRAY, DEMO_HINT, 0.),
+        rect(DEMO_GRAY, DEMO_BG, 0.),
         stack(vec![
-            rect(DEMO_GRAY, DEMO_BG, 5.),
+            rect(DEMO_GRAY, DEMO_HINT, 5.),
             column_spaced(
                 10.,
                 vec![
                     row_spaced(
                         10.,
                         vec![
-                            column(vec![
-                                draw_label(ui, "Public profile", 18.),
-                                multiline_label(ui, profile_blurb, 10.).height(50.),
-                            ])
+                            column_spaced(
+                                10.,
+                                vec![
+                                    draw_label(ui, "Public profile", 18.),
+                                    multiline_label(ui, profile_blurb, 10.).height(50.),
+                                ],
+                            )
                             .align(Align::TopLeading)
                             .width_range(300.0..),
                             column_spaced(
@@ -164,10 +166,13 @@ fn main_view(ui: &mut Ui) -> Node<Ui> {
                     row_spaced(
                         10.,
                         vec![
-                            column(vec![
-                                draw_label(ui, "Edit PFP", 18.),
-                                multiline_label(ui, pic_blurb, 10.).height(50.),
-                            ])
+                            column_spaced(
+                                10.,
+                                vec![
+                                    draw_label(ui, "Edit PFP", 18.),
+                                    multiline_label(ui, pic_blurb, 10.).height(50.),
+                                ],
+                            )
                             .align(Align::TopLeading)
                             .width_range(300.0..),
                             row_spaced(
@@ -180,7 +185,7 @@ fn main_view(ui: &mut Ui) -> Node<Ui> {
                                             draw_label(ui, "@UserName", 12.),
                                             draw_label_color(
                                                 ui,
-                                                "Living, laughing loving",
+                                                "Living, laughing, loving",
                                                 10.,
                                                 DEMO_FG_SECONDARY,
                                             ),
@@ -207,15 +212,46 @@ fn main_view(ui: &mut Ui) -> Node<Ui> {
                     row_spaced(
                         10.,
                         vec![
-                            column(vec![
-                                draw_label(ui, "Edit personal information", 18.),
-                                multiline_label(ui, info_blurb, 10.).height(50.),
-                            ])
+                            column_spaced(
+                                10.,
+                                vec![
+                                    draw_label(ui, "Edit personal information", 18.),
+                                    multiline_label(ui, info_blurb, 10.).height(50.),
+                                ],
+                            )
                             .align(Align::TopLeading)
                             .width_range(300.0..),
-                            empty(),
+                            column_spaced(
+                                5.,
+                                vec![
+                                    draw_label_color(ui, "Edit username", 12., DEMO_FG_SECONDARY),
+                                    stack(vec![
+                                        rect(DEMO_FG, DEMO_BG, 5.),
+                                        draw_label_color(ui, "@UserName", 12., DEMO_FG)
+                                            .x_align(XAlign::Leading)
+                                            .pad(5.),
+                                    ])
+                                    .height(25.),
+                                    draw_label_color(ui, "Bio", 12., DEMO_FG_SECONDARY),
+                                    stack(vec![
+                                        rect(DEMO_FG, DEMO_BG, 5.),
+                                        draw_label_color(
+                                            ui,
+                                            "Living, laughing, loving",
+                                            12.,
+                                            DEMO_FG,
+                                        )
+                                        .align(Align::TopLeading)
+                                        .pad(5.),
+                                    ])
+                                    .height(50.),
+                                ],
+                            )
+                            .x_align(XAlign::Leading),
                         ],
-                    ),
+                    )
+                    .y_align(YAlign::Top),
+                    space(),
                 ],
             )
             .align(Align::TopLeading)
@@ -257,37 +293,41 @@ fn header(ui: &mut Ui) -> Node<Ui> {
     row_spaced(
         10.,
         vec![
-            draw_label(ui, "My Account", 22.).pad(5.),
+            draw_label(ui, "My Account", 18.)
+                .y_align(YAlign::Bottom)
+                .width(100.),
             space(),
             stack(vec![
+                rect(DEMO_FG, DEMO_HINT, 5.),
                 draw_label(ui, "$115,000", 12.),
-                rect_stroke(DEMO_GRAY),
             ])
             .width(80.),
             stack(vec![
+                rect(DEMO_FG, DEMO_HINT, 5.),
                 row(vec![draw_label(ui, "Operational", 12.)]),
-                rect_stroke(DEMO_GRAY),
             ])
             .width(90.),
             stack(vec![
+                rect(DEMO_FG, DEMO_HINT, 5.),
                 icon(include_image!("../assets/bell.svg"))
                     .aspect(1.)
                     .pad_y(8.5)
                     .aspect(1.),
-                rect_stroke(DEMO_GRAY),
             ])
             .aspect(1.),
             stack(vec![
+                rect(DEMO_FG, DEMO_HINT, 5.),
                 icon(include_image!("../assets/user.svg"))
                     .aspect(1.)
                     .pad_y(8.5)
                     .aspect(1.),
-                rect_stroke(DEMO_GRAY),
             ])
             .aspect(1.),
         ],
     )
-    .pad(25.)
+    .pad_top(35.)
+    .pad_bottom(15.)
+    .pad_x(30.)
     .height(80.)
 }
 
@@ -295,14 +335,6 @@ fn icon(image: impl Into<ImageSource<'static>> + 'static) -> Node<Ui> {
     let image = Image::new(image).tint(Color32::WHITE);
     draw(move |area, ui: &mut Ui| {
         ui.put(rect_from(area), image.clone());
-    })
-}
-
-fn button(action: fn(&mut Ui)) -> Node<Ui> {
-    draw(move |area, ui: &mut Ui| {
-        if ui.put(rect_from(area), Button::new("Backer Off")).clicked() {
-            action(ui);
-        }
     })
 }
 
