@@ -33,14 +33,14 @@ jobs:
 
           trunk build --release --public-url https://ejjonny.github.io/backer/
       - name: Setup Pages
-        if: github.ref == 'refs/heads/main'
+        # if: github.ref == 'refs/heads/main'
         uses: actions/configure-pages@v5
       - name: Upload artifact
-        if: github.ref == 'refs/heads/main'
+        # if: github.ref == 'refs/heads/main'
         uses: actions/upload-pages-artifact@v3
         with:
           path: "examples/demo-site/dist"
       - name: Deploy to GitHub Pages
-        if: github.ref == 'refs/heads/main'
+        # if: github.ref == 'refs/heads/main'
         id: deployment
         uses: actions/deploy-pages@v4
