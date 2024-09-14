@@ -38,5 +38,6 @@ jobs:
         with:
           path: "examples/demo-site/dist"
       - name: Deploy to GitHub Pages
+        if: github.ref == 'refs/heads/main'
         id: deployment
         uses: actions/deploy-pages@v4
