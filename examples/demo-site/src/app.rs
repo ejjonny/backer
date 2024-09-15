@@ -21,6 +21,11 @@ impl TemplateApp {
     }
 }
 
+struct State<'a> {
+    ui: &'a mut Ui,
+    sidebar: &'a mut bool,
+}
+
 impl eframe::App for TemplateApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         if self.web && !self.zoom_set {
@@ -48,46 +53,45 @@ const DEMO_HINT: Color32 = Color32::from_rgb(35, 35, 38);
 const DEMO_FG: Color32 = Color32::from_rgb(250, 250, 255);
 const DEMO_FG_SECONDARY: Color32 = Color32::from_rgb(180, 180, 183);
 
-struct State<'a> {
-    ui: &'a mut Ui,
-    sidebar: &'a mut bool,
-}
-
-fn my_layout_fn<'a>(ui: &mut State<'_>) -> Node<State<'a>> {
+fn my_layout_fn<'a>(state: &mut State<'_>) -> Node<State<'a>> {
     stack(vec![
         rect(Color32::TRANSPARENT, DEMO_BG, 0.),
         row(vec![
-            if *ui.sidebar { side_bar(ui) } else { empty() },
             row_divider(DEMO_GRAY).width(1.),
             column(vec![
-                header(ui),
+                header(state),
                 col_divider(DEMO_GRAY).height(1.),
-                main_view(ui),
+                main_view(state),
                 space(),
                 col_divider(DEMO_GRAY).height(1.),
-                footer(ui),
+                footer(state),
             ]),
         ])
         .y_align(YAlign::Top),
+        if *state.sidebar {
+            side_bar(state)
+        } else {
+            empty()
+        },
     ])
 }
 
-fn footer<'a>(ui: &mut State<'_>) -> Node<State<'a>> {
+fn footer<'a>(state: &mut State<'_>) -> Node<State<'a>> {
     row_spaced(
         10.,
         vec![
             row_spaced(
                 20.,
                 vec![
-                    draw_label_color(ui.ui, "Game", 9., DEMO_FG_SECONDARY),
-                    draw_label_color(ui.ui, "Terms & Conditions", 9., DEMO_FG_SECONDARY),
-                    draw_label_color(ui.ui, "Privacy Policy", 9., DEMO_FG_SECONDARY),
+                    draw_label_color(state.ui, "Game", 9., DEMO_FG_SECONDARY),
+                    draw_label_color(state.ui, "Terms & Conditions", 9., DEMO_FG_SECONDARY),
+                    draw_label_color(state.ui, "Privacy Policy", 9., DEMO_FG_SECONDARY),
                 ],
             )
             .x_align(XAlign::Leading),
             space(),
             draw_label_color(
-                ui.ui,
+                state.ui,
                 "© Backer 2021. All rights reserved",
                 9.,
                 DEMO_FG_SECONDARY,
@@ -99,7 +103,7 @@ fn footer<'a>(ui: &mut State<'_>) -> Node<State<'a>> {
     .height(40.)
 }
 
-fn main_view<'a>(ui: &mut State<'_>) -> Node<State<'a>> {
+fn main_view<'a>(state: &mut State<'_>) -> Node<State<'a>> {
     let profile_blurb = "Your public profile URL can be shared with anyone and allows them to immediately see your bases and activity in Backer.";
     let pic_blurb = "Upload a profile picture of yourself or the character you always wanted to be. Your avatar will be displayed all over the Backer world.";
     let info_blurb = "Tell the world about yourself. Information you add will be visible only in your profile, not for all users.";
@@ -114,8 +118,8 @@ fn main_view<'a>(ui: &mut State<'_>) -> Node<State<'a>> {
                         column_spaced(
                             10.,
                             vec![
-                                draw_label(ui.ui, "Public profile", 18.),
-                                multiline_label(ui.ui, profile_blurb, 10.).height(80.),
+                                draw_label(state.ui, "Public profile", 18.),
+                                multiline_label(state.ui, profile_blurb, 10.).height(80.),
                             ],
                         )
                         .align(Align::TopLeading)
@@ -129,7 +133,7 @@ fn main_view<'a>(ui: &mut State<'_>) -> Node<State<'a>> {
                                         10.,
                                         vec![
                                             draw_label_color(
-                                                ui.ui,
+                                                state.ui,
                                                 "ejjonny.io/backer/username",
                                                 12.,
                                                 DEMO_FG_SECONDARY,
@@ -151,7 +155,7 @@ fn main_view<'a>(ui: &mut State<'_>) -> Node<State<'a>> {
                                                     icon(include_image!("../assets/share.svg"))
                                                         .aspect(1.),
                                                     draw_label_color(
-                                                        ui.ui,
+                                                        state.ui,
                                                         "Share",
                                                         12.,
                                                         DEMO_FG_SECONDARY,
@@ -169,7 +173,7 @@ fn main_view<'a>(ui: &mut State<'_>) -> Node<State<'a>> {
                                                     icon(include_image!("../assets/map-pin.svg"))
                                                         .aspect(1.),
                                                     draw_label_color(
-                                                        ui.ui,
+                                                        state.ui,
                                                         "View location",
                                                         12.,
                                                         DEMO_FG_SECONDARY,
@@ -192,8 +196,8 @@ fn main_view<'a>(ui: &mut State<'_>) -> Node<State<'a>> {
                         column_spaced(
                             10.,
                             vec![
-                                draw_label(ui.ui, "Edit PFP", 18.),
-                                multiline_label(ui.ui, pic_blurb, 10.).height(80.),
+                                draw_label(state.ui, "Edit PFP", 18.),
+                                multiline_label(state.ui, pic_blurb, 10.).height(80.),
                             ],
                         )
                         .align(Align::TopLeading)
@@ -208,9 +212,9 @@ fn main_view<'a>(ui: &mut State<'_>) -> Node<State<'a>> {
                                         column_spaced(
                                             5.,
                                             vec![
-                                                draw_label(ui.ui, "@UserName", 12.),
+                                                draw_label(state.ui, "@UserName", 12.),
                                                 draw_label_color(
-                                                    ui.ui,
+                                                    state.ui,
                                                     "Living, laughing, loving",
                                                     10.,
                                                     DEMO_FG_SECONDARY,
@@ -226,7 +230,7 @@ fn main_view<'a>(ui: &mut State<'_>) -> Node<State<'a>> {
                                         stack(vec![
                                             rect(DEMO_FG, DEMO_BG, 5.),
                                             draw_label_color(
-                                                ui.ui,
+                                                state.ui,
                                                 "Upload",
                                                 12.,
                                                 DEMO_FG_SECONDARY,
@@ -237,7 +241,7 @@ fn main_view<'a>(ui: &mut State<'_>) -> Node<State<'a>> {
                                         stack(vec![
                                             rect(DEMO_DESTRUCTIVE_SECONDARY, DEMO_BG, 5.),
                                             draw_label_color(
-                                                ui.ui,
+                                                state.ui,
                                                 "Remove",
                                                 12.,
                                                 DEMO_DESTRUCTIVE,
@@ -258,8 +262,8 @@ fn main_view<'a>(ui: &mut State<'_>) -> Node<State<'a>> {
                         column_spaced(
                             10.,
                             vec![
-                                draw_label(ui.ui, "Edit personal information", 18.),
-                                multiline_label(ui.ui, info_blurb, 10.).height(50.),
+                                draw_label(state.ui, "Edit personal information", 18.),
+                                multiline_label(state.ui, info_blurb, 10.).height(50.),
                             ],
                         )
                         .align(Align::TopLeading)
@@ -267,19 +271,19 @@ fn main_view<'a>(ui: &mut State<'_>) -> Node<State<'a>> {
                         column_spaced(
                             5.,
                             vec![
-                                draw_label_color(ui.ui, "Edit username", 12., DEMO_FG_SECONDARY),
+                                draw_label_color(state.ui, "Edit username", 12., DEMO_FG_SECONDARY),
                                 stack(vec![
                                     rect(DEMO_FG, DEMO_BG, 5.),
-                                    draw_label_color(ui.ui, "@UserName", 12., DEMO_FG)
+                                    draw_label_color(state.ui, "@UserName", 12., DEMO_FG)
                                         .x_align(XAlign::Leading)
                                         .pad(5.),
                                 ])
                                 .height(25.),
-                                draw_label_color(ui.ui, "Bio", 12., DEMO_FG_SECONDARY),
+                                draw_label_color(state.ui, "Bio", 12., DEMO_FG_SECONDARY),
                                 stack(vec![
                                     rect(DEMO_FG, DEMO_BG, 5.),
                                     draw_label_color(
-                                        ui.ui,
+                                        state.ui,
                                         "Living, laughing, loving",
                                         12.,
                                         DEMO_FG,
@@ -304,63 +308,59 @@ fn main_view<'a>(ui: &mut State<'_>) -> Node<State<'a>> {
     .pad(20.)])
 }
 
-fn side_bar<'a>(ui: &mut State<'_>) -> Node<State<'a>> {
-    column_spaced(
-        15.,
-        vec![
-            draw_label(ui.ui, "BACKER", 22.).height(35.),
-            col_divider(DEMO_GRAY).pad_x(-30.).height(1.),
-            draw_label(ui.ui, "Home", 10.),
-            draw_label(ui.ui, "Explore", 10.),
-            draw_label(ui.ui, "Marketplace", 10.),
-            draw_label(ui.ui, "My Account", 10.),
-            col_divider(DEMO_GRAY).pad_trailing(-20.).height(1.),
-            draw_label(ui.ui, "Activity", 10.),
-            draw_label(ui.ui, "News", 10.),
-            draw_label(ui.ui, "Docs", 10.),
-            col_divider(DEMO_GRAY).pad_trailing(-20.).height(1.),
-            draw_label(ui.ui, "Twitter", 10.),
-            draw_label(ui.ui, "Telegram", 10.),
-            draw_label(ui.ui, "Medium", 10.),
-            space(),
-        ],
-    )
-    .align(Align::TopLeading)
-    .pad(30.)
-    .width(150.)
+fn side_bar<'a>(state: &mut State<'_>) -> Node<State<'a>> {
+    stack(vec![
+        rect(Color32::TRANSPARENT, DEMO_BG, 0.),
+        column_spaced(
+            15.,
+            vec![
+                row_spaced(
+                    10.,
+                    vec![
+                        menu_button(state),
+                        draw_label(state.ui, "BACKER", 22.).height(35.),
+                    ],
+                ),
+                col_divider(DEMO_GRAY).pad_x(-30.).height(1.),
+                draw_label(state.ui, "Home", 10.),
+                draw_label(state.ui, "Explore", 10.),
+                draw_label(state.ui, "Marketplace", 10.),
+                draw_label(state.ui, "My Account", 10.),
+                col_divider(DEMO_GRAY).pad_trailing(-20.).height(1.),
+                draw_label(state.ui, "Activity", 10.),
+                draw_label(state.ui, "News", 10.),
+                draw_label(state.ui, "Docs", 10.),
+                col_divider(DEMO_GRAY).pad_trailing(-20.).height(1.),
+                draw_label(state.ui, "Twitter", 10.),
+                draw_label(state.ui, "Telegram", 10.),
+                draw_label(state.ui, "Medium", 10.),
+                space(),
+            ],
+        )
+        .align(Align::TopLeading)
+        .pad(30.),
+    ])
+    .x_align(XAlign::Leading)
+    .width(200.)
 }
 
-fn header<'a>(ui: &mut State<'_>) -> Node<State<'a>> {
+fn header<'a>(state: &mut State<'_>) -> Node<State<'a>> {
     row_spaced(
         10.,
         vec![
-            draw(move |area, ui: &mut State<'_>| {
-                if ui
-                    .ui
-                    .put(
-                        rect_from(area),
-                        Button::image(include_image!("../assets/menu-scale.svg"))
-                            .fill(Color32::TRANSPARENT),
-                    )
-                    .clicked()
-                {
-                    *ui.sidebar = !*ui.sidebar;
-                }
-            })
-            .aspect(1.)
-            .width(30.),
-            draw_label(ui.ui, "My Account", 18.)
+            menu_button(state),
+            draw_label(state.ui, "My Account", 18.)
                 .y_align(YAlign::Bottom)
                 .width(110.),
             space(),
             stack(vec![
                 rect(DEMO_FG, DEMO_HINT, 5.),
-                draw_label(ui.ui, "$115,000", 12.),
+                draw_label(state.ui, "$115,000", 12.),
             ])
             .width(80.),
             stack(vec![
                 rect(DEMO_FG, DEMO_HINT, 5.),
-                row(vec![draw_label(ui.ui, "Operational", 12.)]),
+                row(vec![draw_label(state.ui, "Operational", 12.)]),
             ])
             .width(90.),
             stack(vec![
@@ -379,6 +379,25 @@ fn header<'a>(ui: &mut State<'_>) -> Node<State<'a>> {
     .pad_bottom(15.)
     .pad_x(30.)
     .height(80.)
+}
+
+fn menu_button<'a>(_ui: &mut State<'_>) -> Node<State<'a>> {
+    draw(move |area, ui: &mut State<'_>| {
+        if ui
+            .ui
+            .put(
+                rect_from(area),
+                Button::image(include_image!("../assets/menu-scale.svg"))
+                    .fill(Color32::TRANSPARENT),
+            )
+            .clicked()
+        {
+            *ui.sidebar = !*ui.sidebar;
+        }
+    })
+    .aspect(1.)
+    .width(30.)
+    .height(30.)
 }
 
 fn icon<'a>(image: impl Into<ImageSource<'static>> + 'static) -> Node<State<'a>> {
