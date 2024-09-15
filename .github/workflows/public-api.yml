@@ -1,0 +1,25 @@
+name: public-api 🌐
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: check API
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install public-api
+        uses: baptiste0928/cargo-install@v3
+        with:
+          crate: public-api
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Build
+        run: cargo public-api diff
