@@ -459,7 +459,7 @@ fn layout_axis<State>(
             }
         } else {
             // Effectively, this means the element can expand any amount
-            room_to_grow[i] = default_size * 2.;
+            room_to_grow[i] = default_size * 10.;
         }
 
         final_sizes[i] = final_size.unwrap_or(default_size).into();
@@ -469,7 +469,7 @@ fn layout_axis<State>(
         room.iter().filter(|r| r.abs() > 0.).count() as f32 > 0.
     }
 
-    let limit = 4;
+    let limit = 5;
     let mut i = 0;
     loop {
         if i > limit {

@@ -530,4 +530,26 @@ mod tests {
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
     }
+    #[test]
+    fn test_space_expansion() {
+        // The unconstrained space node should expand an unlimited amount
+        Layout::new(|()| {
+            row(vec![
+                draw(|a, _| {
+                    assert_eq!(a, Area::new(0., 0., 1., 100.));
+                })
+                .width(1.),
+                space(),
+                draw(|a, _| {
+                    assert_eq!(a, Area::new(998., 0., 1., 100.));
+                })
+                .width(1.),
+                draw(|a, _| {
+                    assert_eq!(a, Area::new(999., 0., 1., 100.));
+                })
+                .width(1.),
+            ])
+        })
+        .draw(Area::new(0., 0., 1000., 100.), &mut ());
+    }
 }
