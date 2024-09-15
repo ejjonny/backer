@@ -35,9 +35,9 @@ jobs:
 
       - name: Check API
         run: |
-          echo "```rust" > api_diff.txt
+          echo "\`\`\`rust" > api_diff.txt
           cargo public-api diff >> api_diff.txt
-          echo "```" >> api_diff.txt
+          echo "\`\`\`" >> api_diff.txt
           cat api_diff.txt
 
       - name: Find Comment
