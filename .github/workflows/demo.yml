@@ -8,7 +8,7 @@ on:
 
 jobs:
   trunk:
-    name: trunk build
+    name: trunk build 🌳
     runs-on: ubuntu-latest
     steps:
       - name: Install trunk
@@ -25,7 +25,7 @@ jobs:
           trunk build --release --public-url https://ejjonny.github.io/backer/
 
   deploy:
-    name: deploy
+    name: deploy 🚀
     if: github.ref == 'refs/heads/main'
 
     permissions:
