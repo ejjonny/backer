@@ -7,23 +7,23 @@ use egui::{
 #[derive(Default)]
 pub struct TemplateApp {
     zoom_set: bool,
+    web: bool,
 }
 
 impl TemplateApp {
-    pub fn new() -> Self {
-        Default::default()
+    pub fn new(web: bool) -> Self {
+        Self {
+            zoom_set: false,
+            web,
+        }
     }
 }
 
 impl eframe::App for TemplateApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        if !self.zoom_set {
+        if self.web && !self.zoom_set {
             self.zoom_set = true;
-            if is_mobile(ctx) {
-                ctx.set_zoom_factor(0.5);
-            } else {
-                ctx.set_zoom_factor(1.0);
-            }
+            ctx.set_zoom_factor(ctx.screen_rect().size().x / 2100.);
         }
         egui::CentralPanel::default().show(ctx, |ui| {
             let layout = Layout::new(my_layout_fn);
@@ -32,11 +32,6 @@ impl eframe::App for TemplateApp {
             layout.draw(available_area, ui);
         });
     }
-}
-
-fn is_mobile(ctx: &egui::Context) -> bool {
-    let screen_size = ctx.screen_rect().size();
-    screen_size.x < 550.0
 }
 
 const DEMO_BG: Color32 = Color32::from_rgb(25, 25, 27);
@@ -114,7 +109,7 @@ fn main_view(ui: &mut Ui) -> Node<Ui> {
                             ],
                         )
                         .align(Align::TopLeading)
-                        .width_range((300.0 * SCALE)..),
+                        .width_range((80.0 * SCALE)..),
                         column_spaced(
                             10. * SCALE,
                             vec![
@@ -193,7 +188,7 @@ fn main_view(ui: &mut Ui) -> Node<Ui> {
                             ],
                         )
                         .align(Align::TopLeading)
-                        .width_range((300.0 * SCALE)..),
+                        .width_range((80.0 * SCALE)..),
                         row_spaced(
                             10. * SCALE,
                             vec![
@@ -241,7 +236,7 @@ fn main_view(ui: &mut Ui) -> Node<Ui> {
                             ],
                         )
                         .align(Align::TopLeading)
-                        .width_range((300.0 * SCALE)..),
+                        .width_range((80.0 * SCALE)..),
                         column_spaced(
                             5. * SCALE,
                             vec![
@@ -279,9 +274,9 @@ fn main_view(ui: &mut Ui) -> Node<Ui> {
 
 fn side_bar(ui: &mut Ui) -> Node<Ui> {
     column_spaced(
-        20. * SCALE,
+        15. * SCALE,
         vec![
-            draw_label(ui, "BACKER", 22.).height(30. * SCALE),
+            draw_label(ui, "BACKER", 22.).height(35. * SCALE),
             col_divider(DEMO_GRAY).pad_x(-30. * SCALE).height(1.),
             draw_label(ui, "Home", 10.),
             draw_label(ui, "Explore", 10.),
@@ -300,7 +295,7 @@ fn side_bar(ui: &mut Ui) -> Node<Ui> {
     )
     .align(Align::TopLeading)
     .pad(30. * SCALE)
-    .width(200. * SCALE)
+    .width(150. * SCALE)
 }
 
 fn header(ui: &mut Ui) -> Node<Ui> {
