@@ -37,9 +37,10 @@ jobs:
           echo "::set-output name=api_diff::$api_diff"
 
       - name: Create comment
+        if: ${{ github.event.pull_request }}
         uses: peter-evans/create-or-update-comment@v4
         with:
-          issue-number: 1
+          issue-number: ${{ github.event.pull_request.number }}
           body: |
             ```rust
             ${{ steps.check_api.outputs.api_diff }}
