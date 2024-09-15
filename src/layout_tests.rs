@@ -441,4 +441,93 @@ mod tests {
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
     }
+    #[test]
+    fn test_pad() {
+        Layout::new(|()| {
+            draw(|a, _| {
+                assert_eq!(a, Area::new(10., 10., 80., 80.));
+            })
+            .pad(10.)
+        })
+        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        Layout::new(|()| {
+            draw(|a, _| {
+                assert_eq!(a, Area::new(10., 0., 80., 100.));
+            })
+            .pad_x(10.)
+        })
+        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        Layout::new(|()| {
+            draw(|a, _| {
+                assert_eq!(a, Area::new(0., 10., 100., 80.));
+            })
+            .pad_y(10.)
+        })
+        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        Layout::new(|()| {
+            draw(|a, _| {
+                assert_eq!(a, Area::new(10., 0., 90., 100.));
+            })
+            .pad_leading(10.)
+        })
+        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        Layout::new(|()| {
+            draw(|a, _| {
+                assert_eq!(a, Area::new(0., 0., 90., 100.));
+            })
+            .pad_trailing(10.)
+        })
+        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        Layout::new(|()| {
+            draw(|a, _| {
+                assert_eq!(a, Area::new(0., 10., 100., 90.));
+            })
+            .pad_top(10.)
+        })
+        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        Layout::new(|()| {
+            draw(|a, _| {
+                assert_eq!(a, Area::new(0., 0., 100., 90.));
+            })
+            .pad_bottom(10.)
+        })
+        .draw(Area::new(0., 0., 100., 100.), &mut ());
+    }
+    #[test]
+    fn test_aspect_ratio_in_pad() {
+        Layout::new(|()| {
+            draw(|a, _| {
+                assert_eq!(a, Area::new(25., 0., 50., 100.));
+            })
+            .aspect(0.5)
+        })
+        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        Layout::new(|()| {
+            stack(vec![draw(|a, _| {
+                // 0.5 aspect ratio
+                // padded size
+                // 10., 10., 80., 80.
+                // constrain aspect, width = 0.5 x height
+                // item is then centered
+                // 30., 10, 40., 80.
+                assert_eq!(a, Area::new(30., 10., 40., 80.));
+            })
+            .aspect(0.5)
+            .pad(10.)])
+        })
+        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        Layout::new(|()| {
+            stack(vec![draw(|a, _| {
+                // 0.5 aspect ratio
+                // aspect constrained size
+                // 25., 0., 50., 100.
+                // add padding of 10. on every edge to the aspect constrained size
+                // 35., 10., 30., 80.
+                assert_eq!(a, Area::new(35., 10., 30., 80.));
+            })
+            .pad(10.)
+            .aspect(0.5)])
+        })
+        .draw(Area::new(0., 0., 100., 100.), &mut ());
+    }
 }

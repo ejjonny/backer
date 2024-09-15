@@ -237,8 +237,8 @@ impl<State> NodeValue<State> {
                 let inner_area = Area {
                     x: available_area.x + amounts.leading,
                     y: available_area.y + amounts.top,
-                    width: available_area.width - amounts.trailing - amounts.leading,
-                    height: available_area.height - amounts.bottom - amounts.top,
+                    width: (available_area.width - amounts.trailing - amounts.leading).max(0.),
+                    height: (available_area.height - amounts.bottom - amounts.top).max(0.),
                 };
                 child.layout(inner_area, None, None);
             }
@@ -557,7 +557,9 @@ fn layout_axis<State>(
                         (None, None) => available_area.height,
                         (None, Some(upper)) => available_area.height.min(upper),
                         (Some(lower), None) => available_area.height.max(lower),
-                        (Some(lower), Some(upper)) => available_area.height.clamp(lower, upper),
+                        (Some(lower), Some(upper)) => {
+                            available_area.height.clamp(lower, upper.max(lower))
+                        }
                     };
                     Area {
                         x: current_pos,
@@ -586,7 +588,9 @@ fn layout_axis<State>(
                         (None, None) => available_area.width,
                         (None, Some(upper)) => available_area.width.min(upper),
                         (Some(lower), None) => available_area.width.max(lower),
-                        (Some(lower), Some(upper)) => available_area.width.clamp(lower, upper),
+                        (Some(lower), Some(upper)) => {
+                            available_area.width.clamp(lower, upper.max(lower))
+                        }
                     };
                     Area {
                         x: match x_align {

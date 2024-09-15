@@ -90,7 +90,7 @@ pub fn stack<U>(elements: Vec<Node<U>>) -> Node<U> {
 /// fn my_drawable(state: &mut MyState) -> Node<MyState> {
 ///  draw(move |area: Area, state: &mut MyState| {
 ///    // The `area` parameter is the space alotted for your view after layout is calculated
-///    // The `state` parameter is *your* mutable state that you pass when you call layout.
+///    // The `state` parameter is *your* mutable state that you pass when you call `draw`.
 ///    // This closure should draw UI based on the alotted area or update your state so that drawing can be performed later.
 ///  })
 ///}
