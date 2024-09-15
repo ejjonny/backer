@@ -6,7 +6,31 @@ use crate::{
 };
 use std::{any::Any, rc::Rc};
 
+macro_rules! sequence_docs {
+    () => {
+        r#"
+Sequences are only as large as their contents require.
+
+Unconstrained elements have no limit on the space they require & will
+"expand" the container they are placed in.
+
+To get a sequence to "shrink wrap" it's contents - **all** of it's children
+must have limits on the space they require. You can specify these limits on nodes
+with
+
+[`Node::width`]
+
+[`Node::width_range`]
+
+[`Node::height`]
+
+[`Node::height_range`]
+"#
+    };
+}
+
 /// Defines a vertical sequence of elements
+#[doc = sequence_docs!()]
 pub fn column<U>(elements: Vec<Node<U>>) -> Node<U> {
     Node {
         inner: NodeValue::Column {
@@ -41,6 +65,7 @@ pub fn group<U>(elements: Vec<Node<U>>) -> Node<U> {
     }
 }
 /// Defines a vertical sequence of elements with the specified spacing between each element.
+#[doc = sequence_docs!()]
 pub fn column_spaced<U>(spacing: f32, elements: Vec<Node<U>>) -> Node<U> {
     Node {
         inner: NodeValue::Column {
@@ -52,6 +77,7 @@ pub fn column_spaced<U>(spacing: f32, elements: Vec<Node<U>>) -> Node<U> {
     }
 }
 /// Defines a horizontal sequence of elements
+#[doc = sequence_docs!()]
 pub fn row<U>(elements: Vec<Node<U>>) -> Node<U> {
     Node {
         inner: NodeValue::Row {
@@ -63,6 +89,7 @@ pub fn row<U>(elements: Vec<Node<U>>) -> Node<U> {
     }
 }
 /// Defines a horizontal sequence of elements with the specified spacing between each element.
+#[doc = sequence_docs!()]
 pub fn row_spaced<U>(spacing: f32, elements: Vec<Node<U>>) -> Node<U> {
     Node {
         inner: NodeValue::Row {
@@ -74,6 +101,7 @@ pub fn row_spaced<U>(spacing: f32, elements: Vec<Node<U>>) -> Node<U> {
     }
 }
 /// Defines a sequence of elements to be laid out on top of each other.
+#[doc = sequence_docs!()]
 pub fn stack<U>(elements: Vec<Node<U>>) -> Node<U> {
     Node {
         inner: NodeValue::Stack(filter_empty(ungroup(elements))),
@@ -90,7 +118,7 @@ pub fn stack<U>(elements: Vec<Node<U>>) -> Node<U> {
 /// fn my_drawable(state: &mut MyState) -> Node<MyState> {
 ///  draw(move |area: Area, state: &mut MyState| {
 ///    // The `area` parameter is the space alotted for your view after layout is calculated
-///    // The `state` parameter is *your* mutable state that you pass when you call layout.
+///    // The `state` parameter is *your* mutable state that you pass when you call `draw`.
 ///    // This closure should draw UI based on the alotted area or update your state so that drawing can be performed later.
 ///  })
 ///}

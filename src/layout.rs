@@ -198,18 +198,20 @@ impl<State> NodeValue<State> {
                     height: Constraint::none(),
                     aspect: None,
                 }),
-            NodeValue::Stack(elements) => {
-                let mut cumulative_size = SizeConstraints {
+            NodeValue::Stack(elements) => elements
+                .iter()
+                .fold(Option::<SizeConstraints>::None, |current, element| {
+                    if let Some(current) = current {
+                        Some(current.combine_adjacent_priority(element.constraints()))
+                    } else {
+                        Some(element.constraints())
+                    }
+                })
+                .unwrap_or(SizeConstraints {
                     width: Constraint::none(),
                     height: Constraint::none(),
                     aspect: None,
-                };
-                for element in elements {
-                    cumulative_size =
-                        cumulative_size.combine_adjacent_priority(element.constraints());
-                }
-                cumulative_size
-            }
+                }),
             NodeValue::Explicit { options, element } => element
                 .constraints()
                 .combine_equal_priority(SizeConstraints::from(*options)),
@@ -237,8 +239,8 @@ impl<State> NodeValue<State> {
                 let inner_area = Area {
                     x: available_area.x + amounts.leading,
                     y: available_area.y + amounts.top,
-                    width: available_area.width - amounts.trailing - amounts.leading,
-                    height: available_area.height - amounts.bottom - amounts.top,
+                    width: (available_area.width - amounts.trailing - amounts.leading).max(0.),
+                    height: (available_area.height - amounts.bottom - amounts.top).max(0.),
                 };
                 child.layout(inner_area, None, None);
             }
@@ -457,7 +459,7 @@ fn layout_axis<State>(
             }
         } else {
             // Effectively, this means the element can expand any amount
-            room_to_grow[i] = default_size * 2.;
+            room_to_grow[i] = default_size * 10.;
         }
 
         final_sizes[i] = final_size.unwrap_or(default_size).into();
@@ -467,7 +469,7 @@ fn layout_axis<State>(
         room.iter().filter(|r| r.abs() > 0.).count() as f32 > 0.
     }
 
-    let limit = 4;
+    let limit = 5;
     let mut i = 0;
     loop {
         if i > limit {
@@ -557,7 +559,9 @@ fn layout_axis<State>(
                         (None, None) => available_area.height,
                         (None, Some(upper)) => available_area.height.min(upper),
                         (Some(lower), None) => available_area.height.max(lower),
-                        (Some(lower), Some(upper)) => available_area.height.clamp(lower, upper),
+                        (Some(lower), Some(upper)) => {
+                            available_area.height.clamp(lower, upper.max(lower))
+                        }
                     };
                     Area {
                         x: current_pos,
@@ -586,7 +590,9 @@ fn layout_axis<State>(
                         (None, None) => available_area.width,
                         (None, Some(upper)) => available_area.width.min(upper),
                         (Some(lower), None) => available_area.width.max(lower),
-                        (Some(lower), Some(upper)) => available_area.width.clamp(lower, upper),
+                        (Some(lower), Some(upper)) => {
+                            available_area.width.clamp(lower, upper.max(lower))
+                        }
                     };
                     Area {
                         x: match x_align {
@@ -1075,6 +1081,38 @@ mod tests {
                 },
                 height: Constraint {
                     lower: Some(20.),
+                    upper: None
+                },
+                aspect: None
+            }
+        );
+        assert_eq!(
+            stack::<()>(vec![space().height(20.), space().height(10.)])
+                .inner
+                .constraints(),
+            SizeConstraints {
+                width: Constraint {
+                    lower: None,
+                    upper: None
+                },
+                height: Constraint {
+                    lower: Some(20.),
+                    upper: Some(20.)
+                },
+                aspect: None
+            }
+        );
+        assert_eq!(
+            stack::<()>(vec![space().width(20.), space().width(10.)])
+                .inner
+                .constraints(),
+            SizeConstraints {
+                width: Constraint {
+                    lower: Some(20.),
+                    upper: Some(20.)
+                },
+                height: Constraint {
+                    lower: None,
                     upper: None
                 },
                 aspect: None

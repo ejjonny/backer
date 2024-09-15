@@ -23,7 +23,6 @@ path = "examples/egui-example/src/main.rs"
 name = "egui-case-study"
 path = "examples/egui-case-study/src/main.rs"
 
-
 [dev-dependencies]
 macroquad = "0.4.13"
 egui = "0.28.1"

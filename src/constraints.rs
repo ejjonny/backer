@@ -54,7 +54,7 @@ impl Constraint {
             (None, Some(a)) | (Some(a), None) => Some(a),
             (Some(bound_a), Some(bound_b)) => Some(bound_a.max(bound_b)),
         };
-        // In terms of upper constraints - no constraint is biggest
+        // In terms of upper constraints - no constraint is the biggest constraint
         let upper = match (self.upper, other.upper) {
             (None, None) => None,
             (None, Some(_)) | (Some(_), None) => None,

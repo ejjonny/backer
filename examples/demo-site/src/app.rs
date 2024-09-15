@@ -56,9 +56,9 @@ fn my_layout_fn(ui: &mut Ui) -> Node<Ui> {
                 space(),
                 col_divider(DEMO_GRAY).height(1.),
                 footer(ui),
-            ])
-            .align(Align::TopLeading),
-        ]),
+            ]),
+        ])
+        .y_align(YAlign::Top),
     ])
 }
 
@@ -318,18 +318,12 @@ fn header(ui: &mut Ui) -> Node<Ui> {
             .width(90. * SCALE),
             stack(vec![
                 rect(DEMO_FG, DEMO_HINT, 5.),
-                icon(include_image!("../assets/bell.svg"))
-                    .aspect(1.)
-                    .pad_y(8.5 * SCALE)
-                    .aspect(1.),
+                icon(include_image!("../assets/bell.svg")).pad_y(8.5 * SCALE),
             ])
             .aspect(1.),
             stack(vec![
                 rect(DEMO_FG, DEMO_HINT, 5.),
-                icon(include_image!("../assets/user.svg"))
-                    .aspect(1.)
-                    .pad_y(8.5 * SCALE)
-                    .aspect(1.),
+                icon(include_image!("../assets/user.svg")).pad_y(8.5 * SCALE),
             ])
             .aspect(1.),
         ],

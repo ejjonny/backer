@@ -16,7 +16,7 @@ eframe = { version = "0.28", default-features = false, features = [
 ] }
 log = "0.4"
 
-backer = "0.5.1"
+backer = { path = "../../" }
 egui_extras = { version = "0.28.1", features = ["default", "image", "svg"] }
 
 # native:

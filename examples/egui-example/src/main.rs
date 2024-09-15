@@ -35,7 +35,6 @@ fn my_layout_fn(ui: &mut Ui) -> Node<Ui> {
             draw_c(ui),
         ],
     )
-    .pad(10.)
 }
 
 fn draw_a(ui: &mut Ui) -> Node<Ui> {
