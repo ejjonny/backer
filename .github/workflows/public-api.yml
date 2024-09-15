@@ -18,7 +18,7 @@ jobs:
       - name: Install public-api
         uses: baptiste0928/cargo-install@v3
         with:
-          crate: public-api
+          crate: cargo-public-api
       - name: Checkout
         uses: actions/checkout@v4
       - name: Build
