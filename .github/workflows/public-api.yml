@@ -45,4 +45,4 @@ jobs:
             ```rust
             ${{ steps.check_api.outputs.api_diff }}
             ```
-          reactions: "+1"
+          token: ${{ secrets.GITHUB_TOKEN }}
