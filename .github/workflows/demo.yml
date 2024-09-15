@@ -63,7 +63,7 @@ jobs:
       - name: Reupload built site
         uses: actions/upload-pages-artifact@v3
         with:
-          path: built-site/examples/demo-site/dist
+          path: examples/demo-site/dist
 
       - name: Deploy to GitHub Pages
         id: deployment
