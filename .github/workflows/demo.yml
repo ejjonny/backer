@@ -10,6 +10,8 @@ jobs:
   trunk:
     name: trunk build 🌳
     runs-on: ubuntu-latest
+    outputs:
+      artifact-path: ${{ steps.upload_artifact.outputs.artifact-path }}
     steps:
       - name: Install trunk
         uses: jetli/trunk-action@v0.5.0
@@ -24,8 +26,15 @@ jobs:
 
           trunk build --release --public-url https://ejjonny.github.io/backer/
 
+      - name: Upload artifact
+        id: upload_artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: built-site
+          path: examples/demo-site/dist
   deploy:
     name: deploy 🚀
+    needs: trunk
     if: github.ref == 'refs/heads/main'
 
     permissions:
@@ -43,6 +52,11 @@ jobs:
 
     runs-on: ubuntu-latest
     steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: built-site
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
