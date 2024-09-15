@@ -60,6 +60,11 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
+      - name: Reupload built site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: built-site/examples/demo-site/dist
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
