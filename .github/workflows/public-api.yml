@@ -26,7 +26,9 @@ jobs:
         with:
           crate: cargo-public-api
           locked: true
+
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Build
+
+      - name: Check API
         run: cargo public-api diff
