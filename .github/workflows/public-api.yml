@@ -19,8 +19,8 @@ jobs:
         run: |
           set -euxo pipefail
 
-          rustup install nightly-2022-06-28 --profile minimal
-          mv ~/.rustup/toolchains/nightly-2022-06-28-x86_64-unknown-linux-gnu ~/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu
+          rustup install nightly-2024-07-05 --profile minimal
+          mv ~/.rustup/toolchains/nightly-2024-07-05-x86_64-unknown-linux-gnu ~/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu
       - name: Install public-api
         uses: baptiste0928/cargo-install@v3
         with:
