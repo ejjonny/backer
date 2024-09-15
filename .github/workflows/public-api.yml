@@ -1,8 +1,6 @@
 name: public-api 🌐
 
 on:
-  push:
-    branches: ["main"]
   pull_request:
     branches: ["main"]
 
@@ -35,7 +33,8 @@ jobs:
 
       - name: Check API
         run: |
-          echo "\`\`\`rust" > api_diff.txt
+          echo "Commit: ${{ github.event.pull_request.head.sha }}" > api_diff.txt
+          echo "\`\`\`rust" >> api_diff.txt
           cargo public-api diff >> api_diff.txt
           echo "\`\`\`" >> api_diff.txt
           cat api_diff.txt
