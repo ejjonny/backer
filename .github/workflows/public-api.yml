@@ -35,8 +35,8 @@ jobs:
 
       - name: Check API
         run: |
-          api_diff=$(cargo public-api diff)
-          echo "api_diff={$api_diff}" >> $GITHUB_OUTPUT
+          cargo public-api diff > api_diff.txt
+          cat api_diff.txt
 
       - name: Create comment
         if: ${{ github.event.pull_request }}
