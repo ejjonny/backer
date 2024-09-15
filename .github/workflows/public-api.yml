@@ -24,6 +24,7 @@ jobs:
         uses: baptiste0928/cargo-install@v3
         with:
           crate: cargo-public-api
+          locked: true
       - name: Checkout
         uses: actions/checkout@v4
       - name: Build
