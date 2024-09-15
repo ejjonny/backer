@@ -32,4 +32,16 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Check API
-        run: cargo public-api diff
+        run: |
+          api_diff=$(cargo public-api diff)
+          echo "::set-output name=api_diff::$api_diff"
+
+      - name: Create comment
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: 1
+          body: |
+            ```rust
+            ${{ steps.check_api.outputs.api_diff }}
+            ```
+          reactions: "+1"
