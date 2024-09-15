@@ -1,4 +1,4 @@
-name: public-api 🌐
+name: public-api
 
 on:
   pull_request:
@@ -9,7 +9,7 @@ env:
 
 jobs:
   build:
-    name: check API
+    name: check API 🌐
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
