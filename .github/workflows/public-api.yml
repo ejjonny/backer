@@ -35,7 +35,9 @@ jobs:
 
       - name: Check API
         run: |
-          cargo public-api diff > api_diff.txt
+          echo "'''rust" > api_diff.txt
+          cargo public-api diff >> api_diff.txt
+          echo "'''" >> api_diff.txt
           cat api_diff.txt
 
       - name: Create comment
@@ -43,8 +45,5 @@ jobs:
         uses: peter-evans/create-or-update-comment@v4
         with:
           issue-number: ${{ github.event.pull_request.number }}
-          body: |
-            ```rust
-            ${{ steps.check_api.outputs.api_diff }}
-            ```
+          body-path: api_diff.txt
           token: ${{ secrets.GITHUB_TOKEN }}
