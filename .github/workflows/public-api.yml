@@ -15,16 +15,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Install nightly minimal
+      - name: Install nightly & cargo-public-api
         run: |
           set -euxo pipefail
 
           rustup install nightly --profile minimal
-      - name: Install public-api
-        uses: baptiste0928/cargo-install@v3
-        with:
-          crate: cargo-public-api
-          locked: true
+          cargo +stable install cargo-public-api --locked
       - name: Checkout
         uses: actions/checkout@v4
       - name: Build
