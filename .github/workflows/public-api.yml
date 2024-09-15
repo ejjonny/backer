@@ -13,6 +13,8 @@ jobs:
   build:
     name: check API
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
 
     steps:
       - name: Install nightly & cargo-public-api
@@ -34,7 +36,7 @@ jobs:
       - name: Check API
         run: |
           api_diff=$(cargo public-api diff)
-          echo "::set-output name=api_diff::$api_diff"
+          echo "api_diff={$api_diff}" >> $GITHUB_OUTPUT
 
       - name: Create comment
         if: ${{ github.event.pull_request }}
