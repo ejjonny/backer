@@ -28,9 +28,9 @@ struct State<'a> {
 
 impl eframe::App for TemplateApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        if self.web && !self.zoom_set {
+        if self.web && !self.zoom_set && ctx.screen_rect().size().x < 800. {
             self.zoom_set = true;
-            ctx.set_zoom_factor(ctx.screen_rect().size().x.min(1500.) / 1500.);
+            ctx.set_zoom_factor(ctx.screen_rect().size().x / 1500.);
         }
         egui::CentralPanel::default().show(ctx, |ui| {
             let layout = Layout::new(my_layout_fn);
