@@ -19,8 +19,12 @@ jobs:
         run: |
           set -euxo pipefail
 
-          rustup install nightly --profile minimal
-          cargo +stable install cargo-public-api --locked
+          rustup install nightly-2022-06-28 --profile minimal
+      - name: Install public-api
+        uses: baptiste0928/cargo-install@v3
+        with:
+          crate: cargo-public-api
+          locked: true
       - name: Checkout
         uses: actions/checkout@v4
       - name: Build
