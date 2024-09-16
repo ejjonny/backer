@@ -9,6 +9,8 @@ use std::{any::Any, rc::Rc};
 macro_rules! sequence_docs {
     () => {
         r#"
+
+
 Sequences are only as large as their contents require.
 
 Unconstrained elements have no limit on the space they require & will
