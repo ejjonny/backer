@@ -36,8 +36,8 @@ pub fn column<U>(elements: Vec<Node<U>>) -> Node<U> {
         inner: NodeValue::Column {
             elements: filter_empty(ungroup(elements)),
             spacing: 0.,
-            align: YAlign::Center,
-            off_axis_align: XAlign::Center,
+            align: None,
+            off_axis_align: None,
         },
     }
 }
@@ -71,8 +71,8 @@ pub fn column_spaced<U>(spacing: f32, elements: Vec<Node<U>>) -> Node<U> {
         inner: NodeValue::Column {
             elements: filter_empty(ungroup(elements)),
             spacing,
-            align: YAlign::Center,
-            off_axis_align: XAlign::Center,
+            align: None,
+            off_axis_align: None,
         },
     }
 }
@@ -83,8 +83,8 @@ pub fn row<U>(elements: Vec<Node<U>>) -> Node<U> {
         inner: NodeValue::Row {
             elements: filter_empty(ungroup(elements)),
             spacing: 0.,
-            align: XAlign::Center,
-            off_axis_align: YAlign::Center,
+            align: None,
+            off_axis_align: None,
         },
     }
 }
@@ -95,8 +95,8 @@ pub fn row_spaced<U>(spacing: f32, elements: Vec<Node<U>>) -> Node<U> {
         inner: NodeValue::Row {
             elements: filter_empty(ungroup(elements)),
             spacing,
-            align: XAlign::Center,
-            off_axis_align: YAlign::Center,
+            align: None,
+            off_axis_align: None,
         },
     }
 }

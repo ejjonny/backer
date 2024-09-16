@@ -80,10 +80,8 @@ pub(crate) struct Padding {
 /// Create a `Size::new()` & add constraints such as `Size::new().width(10.)`
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Size {
-    pub(crate) width: Option<f32>,
     pub(crate) width_min: Option<f32>,
     pub(crate) width_max: Option<f32>,
-    pub(crate) height: Option<f32>,
     pub(crate) height_min: Option<f32>,
     pub(crate) height_max: Option<f32>,
     pub(crate) x_align: Option<XAlign>,
@@ -101,10 +99,8 @@ impl Size {
     /// Creates a default size object to add constraints to
     pub(crate) fn new() -> Self {
         Size {
-            width: None,
             width_min: None,
             width_max: None,
-            height: None,
             height_min: None,
             height_max: None,
             x_align: None,

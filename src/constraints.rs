@@ -30,13 +30,6 @@ impl SizeConstraints {
             aspect: None,
         }
     }
-    pub(crate) fn combine_equal_priority(self, other: Self) -> Self {
-        SizeConstraints {
-            width: self.width.combine_equal_priority(other.width),
-            height: self.height.combine_equal_priority(other.height),
-            aspect: self.aspect.or(other.aspect),
-        }
-    }
     pub(crate) fn combine_sum(self, other: Self, spacing: f32) -> Self {
         SizeConstraints {
             width: self.width.combine_sum(other.width, spacing),
@@ -62,19 +55,6 @@ impl Constraint {
         };
         Constraint { lower, upper }
     }
-    pub(crate) fn combine_equal_priority(self, other: Self) -> Self {
-        let lower = match (self.lower, other.lower) {
-            (None, None) => None,
-            (None, Some(a)) | (Some(a), None) => Some(a),
-            (Some(bound_a), Some(bound_b)) => Some(bound_a.max(bound_b)),
-        };
-        let upper = match (self.upper, other.upper) {
-            (None, None) => None,
-            (None, Some(a)) | (Some(a), None) => Some(a),
-            (Some(bound_a), Some(bound_b)) => Some(bound_a.max(bound_b)),
-        };
-        Constraint { lower, upper }
-    }
     pub(crate) fn combine_sum(self, other: Self, spacing: f32) -> Self {
         let lower = match (self.lower, other.lower) {
             (None, None) => None,
@@ -93,12 +73,7 @@ impl Constraint {
 impl From<Size> for SizeConstraints {
     fn from(value: Size) -> Self {
         SizeConstraints {
-            width: if value.width.is_some() {
-                Constraint {
-                    lower: value.width,
-                    upper: value.width,
-                }
-            } else if value.width_min.is_some() || value.width_max.is_some() {
+            width: if value.width_min.is_some() || value.width_max.is_some() {
                 Constraint {
                     lower: value.width_min,
                     upper: value.width_max,
@@ -109,12 +84,7 @@ impl From<Size> for SizeConstraints {
                     upper: None,
                 }
             },
-            height: if value.height.is_some() {
-                Constraint {
-                    lower: value.height,
-                    upper: value.height,
-                }
-            } else if value.height_min.is_some() || value.height_max.is_some() {
+            height: if value.height_min.is_some() || value.height_max.is_some() {
                 Constraint {
                     lower: value.height_min,
                     upper: value.height_max,
