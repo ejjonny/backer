@@ -62,12 +62,12 @@ fn my_layout_fn<'a>(state: &mut State<'_>) -> Node<State<'a>> {
         row(vec![
             row_divider(DEMO_GRAY).width(1.),
             column(vec![
-                header(state),
-                col_divider(DEMO_GRAY).height(1.),
+                // header(state),
+                // col_divider(DEMO_GRAY).height(1.),
                 main_view(state),
-                space(),
-                col_divider(DEMO_GRAY).height(1.),
-                footer(state),
+                // space(),
+                // col_divider(DEMO_GRAY).height(1.),
+                // footer(state),
             ]),
         ])
         .y_align(YAlign::Top),
@@ -107,7 +107,7 @@ fn footer<'a>(state: &mut State<'_>) -> Node<State<'a>> {
 }
 
 fn main_view<'a>(state: &mut State<'_>) -> Node<State<'a>> {
-    let profile_blurb = "Your public profile URL can be shared with anyone and allows them to immediately see your bases and activity in Backer.";
+    let profile_blurb = "Your public profile URL can be shared with anyone and allows them to immediately see your bases and activity in Backer.Your public profile URL can be shared with anyone and allows them to immediately see your bases and activity in Backer.Your public profile URL can be shared with anyone and allows them to immediately see your bases and activity in Backer.Your public profile URL can be shared with anyone and allows them to immediately see your bases and activity in Backer.Your public profile URL can be shared with anyone and allows them to immediately see your bases and activity in Backer.Your public profile URL can be shared with anyone and allows them to immediately see your bases and activity in Backer.Your public profile URL can be shared with anyone and allows them to immediately see your bases and activity in Backer.Your public profile URL can be shared with anyone and allows them to immediately see your bases and activity in Backer.Your public profile URL can be shared with anyone and allows them to immediately see your bases and activity in Backer.Your public profile URL can be shared with anyone and allows them to immediately see your bases and activity in Backer.Your public profile URL can be shared with anyone and allows them to immediately see your bases and activity in Backer.Your public profile URL can be shared with anyone and allows them to immediately see your bases and activity in Backer.Your public profile URL can be shared with anyone and allows them to immediately see your bases and activity in Backer.Your public profile URL can be shared with anyone and allows them to immediately see your bases and activity in Backer.Your public profile URL can be shared with anyone and allows them to immediately see your bases and activity in Backer.";
     let pic_blurb = "Upload a profile picture of yourself or the character you always wanted to be. Your avatar will be displayed all over the Backer world.";
     let info_blurb = "Tell the world about yourself. Information you add will be visible only in your profile, not for all users.";
     stack(vec![stack(vec![
@@ -122,185 +122,185 @@ fn main_view<'a>(state: &mut State<'_>) -> Node<State<'a>> {
                             10.,
                             vec![
                                 draw_label(state.ui, "Public profile", 18.),
-                                multiline_label(state.ui, profile_blurb, 10.).height(80.),
+                                multiline_label(state.ui, profile_blurb, 10.),
                             ],
                         )
                         .align(Align::TopLeading)
                         .width_range((80.0)..),
-                        column_spaced(
-                            10.,
-                            vec![
-                                stack(vec![
-                                    rect(DEMO_FG, DEMO_BG, 5.),
-                                    row_spaced(
-                                        10.,
-                                        vec![
-                                            draw_label_color(
-                                                state.ui,
-                                                "ejjonny.io/backer/username",
-                                                12.,
-                                                DEMO_FG_SECONDARY,
-                                            ),
-                                            icon(include_image!("../assets/copy.svg")).aspect(1.),
-                                        ],
-                                    )
-                                    .pad(3.),
-                                ])
-                                .height(25.),
-                                row_spaced(
-                                    10.,
-                                    vec![
-                                        stack(vec![
-                                            rect(DEMO_FG, DEMO_BG, 5.),
-                                            row_spaced(
-                                                10.,
-                                                vec![
-                                                    icon(include_image!("../assets/share.svg"))
-                                                        .aspect(1.),
-                                                    draw_label_color(
-                                                        state.ui,
-                                                        "Share",
-                                                        12.,
-                                                        DEMO_FG_SECONDARY,
-                                                    ),
-                                                ],
-                                            )
-                                            .pad(3.),
-                                        ])
-                                        .height(25.),
-                                        stack(vec![
-                                            rect(DEMO_FG, DEMO_BG, 5.),
-                                            row_spaced(
-                                                10.,
-                                                vec![
-                                                    icon(include_image!("../assets/map-pin.svg"))
-                                                        .aspect(1.),
-                                                    draw_label_color(
-                                                        state.ui,
-                                                        "View location",
-                                                        12.,
-                                                        DEMO_FG_SECONDARY,
-                                                    ),
-                                                ],
-                                            )
-                                            .pad(3.),
-                                        ])
-                                        .height(25.),
-                                    ],
-                                ),
-                            ],
-                        ),
+                        // column_spaced(
+                        //     10.,
+                        //     vec![
+                        //         stack(vec![
+                        //             rect(DEMO_FG, DEMO_BG, 5.),
+                        //             row_spaced(
+                        //                 10.,
+                        //                 vec![
+                        //                     draw_label_color(
+                        //                         state.ui,
+                        //                         "ejjonny.io/backer/username",
+                        //                         12.,
+                        //                         DEMO_FG_SECONDARY,
+                        //                     ),
+                        //                     icon(include_image!("../assets/copy.svg")).aspect(1.),
+                        //                 ],
+                        //             )
+                        //             .pad(3.),
+                        //         ])
+                        //         .height(25.),
+                        //         row_spaced(
+                        //             10.,
+                        //             vec![
+                        //                 stack(vec![
+                        //                     rect(DEMO_FG, DEMO_BG, 5.),
+                        //                     row_spaced(
+                        //                         10.,
+                        //                         vec![
+                        //                             icon(include_image!("../assets/share.svg"))
+                        //                                 .aspect(1.),
+                        //                             draw_label_color(
+                        //                                 state.ui,
+                        //                                 "Share",
+                        //                                 12.,
+                        //                                 DEMO_FG_SECONDARY,
+                        //                             ),
+                        //                         ],
+                        //                     )
+                        //                     .pad(3.),
+                        //                 ])
+                        //                 .height(25.),
+                        //                 stack(vec![
+                        //                     rect(DEMO_FG, DEMO_BG, 5.),
+                        //                     row_spaced(
+                        //                         10.,
+                        //                         vec![
+                        //                             icon(include_image!("../assets/map-pin.svg"))
+                        //                                 .aspect(1.),
+                        //                             draw_label_color(
+                        //                                 state.ui,
+                        //                                 "View location",
+                        //                                 12.,
+                        //                                 DEMO_FG_SECONDARY,
+                        //                             ),
+                        //                         ],
+                        //                     )
+                        //                     .pad(3.),
+                        //                 ])
+                        //                 .height(25.),
+                        //             ],
+                        //         ),
+                        //     ],
+                        // ),
                     ],
                 ),
                 col_divider(DEMO_GRAY).height(1.),
-                row_spaced(
-                    10.,
-                    vec![
-                        column_spaced(
-                            10.,
-                            vec![
-                                draw_label(state.ui, "Edit PFP", 18.),
-                                multiline_label(state.ui, pic_blurb, 10.).height(80.),
-                            ],
-                        )
-                        .align(Align::TopLeading)
-                        .width_range((80.0)..),
-                        column_spaced(
-                            10.,
-                            vec![
-                                row_spaced(
-                                    10.,
-                                    vec![
-                                        rect(DEMO_FG, DEMO_BG, 100.).height(30.).width(30.),
-                                        column_spaced(
-                                            5.,
-                                            vec![
-                                                draw_label(state.ui, "@UserName", 12.),
-                                                draw_label_color(
-                                                    state.ui,
-                                                    "Living, laughing, loving",
-                                                    10.,
-                                                    DEMO_FG_SECONDARY,
-                                                ),
-                                            ],
-                                        )
-                                        .x_align(XAlign::Leading),
-                                    ],
-                                ),
-                                row_spaced(
-                                    10.,
-                                    vec![
-                                        stack(vec![
-                                            rect(DEMO_FG, DEMO_BG, 5.),
-                                            draw_label_color(
-                                                state.ui,
-                                                "Upload",
-                                                12.,
-                                                DEMO_FG_SECONDARY,
-                                            )
-                                            .pad(5.),
-                                        ])
-                                        .height(25.),
-                                        stack(vec![
-                                            rect(DEMO_DESTRUCTIVE_SECONDARY, DEMO_BG, 5.),
-                                            draw_label_color(
-                                                state.ui,
-                                                "Remove",
-                                                12.,
-                                                DEMO_DESTRUCTIVE,
-                                            )
-                                            .pad(5.),
-                                        ])
-                                        .height(25.),
-                                    ],
-                                ),
-                            ],
-                        ),
-                    ],
-                ),
-                col_divider(DEMO_GRAY).height(1.),
-                row_spaced(
-                    10.,
-                    vec![
-                        column_spaced(
-                            10.,
-                            vec![
-                                draw_label(state.ui, "Edit personal information", 18.),
-                                multiline_label(state.ui, info_blurb, 10.).height(50.),
-                            ],
-                        )
-                        .align(Align::TopLeading)
-                        .width_range((80.0)..),
-                        column_spaced(
-                            5.,
-                            vec![
-                                draw_label_color(state.ui, "Edit username", 12., DEMO_FG_SECONDARY),
-                                stack(vec![
-                                    rect(DEMO_FG, DEMO_BG, 5.),
-                                    draw_label_color(state.ui, "@UserName", 12., DEMO_FG)
-                                        .x_align(XAlign::Leading)
-                                        .pad(5.),
-                                ])
-                                .height(25.),
-                                draw_label_color(state.ui, "Bio", 12., DEMO_FG_SECONDARY),
-                                stack(vec![
-                                    rect(DEMO_FG, DEMO_BG, 5.),
-                                    draw_label_color(
-                                        state.ui,
-                                        "Living, laughing, loving",
-                                        12.,
-                                        DEMO_FG,
-                                    )
-                                    .align(Align::TopLeading)
-                                    .pad(5.),
-                                ])
-                                .height(50.),
-                            ],
-                        )
-                        .x_align(XAlign::Leading),
-                    ],
-                )
-                .y_align(YAlign::Top),
+                // row_spaced(
+                //     10.,
+                //     vec![
+                //         column_spaced(
+                //             10.,
+                //             vec![
+                //                 draw_label(state.ui, "Edit PFP", 18.),
+                //                 multiline_label(state.ui, pic_blurb, 10.).height(80.),
+                //             ],
+                //         )
+                //         .align(Align::TopLeading)
+                //         .width_range((80.0)..),
+                //         column_spaced(
+                //             10.,
+                //             vec![
+                //                 row_spaced(
+                //                     10.,
+                //                     vec![
+                //                         rect(DEMO_FG, DEMO_BG, 100.).height(30.).width(30.),
+                //                         column_spaced(
+                //                             5.,
+                //                             vec![
+                //                                 draw_label(state.ui, "@UserName", 12.),
+                //                                 draw_label_color(
+                //                                     state.ui,
+                //                                     "Living, laughing, loving",
+                //                                     10.,
+                //                                     DEMO_FG_SECONDARY,
+                //                                 ),
+                //                             ],
+                //                         )
+                //                         .x_align(XAlign::Leading),
+                //                     ],
+                //                 ),
+                //                 row_spaced(
+                //                     10.,
+                //                     vec![
+                //                         stack(vec![
+                //                             rect(DEMO_FG, DEMO_BG, 5.),
+                //                             draw_label_color(
+                //                                 state.ui,
+                //                                 "Upload",
+                //                                 12.,
+                //                                 DEMO_FG_SECONDARY,
+                //                             )
+                //                             .pad(5.),
+                //                         ])
+                //                         .height(25.),
+                //                         stack(vec![
+                //                             rect(DEMO_DESTRUCTIVE_SECONDARY, DEMO_BG, 5.),
+                //                             draw_label_color(
+                //                                 state.ui,
+                //                                 "Remove",
+                //                                 12.,
+                //                                 DEMO_DESTRUCTIVE,
+                //                             )
+                //                             .pad(5.),
+                //                         ])
+                //                         .height(25.),
+                //                     ],
+                //                 ),
+                //             ],
+                //         ),
+                //     ],
+                // ),
+                // col_divider(DEMO_GRAY).height(1.),
+                // row_spaced(
+                //     10.,
+                //     vec![
+                //         column_spaced(
+                //             10.,
+                //             vec![
+                //                 draw_label(state.ui, "Edit personal information", 18.),
+                //                 multiline_label(state.ui, info_blurb, 10.).height(50.),
+                //             ],
+                //         )
+                //         .align(Align::TopLeading)
+                //         .width_range((80.0)..),
+                //         column_spaced(
+                //             5.,
+                //             vec![
+                //                 draw_label_color(state.ui, "Edit username", 12., DEMO_FG_SECONDARY),
+                //                 stack(vec![
+                //                     rect(DEMO_FG, DEMO_BG, 5.),
+                //                     draw_label_color(state.ui, "@UserName", 12., DEMO_FG)
+                //                         .x_align(XAlign::Leading)
+                //                         .pad(5.),
+                //                 ])
+                //                 .height(25.),
+                //                 draw_label_color(state.ui, "Bio", 12., DEMO_FG_SECONDARY),
+                //                 stack(vec![
+                //                     rect(DEMO_FG, DEMO_BG, 5.),
+                //                     draw_label_color(
+                //                         state.ui,
+                //                         "Living, laughing, loving",
+                //                         12.,
+                //                         DEMO_FG,
+                //                     )
+                //                     .align(Align::TopLeading)
+                //                     .pad(5.),
+                //                 ])
+                //                 .height(50.),
+                //             ],
+                //         )
+                //         .x_align(XAlign::Leading),
+                //     ],
+                // )
+                // .y_align(YAlign::Top),
             ],
         )
         .align(Align::TopLeading)
@@ -415,9 +415,33 @@ fn multiline_label<'a, S: AsRef<str> + 'static>(
     text: S,
     size: f32,
 ) -> Node<State<'a>> {
-    draw(move |area, ui: &mut State<'_>| {
-        let layout_job = LayoutJob::single_section(
-            text.as_ref().to_string(),
+    // draw(move |area, ui: &mut State<'_>| {
+    //     let layout_job = LayoutJob::single_section(
+    //         text.as_ref().to_string(),
+    //         egui::TextFormat {
+    //             font_id: egui::FontId::new(size, egui::FontFamily::Proportional),
+    //             extra_letter_spacing: 0.,
+    //             line_height: Some(14.),
+    //             color: Color32::WHITE,
+    //             background: Color32::TRANSPARENT,
+    //             italics: false,
+    //             underline: Stroke::NONE,
+    //             strikethrough: Stroke::NONE,
+    //             valign: EguiAlign::Min,
+    //         },
+    //     );
+    //     let rect = rect_from(area);
+    //     ui.ui.allocate_ui_at_rect(rect, |ui| {
+    //         ui.vertical(|ui| {
+    //             ui.add(Label::new(layout_job));
+    //         })
+    //     });
+    // })
+
+    let text = text.as_ref().to_string();
+    width_reader(move |read_area, state: &mut State<'_>| {
+        let mut job = LayoutJob::single_section(
+            text.clone(),
             egui::TextFormat {
                 font_id: egui::FontId::new(size, egui::FontFamily::Proportional),
                 extra_letter_spacing: 0.,
@@ -430,12 +454,37 @@ fn multiline_label<'a, S: AsRef<str> + 'static>(
                 valign: EguiAlign::Min,
             },
         );
-        let rect = rect_from(area);
-        ui.ui.allocate_ui_at_rect(rect, |ui| {
-            ui.vertical(|ui| {
-                ui.add(Label::new(layout_job));
-            })
-        });
+        job.wrap.max_width = read_area.width;
+        let label = egui::Label::new(job);
+        let galley = label.layout_in_ui(state.ui).1.mesh_bounds;
+        let text_area = area_from(galley);
+        let text_clone = text.clone();
+        // rect(Color32::RED, Color32::TRANSPARENT, 0.).height(text_area.height)
+        draw(move |area, ui: &mut State<'_>| {
+            // let mut job = LayoutJob::single_section(
+            //     text_clone.as_str().to_string(),
+            //     egui::TextFormat {
+            //         font_id: egui::FontId::new(size, egui::FontFamily::Proportional),
+            //         extra_letter_spacing: 0.,
+            //         line_height: Some(14.),
+            //         color: Color32::WHITE,
+            //         background: Color32::TRANSPARENT,
+            //         italics: false,
+            //         underline: Stroke::NONE,
+            //         strikethrough: Stroke::NONE,
+            //         valign: EguiAlign::Min,
+            //     },
+            // );
+            // job.wrap.max_width = read_area.width;
+
+            let rect = rect_from(area);
+            ui.ui.allocate_ui_at_rect(rect, |ui| {
+                ui.vertical(|ui| {
+                    ui.add(Label::new(job.clone()));
+                })
+            });
+        })
+        .height(text_area.height)
     })
 }
 
@@ -469,8 +518,6 @@ fn draw_label_color<'a, S: AsRef<str> + 'static>(
             )),
         );
     })
-    .width(text_area.width)
-    .height(text_area.height)
 }
 
 fn col_divider<'a>(color: Color32) -> Node<State<'a>> {

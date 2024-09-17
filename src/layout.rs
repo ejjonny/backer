@@ -5,6 +5,7 @@ use crate::{
     models::*,
 };
 use core::f32;
+use std::rc::Rc;
 
 /**
 The root object used to store & calculate a layout
@@ -58,7 +59,7 @@ impl<State> Layout<State> {
     /// Calculates layout and draws all draw nodes in the tree
     pub fn draw(&self, area: Area, state: &mut State) {
         let mut layout = (self.tree)(state);
-        layout.inner.layout(area, None, None);
+        layout.inner.layout(area, None, None, state);
         layout.inner.draw(state);
     }
 }
@@ -111,6 +112,9 @@ pub(crate) enum NodeValue<State> {
     Scope {
         scoped: AnyNode<State>,
     },
+    WidthReader {
+        read: Rc<dyn Fn(Area, &mut State) -> Node<State>>,
+    },
 }
 
 impl<State> NodeValue<State> {
@@ -130,7 +134,9 @@ impl<State> NodeValue<State> {
             }
             NodeValue::Space => (),
             NodeValue::Scope { scoped } => scoped.draw(state),
-            NodeValue::Group(_) | NodeValue::Empty => unreachable!(),
+            NodeValue::Group(_) | NodeValue::Empty | NodeValue::WidthReader { .. } => {
+                unreachable!()
+            }
         }
     }
 
@@ -139,6 +145,7 @@ impl<State> NodeValue<State> {
         available_area: Area,
         contextual_x_align: Option<XAlign>,
         contextual_y_align: Option<YAlign>,
+        state: &mut State,
     ) {
         match self {
             NodeValue::Padding {
@@ -151,7 +158,7 @@ impl<State> NodeValue<State> {
                     width: (available_area.width - amounts.trailing - amounts.leading).max(0.),
                     height: (available_area.height - amounts.bottom - amounts.top).max(0.),
                 };
-                child.layout(inner_area, None, None);
+                child.layout(inner_area, None, None, state);
             }
             NodeValue::Column {
                 elements,
@@ -165,6 +172,7 @@ impl<State> NodeValue<State> {
                 Orientation::Vertical,
                 off_axis_align.unwrap_or(XAlign::Center),
                 align.unwrap_or(YAlign::Center),
+                state,
             ),
             NodeValue::Row {
                 elements,
@@ -178,10 +186,11 @@ impl<State> NodeValue<State> {
                 Orientation::Horizontal,
                 align.unwrap_or(XAlign::Center),
                 off_axis_align.unwrap_or(YAlign::Center),
+                state,
             ),
             NodeValue::Stack(children) => {
                 for child in children {
-                    child.layout(available_area, None, None)
+                    child.layout(available_area, None, None, state)
                 }
             }
             NodeValue::Draw(drawable) => {
@@ -209,7 +218,7 @@ impl<State> NodeValue<State> {
                     .unwrap_or(YAlign::Center);
                 let available_area =
                     available_area.constrained(SizeConstraints::from(*options), x_align, y_align);
-                child.layout(available_area, None, None);
+                child.layout(available_area, None, None, state);
             }
             NodeValue::Offset {
                 offset_x,
@@ -225,10 +234,15 @@ impl<State> NodeValue<State> {
                     },
                     None,
                     None,
+                    state,
                 );
             }
             NodeValue::Space => (),
-            NodeValue::Scope { scoped } => scoped.layout(available_area),
+            NodeValue::Scope { scoped } => scoped.layout(available_area, state),
+            NodeValue::WidthReader { read } => {
+                *self = read(available_area, state).inner;
+                self.layout(available_area, None, None, state);
+            }
             NodeValue::Group(_) | NodeValue::Empty => unreachable!(),
         }
     }
@@ -284,10 +298,11 @@ fn layout_axis<State>(
     orientation: Orientation,
     x_align: XAlign,
     y_align: YAlign,
+    state: &mut State,
 ) {
     let sizes: Vec<SizeConstraints> = elements
         .iter_mut()
-        .map(|element| element.constraints())
+        .map(|element| element.constraints(available_area, state))
         .collect();
     let element_count = elements.len();
 
@@ -316,7 +331,6 @@ fn layout_axis<State>(
         } = constraint;
 
         if let Some(aspect) = size_constraint.aspect {
-            dbg!(aspect);
             match orientation {
                 Orientation::Horizontal => {
                     let value = available_area.height * aspect;
@@ -466,7 +480,7 @@ fn layout_axis<State>(
             area = area.constrained(sizes[i], x_align, y_align)
         }
 
-        child.layout(area, Some(x_align), Some(y_align));
+        child.layout(area, Some(x_align), Some(y_align), state);
 
         current_pos += child_size + *spacing;
     }
@@ -864,7 +878,7 @@ mod tests {
         assert_eq!(
             row::<()>(vec![space(), space().height(30.)])
                 .inner
-                .constraints(),
+                .constraints(Area::zero(), &mut ()),
             SizeConstraints {
                 width: Constraint::none(),
                 height: Constraint {
@@ -877,7 +891,7 @@ mod tests {
         assert_eq!(
             row::<()>(vec![space().height(40.), space().height(30.)])
                 .inner
-                .constraints(),
+                .constraints(Area::zero(), &mut ()),
             SizeConstraints {
                 width: Constraint::none(),
                 height: Constraint {
@@ -890,7 +904,7 @@ mod tests {
         assert_eq!(
             column::<()>(vec![space(), space().width(10.)])
                 .inner
-                .constraints(),
+                .constraints(Area::zero(), &mut ()),
             SizeConstraints {
                 width: Constraint {
                     lower: Some(10.),
@@ -903,7 +917,7 @@ mod tests {
         assert_eq!(
             column::<()>(vec![space().width(20.), space().width(10.)])
                 .inner
-                .constraints(),
+                .constraints(Area::zero(), &mut ()),
             SizeConstraints {
                 width: Constraint {
                     lower: Some(20.),
@@ -916,7 +930,7 @@ mod tests {
         assert_eq!(
             stack::<()>(vec![space(), space().height(10.)])
                 .inner
-                .constraints(),
+                .constraints(Area::zero(), &mut ()),
             SizeConstraints {
                 width: Constraint::none(),
                 height: Constraint {
@@ -929,7 +943,7 @@ mod tests {
         assert_eq!(
             stack::<()>(vec![space().height(20.), space().width(10.)])
                 .inner
-                .constraints(),
+                .constraints(Area::zero(), &mut ()),
             SizeConstraints {
                 width: Constraint {
                     lower: Some(10.),
@@ -945,7 +959,7 @@ mod tests {
         assert_eq!(
             stack::<()>(vec![space().height(20.), space().height(10.)])
                 .inner
-                .constraints(),
+                .constraints(Area::zero(), &mut ()),
             SizeConstraints {
                 width: Constraint {
                     lower: None,
@@ -961,7 +975,7 @@ mod tests {
         assert_eq!(
             stack::<()>(vec![space().width(20.), space().width(10.)])
                 .inner
-                .constraints(),
+                .constraints(Area::zero(), &mut ()),
             SizeConstraints {
                 width: Constraint {
                     lower: Some(20.),

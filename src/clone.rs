@@ -53,6 +53,7 @@ impl<State> Clone for NodeValue<State> {
                 scoped: scoped.clone(),
             },
             NodeValue::Empty => NodeValue::Empty,
+            NodeValue::WidthReader { read } => NodeValue::WidthReader { read: read.clone() },
         }
     }
 }

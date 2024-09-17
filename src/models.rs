@@ -66,6 +66,14 @@ impl Area {
             height,
         }
     }
+    pub(crate) fn zero() -> Self {
+        Self {
+            x: 0.,
+            y: 0.,
+            width: 0.,
+            height: 0.,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy)]

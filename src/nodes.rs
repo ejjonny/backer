@@ -116,8 +116,20 @@ pub fn empty<U>() -> Node<U> {
         inner: NodeValue::Empty,
     }
 }
+pub fn width_reader<U>(func: impl Fn(Area, &mut U) -> Node<U> + 'static) -> Node<U> {
+    Node {
+        inner: NodeValue::WidthReader {
+            read: Rc::new(func),
+        },
+    }
+}
 /// Narrows or scopes the mutable state available to the children of this node
-pub fn scope<U, V: 'static>(scope: impl Fn(&mut U) -> &mut V + 'static, node: Node<V>) -> Node<U> {
+pub fn scope<U, V: 'static, F>(scope: F, node: Node<V>) -> Node<U>
+where
+    F: Fn(&mut U) -> &mut V + 'static,
+    F: Clone,
+{
+    let scope_a = scope.clone();
     Node {
         inner: match node.inner {
             NodeValue::Empty => empty().inner,
@@ -131,23 +143,24 @@ pub fn scope<U, V: 'static>(scope: impl Fn(&mut U) -> &mut V + 'static, node: No
                                 .clone(),
                         ) as Box<dyn Any>
                     },
-                    layout: |any, area| {
+                    layout: Rc::new(move |any, area, state| {
                         any.downcast_mut::<Node<V>>()
                             .expect("Invalid downcast")
                             .inner
-                            .layout(area, None, None)
-                    },
+                            .layout(area, None, None, scope_a(state))
+                    }),
                     draw: Rc::new(move |any, state| {
                         any.downcast_ref::<Node<V>>()
                             .expect("Invalid downcast")
                             .inner
                             .draw(scope(state))
                     }),
-                    constraints: |any| {
-                        any.downcast_ref::<Node<V>>()
-                            .expect("Invalid downcast")
-                            .inner
-                            .constraints()
+                    constraints: |any, area| {
+                        todo!()
+                        // any.downcast_ref::<Node<V>>()
+                        //     .expect("Invalid downcast")
+                        //     .inner
+                        //     .constraints(area)
                     },
                 },
             },
