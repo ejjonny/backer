@@ -426,7 +426,7 @@ mod tests {
         .draw(Area::new(0., 0., 100., 100.), &mut ());
         Layout::new(|()| {
             column(vec![draw(|a, _| {
-                assert_eq!(a, Area::new(0., 0., 50., 100.));
+                assert_eq!(a, Area::new(0., -50., 100., 200.));
             })
             .aspect(0.5)
             .x_align(XAlign::Leading)])

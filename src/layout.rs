@@ -316,6 +316,7 @@ fn layout_axis<State>(
         } = constraint;
 
         if let Some(aspect) = size_constraint.aspect {
+            dbg!(aspect);
             match orientation {
                 Orientation::Horizontal => {
                     let value = available_area.height * aspect;
