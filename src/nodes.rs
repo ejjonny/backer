@@ -137,11 +137,6 @@ pub fn space<U>() -> Node<U> {
         inner: NodeValue::Space,
     }
 }
-/// A convenience for creating an inline closure that runs some code to determine
-/// which nodes should be added to the layout.
-pub fn logic<U>(element: impl Fn() -> Node<U>) -> Node<U> {
-    element()
-}
 /// Nothing! This will not have any impact on layout - useful for conditionally
 /// adding elements to a layout in the case where nothing should be added.
 pub fn empty<U>() -> Node<U> {
