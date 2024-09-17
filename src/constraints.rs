@@ -78,24 +78,20 @@ impl<State> NodeValue<State> {
                     height: Constraint::none(),
                     aspect: None,
                 }),
-            NodeValue::Stack(elements) => {
-                let n = elements
-                    .iter()
-                    .fold(Option::<SizeConstraints>::None, |current, element| {
-                        if let Some(current) = current {
-                            Some(current.combine_adjacent_priority(element.constraints()))
-                        } else {
-                            Some(element.constraints())
-                        }
-                    })
-                    .unwrap_or(SizeConstraints {
-                        width: Constraint::none(),
-                        height: Constraint::none(),
-                        aspect: None,
-                    });
-                // dbg!(n);
-                return n;
-            }
+            NodeValue::Stack(elements) => elements
+                .iter()
+                .fold(Option::<SizeConstraints>::None, |current, element| {
+                    if let Some(current) = current {
+                        Some(current.combine_adjacent_priority(element.constraints()))
+                    } else {
+                        Some(element.constraints())
+                    }
+                })
+                .unwrap_or(SizeConstraints {
+                    width: Constraint::none(),
+                    height: Constraint::none(),
+                    aspect: None,
+                }),
             NodeValue::Explicit { options, element } => element
                 .constraints()
                 .combine_equal_priority(SizeConstraints::from(*options)),
