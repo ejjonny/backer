@@ -1,4 +1,4 @@
-use crate::models::Size;
+use crate::{layout::NodeValue, models::Size};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub(crate) struct SizeConstraints {
@@ -11,6 +11,100 @@ pub(crate) struct SizeConstraints {
 pub(crate) struct Constraint {
     pub(crate) lower: Option<f32>,
     pub(crate) upper: Option<f32>,
+}
+
+impl<State> NodeValue<State> {
+    pub(crate) fn constraints(&self) -> SizeConstraints {
+        match self {
+            NodeValue::Padding { amounts, element } => element.constraints().combine_sum(
+                SizeConstraints {
+                    width: Constraint {
+                        lower: Some(amounts.trailing + amounts.leading),
+                        upper: None,
+                    },
+                    height: Constraint {
+                        lower: Some(amounts.bottom + amounts.top),
+                        upper: None,
+                    },
+                    aspect: None,
+                },
+                0.,
+            ),
+            NodeValue::Column {
+                elements, spacing, ..
+            } => elements
+                .iter()
+                .fold(Option::<SizeConstraints>::None, |current, element| {
+                    if let Some(current) = current {
+                        Some(SizeConstraints {
+                            width: current
+                                .width
+                                .combine_adjacent_priority(element.constraints().width),
+                            height: current
+                                .height
+                                .combine_sum(element.constraints().height, *spacing),
+                            aspect: None,
+                        })
+                    } else {
+                        Some(element.constraints())
+                    }
+                })
+                .unwrap_or(SizeConstraints {
+                    width: Constraint::none(),
+                    height: Constraint::none(),
+                    aspect: None,
+                }),
+            NodeValue::Row {
+                elements, spacing, ..
+            } => elements
+                .iter()
+                .fold(Option::<SizeConstraints>::None, |current, element| {
+                    if let Some(current) = current {
+                        Some(SizeConstraints {
+                            width: current
+                                .width
+                                .combine_sum(element.constraints().width, *spacing),
+                            height: current
+                                .height
+                                .combine_adjacent_priority(element.constraints().height),
+                            aspect: None,
+                        })
+                    } else {
+                        Some(element.constraints())
+                    }
+                })
+                .unwrap_or(SizeConstraints {
+                    width: Constraint::none(),
+                    height: Constraint::none(),
+                    aspect: None,
+                }),
+            NodeValue::Stack(elements) => elements
+                .iter()
+                .fold(Option::<SizeConstraints>::None, |current, element| {
+                    if let Some(current) = current {
+                        Some(current.combine_adjacent_priority(element.constraints()))
+                    } else {
+                        Some(element.constraints())
+                    }
+                })
+                .unwrap_or(SizeConstraints {
+                    width: Constraint::none(),
+                    height: Constraint::none(),
+                    aspect: None,
+                }),
+            NodeValue::Explicit { options, element } => element
+                .constraints()
+                .combine_equal_priority(SizeConstraints::from(*options)),
+            NodeValue::Offset { element, .. } => element.constraints(),
+            NodeValue::Scope { scoped, .. } => scoped.constraints(),
+            NodeValue::Draw(_) | NodeValue::Space => SizeConstraints {
+                width: Constraint::none(),
+                height: Constraint::none(),
+                aspect: None,
+            },
+            NodeValue::Empty | NodeValue::Group(_) => unreachable!(),
+        }
+    }
 }
 
 impl Constraint {
@@ -27,6 +121,13 @@ impl SizeConstraints {
         SizeConstraints {
             width: self.width.combine_adjacent_priority(other.width),
             height: self.height.combine_adjacent_priority(other.height),
+            aspect: None,
+        }
+    }
+    pub(crate) fn combine_equal_priority(self, other: Self) -> Self {
+        SizeConstraints {
+            width: self.width.combine_equal_priority(other.width),
+            height: self.height.combine_equal_priority(other.height),
             aspect: None,
         }
     }
@@ -51,6 +152,19 @@ impl Constraint {
         let upper = match (self.upper, other.upper) {
             (None, None) => None,
             (None, Some(_)) | (Some(_), None) => None,
+            (Some(bound_a), Some(bound_b)) => Some(bound_a.max(bound_b)),
+        };
+        Constraint { lower, upper }
+    }
+    pub(crate) fn combine_equal_priority(self, other: Self) -> Self {
+        let lower = match (self.lower, other.lower) {
+            (None, None) => None,
+            (None, Some(a)) | (Some(a), None) => Some(a),
+            (Some(bound_a), Some(bound_b)) => Some(bound_a.max(bound_b)),
+        };
+        let upper = match (self.upper, other.upper) {
+            (None, None) => None,
+            (None, Some(a)) | (Some(a), None) => Some(a),
             (Some(bound_a), Some(bound_b)) => Some(bound_a.max(bound_b)),
         };
         Constraint { lower, upper }

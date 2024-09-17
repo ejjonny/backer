@@ -134,103 +134,12 @@ impl<State> NodeValue<State> {
         }
     }
 
-    pub(crate) fn constraints(&self) -> SizeConstraints {
-        match self {
-            NodeValue::Padding { amounts, element } => element.constraints().combine_sum(
-                SizeConstraints {
-                    width: Constraint {
-                        lower: Some(amounts.trailing + amounts.leading),
-                        upper: None,
-                    },
-                    height: Constraint {
-                        lower: Some(amounts.bottom + amounts.top),
-                        upper: None,
-                    },
-                    aspect: None,
-                },
-                0.,
-            ),
-            NodeValue::Column {
-                elements, spacing, ..
-            } => elements
-                .iter()
-                .fold(Option::<SizeConstraints>::None, |current, element| {
-                    if let Some(current) = current {
-                        Some(SizeConstraints {
-                            width: current
-                                .width
-                                .combine_adjacent_priority(element.constraints().width),
-                            height: current
-                                .height
-                                .combine_sum(element.constraints().height, *spacing),
-                            aspect: None,
-                        })
-                    } else {
-                        Some(element.constraints())
-                    }
-                })
-                .unwrap_or(SizeConstraints {
-                    width: Constraint::none(),
-                    height: Constraint::none(),
-                    aspect: None,
-                }),
-            NodeValue::Row {
-                elements, spacing, ..
-            } => elements
-                .iter()
-                .fold(Option::<SizeConstraints>::None, |current, element| {
-                    if let Some(current) = current {
-                        Some(SizeConstraints {
-                            width: current
-                                .width
-                                .combine_sum(element.constraints().width, *spacing),
-                            height: current
-                                .height
-                                .combine_adjacent_priority(element.constraints().height),
-                            aspect: None,
-                        })
-                    } else {
-                        Some(element.constraints())
-                    }
-                })
-                .unwrap_or(SizeConstraints {
-                    width: Constraint::none(),
-                    height: Constraint::none(),
-                    aspect: None,
-                }),
-            NodeValue::Stack(elements) => elements
-                .iter()
-                .fold(Option::<SizeConstraints>::None, |current, element| {
-                    if let Some(current) = current {
-                        Some(current.combine_adjacent_priority(element.constraints()))
-                    } else {
-                        Some(element.constraints())
-                    }
-                })
-                .unwrap_or(SizeConstraints {
-                    width: Constraint::none(),
-                    height: Constraint::none(),
-                    aspect: None,
-                }),
-            NodeValue::Explicit { options, .. } => SizeConstraints::from(*options),
-            NodeValue::Offset { element, .. } => element.constraints(),
-            NodeValue::Scope { scoped, .. } => scoped.constraints(),
-            NodeValue::Draw(_) | NodeValue::Space => SizeConstraints {
-                width: Constraint::none(),
-                height: Constraint::none(),
-                aspect: None,
-            },
-            NodeValue::Empty | NodeValue::Group(_) => unreachable!(),
-        }
-    }
-
     pub(crate) fn layout(
         &mut self,
         available_area: Area,
         contextual_x_align: Option<XAlign>,
         contextual_y_align: Option<YAlign>,
     ) {
-        let constraints = self.constraints();
         match self {
             NodeValue::Padding {
                 amounts,
@@ -249,41 +158,27 @@ impl<State> NodeValue<State> {
                 spacing,
                 align,
                 off_axis_align,
-            } => {
-                let constrained_area = available_area.constrained(
-                    constraints,
-                    off_axis_align.unwrap_or(XAlign::Center),
-                    align.unwrap_or(YAlign::Center),
-                );
-                layout_axis(
-                    elements,
-                    spacing,
-                    constrained_area,
-                    Orientation::Vertical,
-                    off_axis_align.unwrap_or(XAlign::Center),
-                    align.unwrap_or(YAlign::Center),
-                )
-            }
+            } => layout_axis(
+                elements,
+                spacing,
+                available_area,
+                Orientation::Vertical,
+                off_axis_align.unwrap_or(XAlign::Center),
+                align.unwrap_or(YAlign::Center),
+            ),
             NodeValue::Row {
                 elements,
                 spacing,
                 align,
                 off_axis_align,
-            } => {
-                let constrained_area = available_area.constrained(
-                    constraints,
-                    align.unwrap_or(XAlign::Center),
-                    off_axis_align.unwrap_or(YAlign::Center),
-                );
-                layout_axis(
-                    elements,
-                    spacing,
-                    constrained_area,
-                    Orientation::Horizontal,
-                    align.unwrap_or(XAlign::Center),
-                    off_axis_align.unwrap_or(YAlign::Center),
-                )
-            }
+            } => layout_axis(
+                elements,
+                spacing,
+                available_area,
+                Orientation::Horizontal,
+                align.unwrap_or(XAlign::Center),
+                off_axis_align.unwrap_or(YAlign::Center),
+            ),
             NodeValue::Stack(children) => {
                 for child in children {
                     child.layout(available_area, None, None)
@@ -550,7 +445,7 @@ fn layout_axis<State>(
     for (i, child) in elements.iter_mut().enumerate() {
         let child_size = final_sizes[i].unwrap();
 
-        let area = match orientation {
+        let mut area = match orientation {
             Orientation::Horizontal => Area {
                 x: current_pos,
                 y: available_area.y,
@@ -564,6 +459,11 @@ fn layout_axis<State>(
                 height: child_size,
             },
         };
+
+        if let NodeValue::Explicit { .. } = child {
+        } else {
+            area = area.constrained(sizes[i], x_align, y_align)
+        }
 
         child.layout(area, Some(x_align), Some(y_align));
 
