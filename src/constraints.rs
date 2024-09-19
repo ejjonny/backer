@@ -62,29 +62,33 @@ impl<State> NodeValue<State> {
                 }),
             NodeValue::Row {
                 elements, spacing, ..
-            } => elements
-                .iter()
-                .fold(Option::<SizeConstraints>::None, |current, element| {
-                    if let Some(current) = current {
-                        Some(SizeConstraints {
-                            width: current.width.combine_sum(
-                                element.constraints(available_area, state).width,
-                                *spacing,
-                            ),
-                            height: current.height.combine_adjacent_priority(
-                                element.constraints(available_area, state).height,
-                            ),
-                            aspect: None,
-                        })
-                    } else {
-                        Some(element.constraints(available_area, state))
-                    }
-                })
-                .unwrap_or(SizeConstraints {
-                    width: Constraint::none(),
-                    height: Constraint::none(),
-                    aspect: None,
-                }),
+            } => {
+                let n = elements
+                    .iter()
+                    .fold(Option::<SizeConstraints>::None, |current, element| {
+                        if let Some(current) = current {
+                            Some(SizeConstraints {
+                                width: current.width.combine_sum(
+                                    element.constraints(available_area, state).width,
+                                    *spacing,
+                                ),
+                                height: current.height.combine_adjacent_priority(
+                                    element.constraints(available_area, state).height,
+                                ),
+                                aspect: None,
+                            })
+                        } else {
+                            Some(element.constraints(available_area, state))
+                        }
+                    })
+                    .unwrap_or(SizeConstraints {
+                        width: Constraint::none(),
+                        height: Constraint::none(),
+                        aspect: None,
+                    });
+                // dbg!(n);
+                n
+            }
             NodeValue::Stack(elements) => {
                 elements
                     .iter()
@@ -108,9 +112,11 @@ impl<State> NodeValue<State> {
                 .combine_equal_priority(SizeConstraints::from(*options)),
             NodeValue::Offset { element, .. } => element.constraints(available_area, state),
             NodeValue::Scope { scoped, .. } => scoped.constraints(available_area),
-            NodeValue::WidthReader { read } => read(available_area, state)
-                .inner
-                .constraints(available_area, state),
+            NodeValue::WidthReader { .. } => SizeConstraints {
+                width: Constraint::none(),
+                height: Constraint::none(),
+                aspect: None,
+            },
             NodeValue::Draw(_) | NodeValue::Space => SizeConstraints {
                 width: Constraint::none(),
                 height: Constraint::none(),

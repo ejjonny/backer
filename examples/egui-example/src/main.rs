@@ -21,20 +21,25 @@ fn main() -> eframe::Result {
 }
 
 fn my_layout_fn(ui: &mut Ui) -> Node<Ui> {
-    column_spaced(
-        10.,
-        vec![
-            draw_a(ui),
-            row_spaced(
-                10.,
-                vec![
-                    draw_b(ui).width_range(200.0..),
-                    column_spaced(10., vec![draw_a(ui), draw_b(ui), draw_c(ui)]),
-                ],
-            ),
-            draw_c(ui),
-        ],
-    )
+    column(vec![
+        draw_a(ui),
+        row_spaced(
+            10.,
+            vec![
+                // draw_a(ui),
+                // draw_a(ui),
+                // row_spaced(
+                //     10.,
+                //     vec![
+                //         draw_b(ui).width_range(200.0..),
+                //         column_spaced(10., vec![draw_a(ui), draw_b(ui), draw_c(ui)]),
+                //     ],
+                // ),
+                draw_c(ui),
+                width_reader(|a, ui| draw_c(ui).height(0.2 * a.width).width(10.)),
+            ],
+        ),
+    ])
 }
 
 fn draw_a(ui: &mut Ui) -> Node<Ui> {

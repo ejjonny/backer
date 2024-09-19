@@ -241,6 +241,7 @@ impl<State> NodeValue<State> {
             NodeValue::Scope { scoped } => scoped.layout(available_area, state),
             NodeValue::WidthReader { read } => {
                 *self = read(available_area, state).inner;
+                dbg!(available_area);
                 self.layout(available_area, None, None, state);
             }
             NodeValue::Group(_) | NodeValue::Empty => unreachable!(),

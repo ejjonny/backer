@@ -6,3 +6,4 @@ edition = "2021"
 [dependencies]
 egui = "0.28.1"
 eframe = "0.28.1"
+backer = { path = "../../" }
