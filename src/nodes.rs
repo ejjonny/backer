@@ -6,7 +6,6 @@ use crate::{
 };
 use std::{any::Any, rc::Rc};
 
-[`Node::height`
 /// Defines a vertical sequence of elements
 pub fn column<U>(elements: Vec<Node<U>>) -> Node<U> {
     Node {
