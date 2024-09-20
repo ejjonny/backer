@@ -1,4 +1,7 @@
-use crate::models::Size;
+use crate::{
+    layout::NodeValue,
+    models::{Area, Size},
+};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub(crate) struct SizeConstraints {
@@ -11,6 +14,107 @@ pub(crate) struct SizeConstraints {
 pub(crate) struct Constraint {
     pub(crate) lower: Option<f32>,
     pub(crate) upper: Option<f32>,
+}
+
+impl<State> NodeValue<State> {
+    pub(crate) fn constraints(&self, available_area: Area) -> SizeConstraints {
+        match self {
+            NodeValue::Padding { amounts, element } => {
+                element.constraints(available_area).combine_sum(
+                    SizeConstraints {
+                        width: Constraint {
+                            lower: Some(amounts.trailing + amounts.leading),
+                            upper: None,
+                        },
+                        height: Constraint {
+                            lower: Some(amounts.bottom + amounts.top),
+                            upper: None,
+                        },
+                        aspect: None,
+                    },
+                    0.,
+                )
+            }
+            NodeValue::Column {
+                elements, spacing, ..
+            } => elements
+                .iter()
+                .fold(Option::<SizeConstraints>::None, |current, element| {
+                    if let Some(current) = current {
+                        Some(SizeConstraints {
+                            width: current.width.combine_adjacent_priority(
+                                element.constraints(available_area).width,
+                            ),
+                            height: current
+                                .height
+                                .combine_sum(element.constraints(available_area).height, *spacing),
+                            aspect: None,
+                        })
+                    } else {
+                        Some(element.constraints(available_area))
+                    }
+                })
+                .unwrap_or(SizeConstraints {
+                    width: Constraint::none(),
+                    height: Constraint::none(),
+                    aspect: None,
+                }),
+            NodeValue::Row {
+                elements, spacing, ..
+            } => elements
+                .iter()
+                .fold(Option::<SizeConstraints>::None, |current, element| {
+                    if let Some(current) = current {
+                        Some(SizeConstraints {
+                            width: current
+                                .width
+                                .combine_sum(element.constraints(available_area).width, *spacing),
+                            height: current.height.combine_adjacent_priority(
+                                element.constraints(available_area).height,
+                            ),
+                            aspect: None,
+                        })
+                    } else {
+                        Some(element.constraints(available_area))
+                    }
+                })
+                .unwrap_or(SizeConstraints {
+                    width: Constraint::none(),
+                    height: Constraint::none(),
+                    aspect: None,
+                }),
+            NodeValue::Stack(elements) => elements
+                .iter()
+                .fold(Option::<SizeConstraints>::None, |current, element| {
+                    if let Some(current) = current {
+                        Some(current.combine_adjacent_priority(element.constraints(available_area)))
+                    } else {
+                        Some(element.constraints(available_area))
+                    }
+                })
+                .unwrap_or(SizeConstraints {
+                    width: Constraint::none(),
+                    height: Constraint::none(),
+                    aspect: None,
+                }),
+            NodeValue::Explicit { options, element } => element
+                .constraints(available_area)
+                .combine_equal_priority(SizeConstraints::from(*options)),
+            NodeValue::Offset { element, .. } => element.constraints(available_area),
+            NodeValue::Scope { scoped, .. } => scoped.constraints(available_area),
+            NodeValue::AreaReader { .. } => SizeConstraints {
+                width: Constraint::none(),
+                height: Constraint::none(),
+                aspect: None,
+            },
+            NodeValue::Draw(_) | NodeValue::Space => SizeConstraints {
+                width: Constraint::none(),
+                height: Constraint::none(),
+                aspect: None,
+            },
+            NodeValue::Empty | NodeValue::Group(_) => unreachable!(),
+        }
+    }
 }
 
 impl Constraint {
@@ -93,12 +197,7 @@ impl Constraint {
 impl From<Size> for SizeConstraints {
     fn from(value: Size) -> Self {
         SizeConstraints {
-            width: if value.width.is_some() {
-                Constraint {
-                    lower: value.width,
-                    upper: value.width,
-                }
-            } else if value.width_min.is_some() || value.width_max.is_some() {
+            width: if value.width_min.is_some() || value.width_max.is_some() {
                 Constraint {
                     lower: value.width_min,
                     upper: value.width_max,
@@ -109,12 +208,7 @@ impl From<Size> for SizeConstraints {
                     upper: None,
                 }
             },
-            height: if value.height.is_some() {
-                Constraint {
-                    lower: value.height,
-                    upper: value.height,
-                }
-            } else if value.height_min.is_some() || value.height_max.is_some() {
+            height: if value.height_min.is_some() || value.height_max.is_some() {
                 Constraint {
                     lower: value.height_min,
                     upper: value.height_max,

@@ -2,11 +2,12 @@ use crate::{constraints::SizeConstraints, models::Area};
 use std::{any::Any, fmt, rc::Rc};
 
 type AnyDrawFn<State> = Rc<dyn Fn(&dyn Any, &mut State)>;
+type AnyLayoutFn<State> = Rc<dyn Fn(&mut dyn Any, Area, &mut State)>;
 pub(crate) struct AnyNode<State> {
     pub(crate) inner: Box<dyn Any>,
     pub(crate) clone: fn(&Box<dyn Any>) -> Box<dyn Any>,
-    pub(crate) layout: fn(&mut dyn Any, Area),
-    pub(crate) constraints: fn(&dyn Any) -> SizeConstraints,
+    pub(crate) layout: AnyLayoutFn<State>,
+    pub(crate) constraints: fn(&dyn Any, Area) -> SizeConstraints,
     pub(crate) draw: AnyDrawFn<State>,
 }
 
@@ -15,12 +16,12 @@ impl<State> AnyNode<State> {
         (self.draw)(&*self.inner, state)
     }
 
-    pub(crate) fn layout(&mut self, available_area: Area) {
-        (self.layout)(&mut *self.inner, available_area)
+    pub(crate) fn layout(&mut self, available_area: Area, state: &mut State) {
+        (self.layout)(&mut *self.inner, available_area, state)
     }
 
-    pub(crate) fn constraints(&self) -> SizeConstraints {
-        (self.constraints)(&*self.inner)
+    pub(crate) fn constraints(&self, area: Area) -> SizeConstraints {
+        (self.constraints)(&*self.inner, area)
     }
 }
 
@@ -29,7 +30,7 @@ impl<State> Clone for AnyNode<State> {
         AnyNode {
             inner: (self.clone)(&self.inner),
             clone: self.clone,
-            layout: self.layout,
+            layout: self.layout.clone(),
             constraints: self.constraints,
             draw: self.draw.clone(),
         }

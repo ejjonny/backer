@@ -65,7 +65,6 @@ fn my_layout_fn<'a>(state: &mut State<'_>) -> Node<State<'a>> {
                 header(state),
                 col_divider(DEMO_GRAY).height(1.),
                 main_view(state),
-                space(),
                 col_divider(DEMO_GRAY).height(1.),
                 footer(state),
             ]),
@@ -86,20 +85,20 @@ fn footer<'a>(state: &mut State<'_>) -> Node<State<'a>> {
             row_spaced(
                 20.,
                 vec![
-                    draw_label_color(state.ui, "Game", 9., DEMO_FG_SECONDARY),
-                    draw_label_color(state.ui, "Terms & Conditions", 9., DEMO_FG_SECONDARY),
-                    draw_label_color(state.ui, "Privacy Policy", 9., DEMO_FG_SECONDARY),
+                    label_color(state, "Game", 9., DEMO_FG_SECONDARY),
+                    label_color(state, "Terms & Conditions", 9., DEMO_FG_SECONDARY),
+                    label_color(state, "Privacy Policy", 9., DEMO_FG_SECONDARY),
                 ],
             )
             .x_align(XAlign::Leading),
             space(),
-            draw_label_color(
-                state.ui,
+            label_color(
+                state,
                 "© Backer 2021. All rights reserved",
                 9.,
                 DEMO_FG_SECONDARY,
             )
-            .width_range((100.)..),
+            .width_range((150.)..),
         ],
     )
     .pad(10.)
@@ -121,8 +120,8 @@ fn main_view<'a>(state: &mut State<'_>) -> Node<State<'a>> {
                         column_spaced(
                             10.,
                             vec![
-                                draw_label(state.ui, "Public profile", 18.),
-                                multiline_label(state.ui, profile_blurb, 10.).height(80.),
+                                label(state, "Public profile", 18.),
+                                fit_label(state, profile_blurb, 10.).height(50.),
                             ],
                         )
                         .align(Align::TopLeading)
@@ -135,8 +134,8 @@ fn main_view<'a>(state: &mut State<'_>) -> Node<State<'a>> {
                                     row_spaced(
                                         10.,
                                         vec![
-                                            draw_label_color(
-                                                state.ui,
+                                            label_color(
+                                                state,
                                                 "ejjonny.io/backer/username",
                                                 12.,
                                                 DEMO_FG_SECONDARY,
@@ -157,8 +156,8 @@ fn main_view<'a>(state: &mut State<'_>) -> Node<State<'a>> {
                                                 vec![
                                                     icon(include_image!("../assets/share.svg"))
                                                         .aspect(1.),
-                                                    draw_label_color(
-                                                        state.ui,
+                                                    label_color(
+                                                        state,
                                                         "Share",
                                                         12.,
                                                         DEMO_FG_SECONDARY,
@@ -175,8 +174,8 @@ fn main_view<'a>(state: &mut State<'_>) -> Node<State<'a>> {
                                                 vec![
                                                     icon(include_image!("../assets/map-pin.svg"))
                                                         .aspect(1.),
-                                                    draw_label_color(
-                                                        state.ui,
+                                                    label_color(
+                                                        state,
                                                         "View location",
                                                         12.,
                                                         DEMO_FG_SECONDARY,
@@ -199,8 +198,8 @@ fn main_view<'a>(state: &mut State<'_>) -> Node<State<'a>> {
                         column_spaced(
                             10.,
                             vec![
-                                draw_label(state.ui, "Edit PFP", 18.),
-                                multiline_label(state.ui, pic_blurb, 10.).height(80.),
+                                label(state, "Edit PFP", 18.),
+                                fit_label(state, pic_blurb, 10.).height(80.),
                             ],
                         )
                         .align(Align::TopLeading)
@@ -215,9 +214,9 @@ fn main_view<'a>(state: &mut State<'_>) -> Node<State<'a>> {
                                         column_spaced(
                                             5.,
                                             vec![
-                                                draw_label(state.ui, "@UserName", 12.),
-                                                draw_label_color(
-                                                    state.ui,
+                                                label(state, "@UserName", 12.),
+                                                label_color(
+                                                    state,
                                                     "Living, laughing, loving",
                                                     10.,
                                                     DEMO_FG_SECONDARY,
@@ -232,24 +231,14 @@ fn main_view<'a>(state: &mut State<'_>) -> Node<State<'a>> {
                                     vec![
                                         stack(vec![
                                             rect(DEMO_FG, DEMO_BG, 5.),
-                                            draw_label_color(
-                                                state.ui,
-                                                "Upload",
-                                                12.,
-                                                DEMO_FG_SECONDARY,
-                                            )
-                                            .pad(5.),
+                                            label_color(state, "Upload", 12., DEMO_FG_SECONDARY)
+                                                .pad(5.),
                                         ])
                                         .height(25.),
                                         stack(vec![
                                             rect(DEMO_DESTRUCTIVE_SECONDARY, DEMO_BG, 5.),
-                                            draw_label_color(
-                                                state.ui,
-                                                "Remove",
-                                                12.,
-                                                DEMO_DESTRUCTIVE,
-                                            )
-                                            .pad(5.),
+                                            label_color(state, "Remove", 12., DEMO_DESTRUCTIVE)
+                                                .pad(5.),
                                         ])
                                         .height(25.),
                                     ],
@@ -265,8 +254,8 @@ fn main_view<'a>(state: &mut State<'_>) -> Node<State<'a>> {
                         column_spaced(
                             10.,
                             vec![
-                                draw_label(state.ui, "Edit personal information", 18.),
-                                multiline_label(state.ui, info_blurb, 10.).height(50.),
+                                label(state, "Edit personal information", 18.),
+                                fit_label(state, info_blurb, 10.).height(50.),
                             ],
                         )
                         .align(Align::TopLeading)
@@ -274,25 +263,20 @@ fn main_view<'a>(state: &mut State<'_>) -> Node<State<'a>> {
                         column_spaced(
                             5.,
                             vec![
-                                draw_label_color(state.ui, "Edit username", 12., DEMO_FG_SECONDARY),
+                                label_color(state, "Edit username", 12., DEMO_FG_SECONDARY),
                                 stack(vec![
                                     rect(DEMO_FG, DEMO_BG, 5.),
-                                    draw_label_color(state.ui, "@UserName", 12., DEMO_FG)
+                                    fit_label_color(state, "@UserName", 12., DEMO_FG)
                                         .x_align(XAlign::Leading)
                                         .pad(5.),
                                 ])
                                 .height(25.),
-                                draw_label_color(state.ui, "Bio", 12., DEMO_FG_SECONDARY),
+                                label_color(state, "Bio", 12., DEMO_FG_SECONDARY),
                                 stack(vec![
                                     rect(DEMO_FG, DEMO_BG, 5.),
-                                    draw_label_color(
-                                        state.ui,
-                                        "Living, laughing, loving",
-                                        12.,
-                                        DEMO_FG,
-                                    )
-                                    .align(Align::TopLeading)
-                                    .pad(5.),
+                                    label_color(state, "Living, laughing, loving", 12., DEMO_FG)
+                                        .align(Align::TopLeading)
+                                        .pad(5.),
                                 ])
                                 .height(50.),
                             ],
@@ -319,24 +303,21 @@ fn side_bar<'a>(state: &mut State<'_>) -> Node<State<'a>> {
             vec![
                 row_spaced(
                     10.,
-                    vec![
-                        menu_button(state),
-                        draw_label(state.ui, "BACKER", 22.).height(35.),
-                    ],
+                    vec![menu_button(state), label(state, "BACKER", 22.).height(35.)],
                 ),
                 col_divider(DEMO_GRAY).pad_x(-30.).height(1.),
-                draw_label(state.ui, "Home", 10.),
-                draw_label(state.ui, "Explore", 10.),
-                draw_label(state.ui, "Marketplace", 10.),
-                draw_label(state.ui, "My Account", 10.),
+                label(state, "Home", 10.),
+                label(state, "Explore", 10.),
+                label(state, "Marketplace", 10.),
+                label(state, "My Account", 10.),
                 col_divider(DEMO_GRAY).pad_trailing(-20.).height(1.),
-                draw_label(state.ui, "Activity", 10.),
-                draw_label(state.ui, "News", 10.),
-                draw_label(state.ui, "Docs", 10.),
+                label(state, "Activity", 10.),
+                label(state, "News", 10.),
+                label(state, "Docs", 10.),
                 col_divider(DEMO_GRAY).pad_trailing(-20.).height(1.),
-                draw_label(state.ui, "Twitter", 10.),
-                draw_label(state.ui, "Telegram", 10.),
-                draw_label(state.ui, "Medium", 10.),
+                label(state, "Twitter", 10.),
+                label(state, "Telegram", 10.),
+                label(state, "Medium", 10.),
                 space(),
             ],
         )
@@ -352,18 +333,18 @@ fn header<'a>(state: &mut State<'_>) -> Node<State<'a>> {
         10.,
         vec![
             menu_button(state),
-            draw_label(state.ui, "My Account", 18.)
+            label(state, "My Account", 18.)
                 .y_align(YAlign::Bottom)
                 .width(110.),
             space(),
             stack(vec![
                 rect(DEMO_FG, DEMO_HINT, 5.),
-                draw_label(state.ui, "$115,000", 12.),
+                label(state, "$115,000", 12.),
             ])
             .width(80.),
             stack(vec![
                 rect(DEMO_FG, DEMO_HINT, 5.),
-                row(vec![draw_label(state.ui, "Operational", 12.)]),
+                row(vec![label(state, "Operational", 12.)]),
             ])
             .width(90.),
             stack(vec![
@@ -410,67 +391,139 @@ fn icon<'a>(image: impl Into<ImageSource<'static>> + 'static) -> Node<State<'a>>
     })
 }
 
-fn multiline_label<'a, S: AsRef<str> + 'static>(
-    _ui: &'_ mut Ui,
+fn label<'a, S: AsRef<str> + 'static>(state: &mut State<'_>, text: S, size: f32) -> Node<State<'a>>
+where
+    S: Clone + Copy,
+{
+    label_common(state, text, size, false, Color32::WHITE)
+}
+
+fn fit_label<'a, S: AsRef<str> + 'static>(
+    state: &mut State<'_>,
     text: S,
     size: f32,
-) -> Node<State<'a>> {
-    draw(move |area, ui: &mut State<'_>| {
-        let layout_job = LayoutJob::single_section(
-            text.as_ref().to_string(),
+) -> Node<State<'a>>
+where
+    S: Clone + Copy,
+{
+    label_common(state, text, size, true, Color32::WHITE)
+}
+
+fn fit_label_color<'a, S: AsRef<str> + 'static>(
+    state: &mut State<'_>,
+    text: S,
+    size: f32,
+    color: Color32,
+) -> Node<State<'a>>
+where
+    S: Clone + Copy,
+{
+    label_common(state, text, size, true, color)
+}
+
+fn label_color<'a, S: AsRef<str> + 'static>(
+    state: &mut State<'_>,
+    text: S,
+    size: f32,
+    color: Color32,
+) -> Node<State<'a>>
+where
+    S: Clone + Copy,
+{
+    label_common(state, text, size, false, color)
+}
+
+fn label_common<'a, S: AsRef<str> + 'static>(
+    state: &mut State<'_>,
+    text: S,
+    size: f32,
+    fit_width: bool,
+    color: Color32,
+) -> Node<State<'a>>
+where
+    S: Clone + Copy,
+{
+    fn layout_job(
+        font_size: f32,
+        width: f32,
+        text: String,
+        align: EguiAlign,
+        color: Color32,
+    ) -> LayoutJob {
+        let mut job = LayoutJob::single_section(
+            text.clone(),
             egui::TextFormat {
-                font_id: egui::FontId::new(size, egui::FontFamily::Proportional),
+                font_id: egui::FontId::new(font_size, egui::FontFamily::Proportional),
                 extra_letter_spacing: 0.,
                 line_height: Some(14.),
-                color: Color32::WHITE,
+                color,
                 background: Color32::TRANSPARENT,
                 italics: false,
                 underline: Stroke::NONE,
                 strikethrough: Stroke::NONE,
-                valign: EguiAlign::Min,
+                valign: align,
             },
         );
-        let rect = rect_from(area);
-        ui.ui.allocate_ui_at_rect(rect, |ui| {
-            ui.vertical(|ui| {
-                ui.add(Label::new(layout_job));
+        job.wrap.max_width = width;
+        job
+    }
+    let text = text.as_ref().to_string();
+    if fit_width {
+        area_reader(move |read_area, state: &mut State<'_>| {
+            let galley_text = text.clone();
+            let node_text = text.clone();
+            let galley_size = state
+                .ui
+                .fonts(move |fonts| {
+                    fonts.layout_job(layout_job(
+                        size,
+                        read_area.width,
+                        galley_text,
+                        EguiAlign::Min,
+                        color,
+                    ))
+                })
+                .size();
+            draw(move |area, ui: &mut State<'_>| {
+                let job = layout_job(
+                    size,
+                    read_area.width,
+                    node_text.clone(),
+                    EguiAlign::Min,
+                    color,
+                );
+                let rect = rect_from(area);
+                ui.ui.allocate_ui_at_rect(rect, |ui| {
+                    ui.vertical(|ui| {
+                        ui.add(Label::new(job.clone()));
+                    })
+                });
             })
-        });
-    })
-}
-
-fn draw_label<'a, S: AsRef<str> + 'static>(ui: &'_ mut Ui, text: S, size: f32) -> Node<State<'a>> {
-    draw_label_color(ui, text, size, DEMO_FG)
-}
-
-fn draw_label_color<'a, S: AsRef<str> + 'static>(
-    ui: &'_ mut Ui,
-    text: S,
-    size: f32,
-    color: Color32,
-) -> Node<State<'a>> {
-    let job = LayoutJob::simple(
-        text.as_ref().to_string(),
-        egui::FontId::new(size, egui::FontFamily::Proportional),
-        color,
-        200.,
-    );
-    let label = egui::Label::new(job);
-    let galley = label.layout_in_ui(ui).1.rect;
-    let text_area = area_from(galley);
-    draw(move |area, ui: &mut State<'_>| {
-        ui.ui.put(
-            rect_from(area),
-            egui::Label::new(LayoutJob::simple(
-                text.as_ref().to_string(),
-                egui::FontId::new(size, egui::FontFamily::Proportional),
-                color,
-                200.,
-            )),
-        );
-    })
-    .width(text_area.width)
-    .height(text_area.height)
+            .height(galley_size.y)
+        })
+        .width_range(100.0..)
+        .height_range(..100.0)
+    } else {
+        let galley_text = text.clone();
+        let galley_size = state
+            .ui
+            .fonts(move |fonts| {
+                fonts.layout_job(layout_job(
+                    size,
+                    300.,
+                    galley_text,
+                    EguiAlign::Center,
+                    color,
+                ))
+            })
+            .size();
+        draw(move |area, ui: &mut State<'_>| {
+            let job = layout_job(size, 300., text.clone(), EguiAlign::Center, color);
+            ui.ui.put(rect_from(area), Label::new(job.clone()));
+        })
+        .height(galley_size.y)
+        .width(galley_size.x)
+    }
 }
 
 fn col_divider<'a>(color: Color32) -> Node<State<'a>> {
@@ -484,6 +537,7 @@ fn col_divider<'a>(color: Color32) -> Node<State<'a>> {
         );
     })
 }
+
 fn row_divider<'a>(color: Color32) -> Node<State<'a>> {
     draw(move |area, ui: &mut State<'_>| {
         ui.ui.painter().line_segment(

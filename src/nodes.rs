@@ -1,45 +1,14 @@
-use crate::{
-    anynode::AnyNode,
-    drawable::Drawable,
-    layout::{Node, NodeValue},
-    models::*,
-};
+use crate::{anynode::AnyNode, drawable::Drawable, layout::NodeValue, models::*, Node};
 use std::{any::Any, rc::Rc};
 
-macro_rules! sequence_docs {
-    () => {
-        r#"
-
-
-Sequences are only as large as their contents require.
-
-Unconstrained elements have no limit on the space they require & will
-"expand" the container they are placed in.
-
-To get a sequence to "shrink wrap" it's contents - **all** of it's children
-must have limits on the space they require. You can specify these limits on nodes
-with
-
-[`Node::width`]
-
-[`Node::width_range`]
-
-[`Node::height`]
-
-[`Node::height_range`]
-"#
-    };
-}
-
 /// Defines a vertical sequence of elements
-#[doc = sequence_docs!()]
 pub fn column<U>(elements: Vec<Node<U>>) -> Node<U> {
     Node {
         inner: NodeValue::Column {
             elements: filter_empty(ungroup(elements)),
             spacing: 0.,
-            align: YAlign::Center,
-            off_axis_align: XAlign::Center,
+            align: None,
+            off_axis_align: None,
         },
     }
 }
@@ -67,43 +36,39 @@ pub fn group<U>(elements: Vec<Node<U>>) -> Node<U> {
     }
 }
 /// Defines a vertical sequence of elements with the specified spacing between each element.
-#[doc = sequence_docs!()]
 pub fn column_spaced<U>(spacing: f32, elements: Vec<Node<U>>) -> Node<U> {
     Node {
         inner: NodeValue::Column {
             elements: filter_empty(ungroup(elements)),
             spacing,
-            align: YAlign::Center,
-            off_axis_align: XAlign::Center,
+            align: None,
+            off_axis_align: None,
         },
     }
 }
 /// Defines a horizontal sequence of elements
-#[doc = sequence_docs!()]
 pub fn row<U>(elements: Vec<Node<U>>) -> Node<U> {
     Node {
         inner: NodeValue::Row {
             elements: filter_empty(ungroup(elements)),
             spacing: 0.,
-            align: XAlign::Center,
-            off_axis_align: YAlign::Center,
+            align: None,
+            off_axis_align: None,
         },
     }
 }
 /// Defines a horizontal sequence of elements with the specified spacing between each element.
-#[doc = sequence_docs!()]
 pub fn row_spaced<U>(spacing: f32, elements: Vec<Node<U>>) -> Node<U> {
     Node {
         inner: NodeValue::Row {
             elements: filter_empty(ungroup(elements)),
             spacing,
-            align: XAlign::Center,
-            off_axis_align: YAlign::Center,
+            align: None,
+            off_axis_align: None,
         },
     }
 }
 /// Defines a sequence of elements to be laid out on top of each other.
-#[doc = sequence_docs!()]
 pub fn stack<U>(elements: Vec<Node<U>>) -> Node<U> {
     Node {
         inner: NodeValue::Stack(filter_empty(ungroup(elements))),
@@ -139,11 +104,6 @@ pub fn space<U>() -> Node<U> {
         inner: NodeValue::Space,
     }
 }
-/// A convenience for creating an inline closure that runs some code to determine
-/// which nodes should be added to the layout.
-pub fn logic<U>(element: impl Fn() -> Node<U>) -> Node<U> {
-    element()
-}
 /// Nothing! This will not have any impact on layout - useful for conditionally
 /// adding elements to a layout in the case where nothing should be added.
 pub fn empty<U>() -> Node<U> {
@@ -151,8 +111,19 @@ pub fn empty<U>() -> Node<U> {
         inner: NodeValue::Empty,
     }
 }
+/// Return nodes based on available area
+///
+/// This node comes with caveats! Constraints within an area reader **cannot** expand the area reader itself.
+/// If it could - it would create cyclical dependency which may be impossible to resolve.
+pub fn area_reader<U>(func: impl Fn(Area, &mut U) -> Node<U> + 'static) -> Node<U> {
+    Node {
+        inner: NodeValue::AreaReader {
+            read: Rc::new(func),
+        },
+    }
+}
 /// Narrows or scopes the mutable state available to the children of this node
-pub fn scope<U, V: 'static>(scope: impl Fn(&mut U) -> &mut V + 'static, node: Node<V>) -> Node<U> {
+pub fn scope<U: 'static, V: 'static>(scope: fn(&mut U) -> &mut V, node: Node<V>) -> Node<U> {
     Node {
         inner: match node.inner {
             NodeValue::Empty => empty().inner,
@@ -166,23 +137,23 @@ pub fn scope<U, V: 'static>(scope: impl Fn(&mut U) -> &mut V + 'static, node: No
                                 .clone(),
                         ) as Box<dyn Any>
                     },
-                    layout: |any, area| {
+                    layout: Rc::new(move |any, area, state| {
                         any.downcast_mut::<Node<V>>()
                             .expect("Invalid downcast")
                             .inner
-                            .layout(area, None, None)
-                    },
+                            .layout(area, None, None, scope(state))
+                    }),
                     draw: Rc::new(move |any, state| {
                         any.downcast_ref::<Node<V>>()
                             .expect("Invalid downcast")
                             .inner
                             .draw(scope(state))
                     }),
-                    constraints: |any| {
+                    constraints: |any, area| {
                         any.downcast_ref::<Node<V>>()
                             .expect("Invalid downcast")
                             .inner
-                            .constraints()
+                            .constraints(area)
                     },
                 },
             },

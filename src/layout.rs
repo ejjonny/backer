@@ -3,8 +3,10 @@ use crate::{
     constraints::{Constraint, SizeConstraints},
     drawable::Drawable,
     models::*,
+    Node,
 };
 use core::f32;
+use std::rc::Rc;
 
 /**
 The root object used to store & calculate a layout
@@ -58,24 +60,12 @@ impl<State> Layout<State> {
     /// Calculates layout and draws all draw nodes in the tree
     pub fn draw(&self, area: Area, state: &mut State) {
         let mut layout = (self.tree)(state);
-        layout.inner.layout(area, None, None);
+        layout.inner.layout(area, None, None, state);
         layout.inner.draw(state);
     }
 }
 
-/// A layout tree node. Use methods in [`crate::nodes`] to create nodes.
-#[derive(Debug)]
-pub struct Node<State> {
-    pub(crate) inner: NodeValue<State>,
-}
-
-impl<State> Clone for Node<State> {
-    fn clone(&self) -> Self {
-        Node {
-            inner: self.inner.clone(),
-        }
-    }
-}
+type AreaReaderFn<State> = Rc<dyn Fn(Area, &mut State) -> Node<State>>;
 
 pub(crate) enum NodeValue<State> {
     Padding {
@@ -85,14 +75,14 @@ pub(crate) enum NodeValue<State> {
     Column {
         elements: Vec<NodeValue<State>>,
         spacing: f32,
-        align: YAlign,
-        off_axis_align: XAlign,
+        align: Option<YAlign>,
+        off_axis_align: Option<XAlign>,
     },
     Row {
         elements: Vec<NodeValue<State>>,
         spacing: f32,
-        align: XAlign,
-        off_axis_align: YAlign,
+        align: Option<XAlign>,
+        off_axis_align: Option<YAlign>,
     },
     Stack(Vec<NodeValue<State>>),
     Group(Vec<NodeValue<State>>),
@@ -110,6 +100,9 @@ pub(crate) enum NodeValue<State> {
     Space,
     Scope {
         scoped: AnyNode<State>,
+    },
+    AreaReader {
+        read: AreaReaderFn<State>,
     },
 }
 
@@ -130,106 +123,18 @@ impl<State> NodeValue<State> {
             }
             NodeValue::Space => (),
             NodeValue::Scope { scoped } => scoped.draw(state),
-            NodeValue::Group(_) | NodeValue::Empty => unreachable!(),
-        }
-    }
-
-    pub(crate) fn constraints(&self) -> SizeConstraints {
-        match self {
-            NodeValue::Padding { amounts, element } => element.constraints().combine_sum(
-                SizeConstraints {
-                    width: Constraint {
-                        lower: Some(amounts.trailing + amounts.leading),
-                        upper: None,
-                    },
-                    height: Constraint {
-                        lower: Some(amounts.bottom + amounts.top),
-                        upper: None,
-                    },
-                    aspect: None,
-                },
-                0.,
-            ),
-            NodeValue::Column {
-                elements, spacing, ..
-            } => elements
-                .iter()
-                .fold(Option::<SizeConstraints>::None, |current, element| {
-                    if let Some(current) = current {
-                        Some(SizeConstraints {
-                            width: current
-                                .width
-                                .combine_adjacent_priority(element.constraints().width),
-                            height: current
-                                .height
-                                .combine_sum(element.constraints().height, *spacing),
-                            aspect: None,
-                        })
-                    } else {
-                        Some(element.constraints())
-                    }
-                })
-                .unwrap_or(SizeConstraints {
-                    width: Constraint::none(),
-                    height: Constraint::none(),
-                    aspect: None,
-                }),
-            NodeValue::Row {
-                elements, spacing, ..
-            } => elements
-                .iter()
-                .fold(Option::<SizeConstraints>::None, |current, element| {
-                    if let Some(current) = current {
-                        Some(SizeConstraints {
-                            width: current
-                                .width
-                                .combine_sum(element.constraints().width, *spacing),
-                            height: current
-                                .height
-                                .combine_adjacent_priority(element.constraints().height),
-                            aspect: None,
-                        })
-                    } else {
-                        Some(element.constraints())
-                    }
-                })
-                .unwrap_or(SizeConstraints {
-                    width: Constraint::none(),
-                    height: Constraint::none(),
-                    aspect: None,
-                }),
-            NodeValue::Stack(elements) => elements
-                .iter()
-                .fold(Option::<SizeConstraints>::None, |current, element| {
-                    if let Some(current) = current {
-                        Some(current.combine_adjacent_priority(element.constraints()))
-                    } else {
-                        Some(element.constraints())
-                    }
-                })
-                .unwrap_or(SizeConstraints {
-                    width: Constraint::none(),
-                    height: Constraint::none(),
-                    aspect: None,
-                }),
-            NodeValue::Explicit { options, element } => element
-                .constraints()
-                .combine_equal_priority(SizeConstraints::from(*options)),
-            NodeValue::Offset { element, .. } => element.constraints(),
-            NodeValue::Scope { scoped, .. } => scoped.constraints(),
-            _ => SizeConstraints {
-                width: Constraint::none(),
-                height: Constraint::none(),
-                aspect: None,
-            },
+            NodeValue::Group(_) | NodeValue::Empty | NodeValue::AreaReader { .. } => {
+                unreachable!()
+            }
         }
     }
 
     pub(crate) fn layout(
         &mut self,
         available_area: Area,
-        x_align: Option<XAlign>,
-        y_align: Option<YAlign>,
+        contextual_x_align: Option<XAlign>,
+        contextual_y_align: Option<YAlign>,
+        state: &mut State,
     ) {
         match self {
             NodeValue::Padding {
@@ -242,7 +147,7 @@ impl<State> NodeValue<State> {
                     width: (available_area.width - amounts.trailing - amounts.leading).max(0.),
                     height: (available_area.height - amounts.bottom - amounts.top).max(0.),
                 };
-                child.layout(inner_area, None, None);
+                child.layout(inner_area, None, None, state);
             }
             NodeValue::Column {
                 elements,
@@ -254,8 +159,9 @@ impl<State> NodeValue<State> {
                 spacing,
                 available_area,
                 Orientation::Vertical,
-                *off_axis_align,
-                *align,
+                off_axis_align.unwrap_or(XAlign::Center),
+                align.unwrap_or(YAlign::Center),
+                state,
             ),
             NodeValue::Row {
                 elements,
@@ -267,12 +173,13 @@ impl<State> NodeValue<State> {
                 spacing,
                 available_area,
                 Orientation::Horizontal,
-                *align,
-                *off_axis_align,
+                align.unwrap_or(XAlign::Center),
+                off_axis_align.unwrap_or(YAlign::Center),
+                state,
             ),
             NodeValue::Stack(children) => {
                 for child in children {
-                    child.layout(available_area, None, None)
+                    child.layout(available_area, None, None, state)
                 }
             }
             NodeValue::Draw(drawable) => {
@@ -288,66 +195,19 @@ impl<State> NodeValue<State> {
                 element: child,
             } => {
                 let Size {
-                    width,
-                    width_min,
-                    width_max,
-                    height,
-                    height_min,
-                    height_max,
                     x_align: explicit_x_align,
                     y_align: explicit_y_align,
-                    aspect,
-                } = options;
-                let explicit_width = if let Some(width) = width {
-                    *width
-                } else if let Some(aspect) = &aspect {
-                    height.unwrap_or(available_area.height) * *aspect
-                } else {
-                    available_area.width
-                }
-                .clamp(
-                    width_min.unwrap_or(0.).min(width_max.unwrap_or(0.)),
-                    width_max
-                        .unwrap_or(available_area.width.max(0.))
-                        .max(width_min.unwrap_or(0.)),
-                );
-                let explicit_height = if let Some(height) = height {
-                    *height
-                } else if let Some(aspect) = &aspect {
-                    width.unwrap_or(available_area.width) / *aspect
-                } else {
-                    available_area.height
-                }
-                .clamp(
-                    height_min.unwrap_or(0.).min(height_max.unwrap_or(0.)),
-                    height_max
-                        .unwrap_or(available_area.height.max(0.))
-                        .max(height_min.unwrap_or(0.)),
-                );
-                let x = match explicit_x_align.or(x_align).unwrap_or(XAlign::Center) {
-                    XAlign::Leading => available_area.x,
-                    XAlign::Trailing => available_area.x + (available_area.width - explicit_width),
-                    XAlign::Center => {
-                        available_area.x + (available_area.width * 0.5) - (explicit_width * 0.5)
-                    }
-                };
-                let y = match explicit_y_align.or(y_align).unwrap_or(YAlign::Center) {
-                    YAlign::Top => available_area.y,
-                    YAlign::Bottom => available_area.y + (available_area.height - explicit_height),
-                    YAlign::Center => {
-                        available_area.y + (available_area.height * 0.5) - (explicit_height * 0.5)
-                    }
-                };
-                child.layout(
-                    Area {
-                        x: x.max(available_area.x),
-                        y: y.max(available_area.y),
-                        width: explicit_width,
-                        height: explicit_height,
-                    },
-                    None,
-                    None,
-                );
+                    ..
+                } = *options;
+                let x_align = explicit_x_align
+                    .or(contextual_x_align)
+                    .unwrap_or(XAlign::Center);
+                let y_align = explicit_y_align
+                    .or(contextual_y_align)
+                    .unwrap_or(YAlign::Center);
+                let available_area =
+                    available_area.constrained(SizeConstraints::from(*options), x_align, y_align);
+                child.layout(available_area, None, None, state);
             }
             NodeValue::Offset {
                 offset_x,
@@ -363,11 +223,53 @@ impl<State> NodeValue<State> {
                     },
                     None,
                     None,
+                    state,
                 );
             }
             NodeValue::Space => (),
-            NodeValue::Scope { scoped } => scoped.layout(available_area),
+            NodeValue::Scope { scoped } => scoped.layout(available_area, state),
+            NodeValue::AreaReader { read } => {
+                *self = read(available_area, state).inner;
+                self.layout(available_area, None, None, state);
+            }
             NodeValue::Group(_) | NodeValue::Empty => unreachable!(),
+        }
+    }
+}
+
+impl Area {
+    fn constrained(self, constraints: SizeConstraints, x_align: XAlign, y_align: YAlign) -> Self {
+        let mut width = match (constraints.width.lower, constraints.width.upper) {
+            (None, None) => self.width,
+            (None, Some(upper)) => self.width.min(upper),
+            (Some(lower), None) => self.width.max(lower),
+            (Some(lower), Some(upper)) => self.width.clamp(lower, upper.max(lower)),
+        };
+        let mut height = match (constraints.height.lower, constraints.height.upper) {
+            (None, None) => self.height,
+            (None, Some(upper)) => self.height.min(upper),
+            (Some(lower), None) => self.height.max(lower),
+            (Some(lower), Some(upper)) => self.height.clamp(lower, upper.max(lower)),
+        };
+        if let Some(aspect) = constraints.aspect {
+            width = (height * aspect).min(width);
+            height = (width / aspect).min(height);
+        }
+        let x = match x_align {
+            XAlign::Leading => self.x,
+            XAlign::Trailing => self.x + (self.width - width),
+            XAlign::Center => self.x + (self.width * 0.5) - (width * 0.5),
+        };
+        let y = match y_align {
+            YAlign::Top => self.y,
+            YAlign::Bottom => self.y + (self.height - height),
+            YAlign::Center => self.y + (self.height * 0.5) - (height * 0.5),
+        };
+        Area {
+            x,
+            y,
+            width,
+            height,
         }
     }
 }
@@ -385,10 +287,11 @@ fn layout_axis<State>(
     orientation: Orientation,
     x_align: XAlign,
     y_align: YAlign,
+    state: &mut State,
 ) {
     let sizes: Vec<SizeConstraints> = elements
         .iter_mut()
-        .map(|element| element.constraints())
+        .map(|element| element.constraints(available_area))
         .collect();
     let element_count = elements.len();
 
@@ -545,578 +448,29 @@ fn layout_axis<State>(
 
     for (i, child) in elements.iter_mut().enumerate() {
         let child_size = final_sizes[i].unwrap();
-        let area = match orientation {
-            Orientation::Horizontal => {
-                if let NodeValue::Explicit { .. } = child {
-                    Area {
-                        x: current_pos,
-                        y: available_area.y,
-                        width: child_size,
-                        height: available_area.height,
-                    }
-                } else {
-                    let height = match (sizes[i].height.lower, sizes[i].height.upper) {
-                        (None, None) => available_area.height,
-                        (None, Some(upper)) => available_area.height.min(upper),
-                        (Some(lower), None) => available_area.height.max(lower),
-                        (Some(lower), Some(upper)) => {
-                            available_area.height.clamp(lower, upper.max(lower))
-                        }
-                    };
-                    Area {
-                        x: current_pos,
-                        y: match y_align {
-                            YAlign::Top => available_area.y,
-                            YAlign::Bottom => available_area.y + (available_area.height - height),
-                            YAlign::Center => {
-                                available_area.y + (available_area.height * 0.5) - (height * 0.5)
-                            }
-                        },
-                        width: child_size,
-                        height,
-                    }
-                }
-            }
-            Orientation::Vertical => {
-                if let NodeValue::Explicit { .. } = child {
-                    Area {
-                        x: available_area.x,
-                        y: current_pos,
-                        width: available_area.width,
-                        height: child_size,
-                    }
-                } else {
-                    let width = match (sizes[i].width.lower, sizes[i].width.upper) {
-                        (None, None) => available_area.width,
-                        (None, Some(upper)) => available_area.width.min(upper),
-                        (Some(lower), None) => available_area.width.max(lower),
-                        (Some(lower), Some(upper)) => {
-                            available_area.width.clamp(lower, upper.max(lower))
-                        }
-                    };
-                    Area {
-                        x: match x_align {
-                            XAlign::Leading => available_area.x,
-                            XAlign::Trailing => available_area.x + (available_area.width - width),
-                            XAlign::Center => {
-                                available_area.x + (available_area.width * 0.5) - (width * 0.5)
-                            }
-                        },
-                        y: current_pos,
-                        width,
-                        height: child_size,
-                    }
-                }
-            }
+
+        let mut area = match orientation {
+            Orientation::Horizontal => Area {
+                x: current_pos,
+                y: available_area.y,
+                width: child_size,
+                height: available_area.height,
+            },
+            Orientation::Vertical => Area {
+                x: available_area.x,
+                y: current_pos,
+                width: available_area.width,
+                height: child_size,
+            },
         };
 
-        child.layout(area, Some(x_align), Some(y_align));
+        if let NodeValue::Explicit { .. } = child {
+        } else {
+            area = area.constrained(sizes[i], x_align, y_align)
+        }
+
+        child.layout(area, Some(x_align), Some(y_align), state);
 
         current_pos += child_size + *spacing;
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::layout::*;
-    use crate::nodes::*;
-    #[test]
-    fn test_column_basic() {
-        Layout::new(|()| {
-            column(vec![
-                draw(|a, _| {
-                    assert_eq!(a, Area::new(0., 0., 100., 50.));
-                }),
-                draw(|a, _| {
-                    assert_eq!(a, Area::new(0., 50., 100., 50.));
-                }),
-            ])
-        })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
-    }
-    #[test]
-    fn test_column_constrained_1() {
-        Layout::new(|()| {
-            column(vec![
-                draw(|a, _| {
-                    assert_eq!(a, Area::new(0., 0., 100., 10.));
-                })
-                .height(10.),
-                draw(|a, _| {
-                    assert_eq!(a, Area::new(0., 10., 100., 90.));
-                }),
-            ])
-        })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
-        Layout::new(|()| {
-            column(vec![
-                draw(|a, _| {
-                    assert_eq!(a, Area::new(0., 0., 100., 10.));
-                })
-                .height(10.),
-                draw(|a, _| {
-                    assert_eq!(a, Area::new(0., 10., 100., 90.));
-                }),
-            ])
-        })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
-    }
-    #[test]
-    fn test_column_constrained_2() {
-        Layout::new(|()| {
-            column(vec![
-                draw(|a, _| {
-                    assert_eq!(a, Area::new(0., 0., 100., 90.));
-                }),
-                draw(|a, _| {
-                    assert_eq!(a, Area::new(0., 90., 100., 10.));
-                })
-                .height(10.),
-            ])
-        })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
-        Layout::new(|()| {
-            column(vec![
-                draw(|a, _| {
-                    assert_eq!(a, Area::new(0., 0., 100., 90.));
-                }),
-                draw(|a, _| {
-                    assert_eq!(a, Area::new(0., 90., 100., 10.));
-                })
-                .height(10.),
-            ])
-        })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
-    }
-    #[test]
-    fn test_row_basic() {
-        Layout::new(|()| {
-            row(vec![
-                draw(|a, _| {
-                    assert_eq!(a, Area::new(0., 0., 50., 100.));
-                }),
-                draw(|a, _| {
-                    assert_eq!(a, Area::new(50., 0., 50., 100.));
-                }),
-            ])
-        })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
-    }
-    #[test]
-    fn test_row_constrained_1() {
-        Layout::new(|()| {
-            row(vec![
-                draw(|a, _| {
-                    assert_eq!(a, Area::new(0., 25., 10., 50.));
-                })
-                .width(10.)
-                .height(50.),
-                draw(|a, _| {
-                    assert_eq!(a, Area::new(10., 0., 90., 100.));
-                }),
-            ])
-        })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
-        Layout::new(|()| {
-            row(vec![
-                draw(|a, _| {
-                    assert_eq!(a, Area::new(0., 0., 10., 20.));
-                })
-                .width(10.)
-                .height(20.)
-                .y_align(YAlign::Top),
-                draw(|a, _| {
-                    assert_eq!(a, Area::new(10., 40., 10., 20.));
-                })
-                .width(10.)
-                .height(20.),
-                draw(|a, _| {
-                    assert_eq!(a, Area::new(20., 80., 10., 20.));
-                })
-                .width(10.)
-                .height(20.)
-                .y_align(YAlign::Bottom),
-                draw(|a, _| {
-                    assert_eq!(a, Area::new(30., 0., 70., 100.));
-                }),
-            ])
-        })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
-    }
-    #[test]
-    fn test_row_constrained_2() {
-        Layout::new(|()| {
-            row(vec![
-                draw(|a, _| {
-                    assert_eq!(a, Area::new(0., 0., 70., 100.));
-                }),
-                draw(|a, _| {
-                    assert_eq!(a, Area::new(70., 0., 10., 20.));
-                })
-                .width(10.)
-                .height(20.)
-                .y_align(YAlign::Top),
-                draw(|a, _| {
-                    assert_eq!(a, Area::new(80., 40., 10., 20.));
-                })
-                .width(10.)
-                .height(20.),
-                draw(|a, _| {
-                    assert_eq!(a, Area::new(90., 80., 10., 20.));
-                })
-                .width(10.)
-                .height(20.)
-                .y_align(YAlign::Bottom),
-            ])
-        })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
-        Layout::new(|()| {
-            row(vec![
-                draw(|a, _| {
-                    assert_eq!(a, Area::new(0., 0., 70., 100.));
-                }),
-                draw(|a, _| {
-                    assert_eq!(a, Area::new(70., 0., 10., 20.));
-                })
-                .width(10.)
-                .height(20.)
-                .y_align(YAlign::Top),
-                draw(|a, _| {
-                    assert_eq!(a, Area::new(80., 40., 10., 20.));
-                })
-                .width(10.)
-                .height(20.),
-                draw(|a, _| {
-                    assert_eq!(a, Area::new(90., 80., 10., 20.));
-                })
-                .width(10.)
-                .height(20.)
-                .y_align(YAlign::Bottom),
-            ])
-        })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
-    }
-    #[test]
-    fn test_stack_basic() {
-        Layout::new(|()| {
-            stack(vec![
-                draw(|a, _| {
-                    assert_eq!(a, Area::new(0., 0., 100., 100.));
-                }),
-                draw(|a, _| {
-                    assert_eq!(a, Area::new(0., 0., 100., 100.));
-                }),
-            ])
-        })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
-    }
-
-    #[test]
-    fn test_stack_alignment() {
-        Layout::new(|()| {
-            stack(vec![
-                draw(|a, _| {
-                    assert_eq!(a, Area::new(0., 0., 10., 20.));
-                })
-                .width(10.)
-                .height(20.)
-                .align(Align::TopLeading),
-                draw(|a, _| {
-                    assert_eq!(a, Area::new(45., 0., 10., 20.));
-                })
-                .width(10.)
-                .height(20.)
-                .align(Align::TopCenter),
-                draw(|a, _| {
-                    assert_eq!(a, Area::new(90., 0., 10., 20.));
-                })
-                .width(10.)
-                .height(20.)
-                .align(Align::TopTrailing),
-                draw(|a, _| {
-                    assert_eq!(a, Area::new(90., 40., 10., 20.));
-                })
-                .width(10.)
-                .height(20.)
-                .align(Align::CenterTrailing),
-                draw(|a, _| {
-                    assert_eq!(a, Area::new(90., 80., 10., 20.));
-                })
-                .width(10.)
-                .height(20.)
-                .align(Align::BottomTrailing),
-                draw(|a, _| {
-                    assert_eq!(a, Area::new(45., 80., 10., 20.));
-                })
-                .width(10.)
-                .height(20.)
-                .align(Align::BottomCenter),
-                draw(|a, _| {
-                    assert_eq!(a, Area::new(0., 80., 10., 20.));
-                })
-                .width(10.)
-                .height(20.)
-                .align(Align::BottomLeading),
-                draw(|a, _| {
-                    assert_eq!(a, Area::new(0., 40., 10., 20.));
-                })
-                .width(10.)
-                .height(20.)
-                .align(Align::CenterLeading),
-                draw(|a, _| {
-                    assert_eq!(a, Area::new(45., 40., 10., 20.));
-                })
-                .width(10.)
-                .height(20.)
-                .align(Align::CenterCenter),
-            ])
-        })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
-    }
-    #[test]
-    fn test_sequence_spacing() {
-        Layout::new(|()| {
-            row_spaced(
-                10.,
-                vec![
-                    draw(|a, _| {
-                        assert_eq!(a, Area::new(0., 40., 10., 20.));
-                    })
-                    .width(10.)
-                    .height(20.),
-                    draw(|a, _| {
-                        assert_eq!(a, Area::new(20., 0., 25., 100.));
-                    }),
-                    draw(|a, _| {
-                        assert_eq!(a, Area::new(55., 40., 10., 20.));
-                    })
-                    .width(10.)
-                    .height(20.),
-                    draw(|a, _| {
-                        assert_eq!(a, Area::new(75., 0., 25., 100.));
-                    }),
-                ],
-            )
-        })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
-        Layout::new(|()| {
-            column_spaced(
-                10.,
-                vec![
-                    draw(|a, _| {
-                        assert_eq!(a, Area::new(0., 0., 100., 15.));
-                    }),
-                    draw(|a, _| {
-                        assert_eq!(a, Area::new(45., 25., 10., 20.));
-                    })
-                    .width(10.)
-                    .height(20.),
-                    draw(|a, _| {
-                        assert_eq!(a, Area::new(0., 55., 100., 15.));
-                    }),
-                    draw(|a, _| {
-                        assert_eq!(a, Area::new(45., 80., 10., 20.));
-                    })
-                    .width(10.)
-                    .height(20.),
-                ],
-            )
-        })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
-    }
-    #[test]
-    fn test_row_with_constrained_item() {
-        Layout::new(|()| {
-            row(vec![
-                draw(|a, _| {
-                    assert_eq!(a, Area::new(0., 0., 30., 100.));
-                })
-                .width(30.),
-                draw(|a, _| {
-                    assert_eq!(a, Area::new(30., 0., 70., 100.));
-                }),
-            ])
-        })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
-    }
-
-    #[test]
-    fn test_nested_row_with_constrained_item() {
-        Layout::new(|()| {
-            row(vec![
-                row(vec![
-                    draw(|a, _| {
-                        assert_eq!(a, Area::new(0., 0., 20., 100.));
-                    })
-                    .width(20.),
-                    draw(|a, _| {
-                        assert_eq!(a, Area::new(20., 0., 30., 100.));
-                    }),
-                ])
-                .width(50.),
-                draw(|a, _| {
-                    assert_eq!(a, Area::new(50., 0., 50., 100.));
-                }),
-            ])
-        })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
-    }
-
-    #[test]
-    fn test_stack_with_constrained_item() {
-        Layout::new(|()| {
-            stack(vec![
-                draw(|a, _| {
-                    assert_eq!(a, Area::new(0., 0., 100., 100.));
-                }),
-                draw(|a, _| {
-                    assert_eq!(a, Area::new(25., 25., 50., 50.));
-                })
-                .width(50.)
-                .height(50.),
-            ])
-        })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
-    }
-
-    #[test]
-    fn test_row_with_multiple_constrained_items() {
-        Layout::new(|()| {
-            row(vec![
-                draw(|a, _| {
-                    assert_eq!(a, Area::new(0., 0., 20., 100.));
-                })
-                .width(20.),
-                draw(|a, _| {
-                    assert_eq!(a, Area::new(20., 25., 30., 50.));
-                })
-                .width(30.)
-                .height(50.),
-                draw(|a, _| {
-                    assert_eq!(a, Area::new(50., 0., 25., 100.));
-                }),
-                draw(|a, _| {
-                    assert_eq!(a, Area::new(75., 0., 25., 100.));
-                }),
-            ])
-        })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
-    }
-
-    #[test]
-    fn test_constraint_combination() {
-        assert_eq!(
-            row::<()>(vec![space(), space().height(30.)])
-                .inner
-                .constraints(),
-            SizeConstraints {
-                width: Constraint::none(),
-                height: Constraint {
-                    lower: Some(30.),
-                    upper: None
-                },
-                aspect: None
-            }
-        );
-        assert_eq!(
-            row::<()>(vec![space().height(40.), space().height(30.)])
-                .inner
-                .constraints(),
-            SizeConstraints {
-                width: Constraint::none(),
-                height: Constraint {
-                    lower: Some(40.),
-                    upper: Some(40.)
-                },
-                aspect: None
-            }
-        );
-        assert_eq!(
-            column::<()>(vec![space(), space().width(10.)])
-                .inner
-                .constraints(),
-            SizeConstraints {
-                width: Constraint {
-                    lower: Some(10.),
-                    upper: None
-                },
-                height: Constraint::none(),
-                aspect: None
-            }
-        );
-        assert_eq!(
-            column::<()>(vec![space().width(20.), space().width(10.)])
-                .inner
-                .constraints(),
-            SizeConstraints {
-                width: Constraint {
-                    lower: Some(20.),
-                    upper: Some(20.)
-                },
-                height: Constraint::none(),
-                aspect: None
-            }
-        );
-        assert_eq!(
-            stack::<()>(vec![space(), space().height(10.)])
-                .inner
-                .constraints(),
-            SizeConstraints {
-                width: Constraint::none(),
-                height: Constraint {
-                    lower: Some(10.),
-                    upper: None
-                },
-                aspect: None
-            }
-        );
-        assert_eq!(
-            stack::<()>(vec![space().height(20.), space().width(10.)])
-                .inner
-                .constraints(),
-            SizeConstraints {
-                width: Constraint {
-                    lower: Some(10.),
-                    upper: None
-                },
-                height: Constraint {
-                    lower: Some(20.),
-                    upper: None
-                },
-                aspect: None
-            }
-        );
-        assert_eq!(
-            stack::<()>(vec![space().height(20.), space().height(10.)])
-                .inner
-                .constraints(),
-            SizeConstraints {
-                width: Constraint {
-                    lower: None,
-                    upper: None
-                },
-                height: Constraint {
-                    lower: Some(20.),
-                    upper: Some(20.)
-                },
-                aspect: None
-            }
-        );
-        assert_eq!(
-            stack::<()>(vec![space().width(20.), space().width(10.)])
-                .inner
-                .constraints(),
-            SizeConstraints {
-                width: Constraint {
-                    lower: Some(20.),
-                    upper: Some(20.)
-                },
-                height: Constraint {
-                    lower: None,
-                    upper: None
-                },
-                aspect: None
-            }
-        );
     }
 }
