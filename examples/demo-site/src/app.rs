@@ -469,7 +469,7 @@ where
     }
     let text = text.as_ref().to_string();
     if fit_width {
-        width_reader(move |read_area, state: &mut State<'_>| {
+        area_reader(move |read_area, state: &mut State<'_>| {
             let galley_text = text.clone();
             let node_text = text.clone();
             let galley_size = state

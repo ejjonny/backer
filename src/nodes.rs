@@ -123,12 +123,7 @@ pub fn area_reader<U>(func: impl Fn(Area, &mut U) -> Node<U> + 'static) -> Node<
     }
 }
 /// Narrows or scopes the mutable state available to the children of this node
-pub fn scope<U, V: 'static, F>(scope: F, node: Node<V>) -> Node<U>
-where
-    F: Fn(&mut U) -> &mut V + 'static,
-    F: Clone,
-{
-    let scope_a = scope.clone();
+pub fn scope<U: 'static, V: 'static>(scope: fn(&mut U) -> &mut V, node: Node<V>) -> Node<U> {
     Node {
         inner: match node.inner {
             NodeValue::Empty => empty().inner,
@@ -146,7 +141,7 @@ where
                         any.downcast_mut::<Node<V>>()
                             .expect("Invalid downcast")
                             .inner
-                            .layout(area, None, None, scope_a(state))
+                            .layout(area, None, None, scope(state))
                     }),
                     draw: Rc::new(move |any, state| {
                         any.downcast_ref::<Node<V>>()
