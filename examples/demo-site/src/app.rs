@@ -537,6 +537,7 @@ fn col_divider<'a>(color: Color32) -> Node<State<'a>> {
         );
     })
 }
+
 fn row_divider<'a>(color: Color32) -> Node<State<'a>> {
     draw(move |area, ui: &mut State<'_>| {
         ui.ui.painter().line_segment(
