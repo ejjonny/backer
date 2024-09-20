@@ -66,6 +66,7 @@ impl Area {
             height,
         }
     }
+    #[allow(unused)]
     pub(crate) fn zero() -> Self {
         Self {
             x: 0.,

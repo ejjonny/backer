@@ -1,9 +1,4 @@
-use crate::{
-    anynode::AnyNode,
-    drawable::Drawable,
-    layout::{Node, NodeValue},
-    models::*,
-};
+use crate::{anynode::AnyNode, drawable::Drawable, layout::NodeValue, models::*, Node};
 use std::{any::Any, rc::Rc};
 
 /// Defines a vertical sequence of elements
@@ -116,9 +111,13 @@ pub fn empty<U>() -> Node<U> {
         inner: NodeValue::Empty,
     }
 }
-pub fn width_reader<U>(func: impl Fn(Area, &mut U) -> Node<U> + 'static) -> Node<U> {
+/// Return nodes based on available area
+///
+/// This node comes with caveats! Constraints within an area reader **cannot** expand the area reader itself.
+/// If it could - it would create cyclical dependency which may be impossible to resolve.
+pub fn area_reader<U>(func: impl Fn(Area, &mut U) -> Node<U> + 'static) -> Node<U> {
     Node {
-        inner: NodeValue::WidthReader {
+        inner: NodeValue::AreaReader {
             read: Rc::new(func),
         },
     }
@@ -156,11 +155,10 @@ where
                             .draw(scope(state))
                     }),
                     constraints: |any, area| {
-                        todo!()
-                        // any.downcast_ref::<Node<V>>()
-                        //     .expect("Invalid downcast")
-                        //     .inner
-                        //     .constraints(area)
+                        any.downcast_ref::<Node<V>>()
+                            .expect("Invalid downcast")
+                            .inner
+                            .constraints(area)
                     },
                 },
             },

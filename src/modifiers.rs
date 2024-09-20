@@ -1,6 +1,5 @@
+use crate::{layout::NodeValue, models::*, Node};
 use std::ops::RangeBounds;
-
-use crate::{layout::Node, layout::NodeValue, models::*};
 
 impl<U> Node<U> {
     /// Adds padding to the node along the leading edge
@@ -269,11 +268,29 @@ impl<U> Node<U> {
                 ref mut options,
                 element: _,
             } => {
+                let width_update = size.width_min.or(size.width_max).is_some();
+                let height_update = size.height_min.or(size.height_max).is_some();
                 *options = Size {
-                    width_min: size.width_min.or(options.width_min),
-                    width_max: size.width_max.or(options.width_max),
-                    height_min: size.height_min.or(options.height_min),
-                    height_max: size.height_max.or(options.height_max),
+                    width_min: if width_update {
+                        size.width_min
+                    } else {
+                        options.width_min
+                    },
+                    width_max: if width_update {
+                        size.width_max
+                    } else {
+                        options.width_max
+                    },
+                    height_min: if height_update {
+                        size.height_min
+                    } else {
+                        options.height_min
+                    },
+                    height_max: if height_update {
+                        size.height_min
+                    } else {
+                        options.height_min
+                    },
                     x_align: size.x_align.or(options.x_align),
                     y_align: size.y_align.or(options.y_align),
                     aspect: size.aspect.or(options.aspect),

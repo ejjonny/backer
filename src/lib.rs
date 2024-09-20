@@ -17,10 +17,12 @@ mod constraints;
 mod debug;
 mod drawable;
 mod layout;
-mod layout_tests;
 mod modifiers;
+mod node;
+mod tests;
 
-pub use layout::{Layout, Node};
+pub use layout::Layout;
+pub use node::Node;
 
 /// Structs involved in layout definitions
 pub mod models;

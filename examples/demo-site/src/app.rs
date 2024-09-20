@@ -1,7 +1,7 @@
 use backer::{models::*, nodes::*, Layout, Node};
 use egui::{
-    include_image, text::LayoutJob, Align as EguiAlign, Button, Color32, Galley, Image,
-    ImageSource, Label, Pos2, Rect, Stroke, Ui,
+    include_image, text::LayoutJob, Align as EguiAlign, Button, Color32, Image, ImageSource, Label,
+    Pos2, Rect, Stroke, Ui,
 };
 
 #[derive(Default)]
@@ -98,7 +98,7 @@ fn footer<'a>(state: &mut State<'_>) -> Node<State<'a>> {
                 9.,
                 DEMO_FG_SECONDARY,
             )
-            .width_range((100.)..),
+            .width_range((150.)..),
         ],
     )
     .pad(10.)
@@ -121,7 +121,7 @@ fn main_view<'a>(state: &mut State<'_>) -> Node<State<'a>> {
                             10.,
                             vec![
                                 label(state, "Public profile", 18.),
-                                fit_label(state, profile_blurb, 10.),
+                                fit_label(state, profile_blurb, 10.).height(50.),
                             ],
                         )
                         .align(Align::TopLeading)
@@ -449,7 +449,6 @@ where
         text: String,
         align: EguiAlign,
         color: Color32,
-        wrap: bool,
     ) -> LayoutJob {
         let mut job = LayoutJob::single_section(
             text.clone(),
@@ -465,9 +464,6 @@ where
                 valign: align,
             },
         );
-        if !wrap {
-            job.wrap.max_rows = 1
-        }
         job.wrap.max_width = width;
         job
     }
@@ -485,29 +481,24 @@ where
                         galley_text,
                         EguiAlign::Min,
                         color,
-                        true,
                     ))
                 })
                 .size();
-            stack(vec![
-                rect(Color32::RED, Color32::TRANSPARENT, 0.),
-                draw(move |area, ui: &mut State<'_>| {
-                    let job = layout_job(
-                        size,
-                        read_area.width,
-                        node_text.clone(),
-                        EguiAlign::Min,
-                        color,
-                        true,
-                    );
-                    let rect = rect_from(area);
-                    ui.ui.allocate_ui_at_rect(rect, |ui| {
-                        ui.vertical(|ui| {
-                            ui.add(Label::new(job.clone()));
-                        })
-                    });
-                }),
-            ])
+            draw(move |area, ui: &mut State<'_>| {
+                let job = layout_job(
+                    size,
+                    read_area.width,
+                    node_text.clone(),
+                    EguiAlign::Min,
+                    color,
+                );
+                let rect = rect_from(area);
+                ui.ui.allocate_ui_at_rect(rect, |ui| {
+                    ui.vertical(|ui| {
+                        ui.add(Label::new(job.clone()));
+                    })
+                });
+            })
             .height(galley_size.y)
         })
         .width_range(100.0..)
@@ -523,18 +514,12 @@ where
                     galley_text,
                     EguiAlign::Center,
                     color,
-                    false,
                 ))
             })
             .size();
         draw(move |area, ui: &mut State<'_>| {
-            let job = layout_job(size, 300., text.clone(), EguiAlign::Center, color, false);
-            let rect = rect_from(area);
-            ui.ui.allocate_ui_at_rect(rect, |ui| {
-                ui.vertical(|ui| {
-                    ui.add(Label::new(job.clone()));
-                })
-            });
+            let job = layout_job(size, 300., text.clone(), EguiAlign::Center, color);
+            ui.ui.put(rect_from(area), Label::new(job.clone()));
         })
         .height(galley_size.y)
         .width(galley_size.x)

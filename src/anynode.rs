@@ -2,10 +2,11 @@ use crate::{constraints::SizeConstraints, models::Area};
 use std::{any::Any, fmt, rc::Rc};
 
 type AnyDrawFn<State> = Rc<dyn Fn(&dyn Any, &mut State)>;
+type AnyLayoutFn<State> = Rc<dyn Fn(&mut dyn Any, Area, &mut State)>;
 pub(crate) struct AnyNode<State> {
     pub(crate) inner: Box<dyn Any>,
     pub(crate) clone: fn(&Box<dyn Any>) -> Box<dyn Any>,
-    pub(crate) layout: Rc<dyn Fn(&mut dyn Any, Area, &mut State)>,
+    pub(crate) layout: AnyLayoutFn<State>,
     pub(crate) constraints: fn(&dyn Any, Area) -> SizeConstraints,
     pub(crate) draw: AnyDrawFn<State>,
 }
