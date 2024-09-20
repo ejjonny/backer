@@ -308,3 +308,20 @@ impl<U> Node<U> {
         self
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::models::*;
+    use crate::nodes::*;
+
+    #[test]
+    fn test_explicit_wrap_valid() {
+        let c = space::<()>()
+            .width(10.)
+            .width_range(5.0..)
+            .inner
+            .constraints(Area::zero());
+        assert!(c.width.upper.is_none());
+        assert_eq!(c.width.lower.unwrap(), 5.);
+    }
+}
