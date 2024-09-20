@@ -46,10 +46,10 @@ fn layout_for_highlight(ctx: &mut State) -> Node<State> {
         vec![
             scope(
                 |state: &mut State| &mut state.highlight,
-                rel_abs_seq(highlight),
+                rel_abs_seq(ctx.highlight),
             ),
             if highlight == HighlightedCase::AlignmentOffset || highlight == HighlightedCase::None {
-                return column_spaced(
+                column_spaced(
                     10.,
                     vec![
                         text("Alignment & Offset", 15., WHITE),
@@ -90,7 +90,7 @@ fn layout_for_highlight(ctx: &mut State) -> Node<State> {
                         .height(BTN_SIZE)
                         .y_align(YAlign::Bottom),
                     ],
-                );
+                )
             } else {
                 empty()
             },
