@@ -149,12 +149,12 @@ pub fn scope<U: 'static, V: 'static>(scope: fn(&mut U) -> &mut V, node: Node<V>)
                             .inner
                             .draw(scope(state))
                     }),
-                    constraints: |any, area| {
-                        any.downcast_ref::<Node<V>>()
-                            .expect("Invalid downcast")
-                            .inner
-                            .constraints(area)
-                    },
+                    constraints: todo!(), // |any, area, state| {
+                                          //     any.downcast_ref::<Node<V>>()
+                                          //         .expect("Invalid downcast")
+                                          //         .inner
+                                          //         .constraints(area, state)
+                                          // },
                 },
             },
         },

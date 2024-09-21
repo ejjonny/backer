@@ -7,7 +7,7 @@ pub(crate) struct AnyNode<State> {
     pub(crate) inner: Box<dyn Any>,
     pub(crate) clone: fn(&Box<dyn Any>) -> Box<dyn Any>,
     pub(crate) layout: AnyLayoutFn<State>,
-    pub(crate) constraints: fn(&dyn Any, Area) -> SizeConstraints,
+    pub(crate) constraints: fn(&dyn Any, Area) -> SizeConstraints<State>,
     pub(crate) draw: AnyDrawFn<State>,
 }
 
@@ -20,7 +20,7 @@ impl<State> AnyNode<State> {
         (self.layout)(&mut *self.inner, available_area, state)
     }
 
-    pub(crate) fn constraints(&self, area: Area) -> SizeConstraints {
+    pub(crate) fn constraints(&self, area: Area) -> SizeConstraints<State> {
         (self.constraints)(&*self.inner, area)
     }
 }

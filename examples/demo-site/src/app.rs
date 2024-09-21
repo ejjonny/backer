@@ -106,7 +106,7 @@ fn footer<'a>(state: &mut State<'_>) -> Node<State<'a>> {
 }
 
 fn main_view<'a>(state: &mut State<'_>) -> Node<State<'a>> {
-    let profile_blurb = "Your public profile URL can be shared with anyone and allows them to immediately see your bases and activity in Backer.";
+    let profile_blurb = "Your public profile URL can be shared with anyone and allows them to immediately see your bases and activity in Backer.Your public profile URL can be shared with anyone and allows them to immediately see your bases and activity in Backer.Your public profile URL can be shared with anyone and allows them to immediately see your bases and activity in Backer.Your public profile URL can be shared with anyone and allows them to immediately see your bases and activity in Backer.Your public profile URL can be shared with anyone and allows them to immediately see your bases and activity in Backer.";
     let pic_blurb = "Upload a profile picture of yourself or the character you always wanted to be. Your avatar will be displayed all over the Backer world.";
     let info_blurb = "Tell the world about yourself. Information you add will be visible only in your profile, not for all users.";
     stack(vec![stack(vec![
@@ -124,71 +124,71 @@ fn main_view<'a>(state: &mut State<'_>) -> Node<State<'a>> {
                                 fit_label(state, profile_blurb, 10.).height(50.),
                             ],
                         )
-                        .align(Align::TopLeading)
-                        .width_range((80.0)..),
-                        column_spaced(
-                            10.,
-                            vec![
-                                stack(vec![
-                                    rect(DEMO_FG, DEMO_BG, 5.),
-                                    row_spaced(
-                                        10.,
-                                        vec![
-                                            label_color(
-                                                state,
-                                                "ejjonny.io/backer/username",
-                                                12.,
-                                                DEMO_FG_SECONDARY,
-                                            ),
-                                            icon(include_image!("../assets/copy.svg")).aspect(1.),
-                                        ],
-                                    )
-                                    .pad(3.),
-                                ])
-                                .height(25.),
-                                row_spaced(
-                                    10.,
-                                    vec![
-                                        stack(vec![
-                                            rect(DEMO_FG, DEMO_BG, 5.),
-                                            row_spaced(
-                                                10.,
-                                                vec![
-                                                    icon(include_image!("../assets/share.svg"))
-                                                        .aspect(1.),
-                                                    label_color(
-                                                        state,
-                                                        "Share",
-                                                        12.,
-                                                        DEMO_FG_SECONDARY,
-                                                    ),
-                                                ],
-                                            )
-                                            .pad(3.),
-                                        ])
-                                        .height(25.),
-                                        stack(vec![
-                                            rect(DEMO_FG, DEMO_BG, 5.),
-                                            row_spaced(
-                                                10.,
-                                                vec![
-                                                    icon(include_image!("../assets/map-pin.svg"))
-                                                        .aspect(1.),
-                                                    label_color(
-                                                        state,
-                                                        "View location",
-                                                        12.,
-                                                        DEMO_FG_SECONDARY,
-                                                    ),
-                                                ],
-                                            )
-                                            .pad(3.),
-                                        ])
-                                        .height(25.),
-                                    ],
-                                ),
-                            ],
-                        ),
+                        .align(Align::TopLeading),
+                        // .width_range((80.0)..),
+                        // column_spaced(
+                        //     10.,
+                        //     vec![
+                        //         stack(vec![
+                        //             rect(DEMO_FG, DEMO_BG, 5.),
+                        //             row_spaced(
+                        //                 10.,
+                        //                 vec![
+                        //                     label_color(
+                        //                         state,
+                        //                         "ejjonny.io/backer/username",
+                        //                         12.,
+                        //                         DEMO_FG_SECONDARY,
+                        //                     ),
+                        //                     icon(include_image!("../assets/copy.svg")).aspect(1.),
+                        //                 ],
+                        //             )
+                        //             .pad(3.),
+                        //         ])
+                        //         .height(25.),
+                        //         row_spaced(
+                        //             10.,
+                        //             vec![
+                        //                 stack(vec![
+                        //                     rect(DEMO_FG, DEMO_BG, 5.),
+                        //                     row_spaced(
+                        //                         10.,
+                        //                         vec![
+                        //                             icon(include_image!("../assets/share.svg"))
+                        //                                 .aspect(1.),
+                        //                             label_color(
+                        //                                 state,
+                        //                                 "Share",
+                        //                                 12.,
+                        //                                 DEMO_FG_SECONDARY,
+                        //                             ),
+                        //                         ],
+                        //                     )
+                        //                     .pad(3.),
+                        //                 ])
+                        //                 .height(25.),
+                        //                 stack(vec![
+                        //                     rect(DEMO_FG, DEMO_BG, 5.),
+                        //                     row_spaced(
+                        //                         10.,
+                        //                         vec![
+                        //                             icon(include_image!("../assets/map-pin.svg"))
+                        //                                 .aspect(1.),
+                        //                             label_color(
+                        //                                 state,
+                        //                                 "View location",
+                        //                                 12.,
+                        //                                 DEMO_FG_SECONDARY,
+                        //                             ),
+                        //                         ],
+                        //                     )
+                        //                     .pad(3.),
+                        //                 ])
+                        //                 .height(25.),
+                        //             ],
+                        //         ),
+                        //     ],
+                        // ),
                     ],
                 ),
                 col_divider(DEMO_GRAY).height(1.),
@@ -468,41 +468,27 @@ where
         job
     }
     let text = text.as_ref().to_string();
+    let text_dyn = text.clone();
     if fit_width {
-        area_reader(move |read_area, state: &mut State<'_>| {
-            let galley_text = text.clone();
-            let node_text = text.clone();
+        draw(move |area, ui: &mut State<'_>| {
+            let job = layout_job(size, area.width, text.clone(), EguiAlign::Min, color);
+            let rect = rect_from(area);
+            ui.ui.allocate_ui_at_rect(rect, |ui| {
+                ui.vertical(|ui| {
+                    ui.add(Label::new(job.clone()));
+                })
+            });
+        })
+        .dynamic_height(move |width, state| {
+            let galley_text = text_dyn.clone();
             let galley_size = state
                 .ui
                 .fonts(move |fonts| {
-                    fonts.layout_job(layout_job(
-                        size,
-                        read_area.width,
-                        galley_text,
-                        EguiAlign::Min,
-                        color,
-                    ))
+                    fonts.layout_job(layout_job(size, width, galley_text, EguiAlign::Min, color))
                 })
                 .size();
-            draw(move |area, ui: &mut State<'_>| {
-                let job = layout_job(
-                    size,
-                    read_area.width,
-                    node_text.clone(),
-                    EguiAlign::Min,
-                    color,
-                );
-                let rect = rect_from(area);
-                ui.ui.allocate_ui_at_rect(rect, |ui| {
-                    ui.vertical(|ui| {
-                        ui.add(Label::new(job.clone()));
-                    })
-                });
-            })
-            .height(galley_size.y)
+            galley_size.y
         })
-        .width_range(100.0..)
-        .height_range(..100.0)
     } else {
         let galley_text = text.clone();
         let galley_size = state

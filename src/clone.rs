@@ -44,7 +44,7 @@ impl<State> Clone for NodeValue<State> {
                 draw: drawable.draw.clone(),
             }),
             NodeValue::Explicit { options, element } => NodeValue::Explicit {
-                options: *options,
+                options: options.clone(),
                 element: element.clone(),
             },
             NodeValue::Group(elements) => NodeValue::Group(elements.clone()),

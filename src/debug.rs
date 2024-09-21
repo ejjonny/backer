@@ -48,7 +48,7 @@ impl<State> fmt::Debug for NodeValue<State> {
             NodeValue::Draw(drawable) => f.debug_tuple("Draw").field(drawable).finish(),
             NodeValue::Explicit { options, element } => f
                 .debug_struct("Explicit")
-                .field("options", options)
+                .field("options", &options)
                 .field("element", element)
                 .finish(),
             NodeValue::Space => write!(f, "Space"),
