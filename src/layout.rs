@@ -6,7 +6,7 @@ use crate::{
     Node,
 };
 use core::f32;
-use std::rc::Rc;
+use std::{process::Child, rc::Rc};
 
 /**
 The root object used to store & calculate a layout
@@ -237,111 +237,37 @@ impl<State> NodeValue<State> {
         contextual_y_align: Option<YAlign>,
         state: &mut State,
     ) {
+        let contextual_aligns = self.contextual_aligns();
+        let allocated = self.allocate_area(
+            available_area,
+            contextual_aligns.0.or(contextual_x_align),
+            contextual_aligns.1.or(contextual_y_align),
+            state,
+        );
         match self {
-            NodeValue::Padding {
-                amounts,
-                element: child,
-            } => {
-                let inner_area = Area {
-                    x: available_area.x + amounts.leading,
-                    y: available_area.y + amounts.top,
-                    width: (available_area.width - amounts.trailing - amounts.leading).max(0.),
-                    height: (available_area.height - amounts.bottom - amounts.top).max(0.),
-                };
-                child.layout(inner_area, None, None, state);
+            NodeValue::Column { elements, .. }
+            | NodeValue::Row { elements, .. }
+            | NodeValue::Stack(elements) => {
+                elements
+                    .iter_mut()
+                    .zip(allocated)
+                    .for_each(|(el, allocation)| el.layout(allocation, None, None, state));
             }
-            NodeValue::Column {
-                elements,
-                spacing,
-                align,
-                off_axis_align,
-            } => {
-                layout_axis(
-                    elements,
-                    spacing,
-                    available_area,
-                    Orientation::Vertical,
-                    off_axis_align.unwrap_or(XAlign::Center),
-                    align.unwrap_or(YAlign::Center),
-                    state,
-                    false,
-                );
-            }
-            NodeValue::Row {
-                elements,
-                spacing,
-                align,
-                off_axis_align,
-            } => {
-                layout_axis(
-                    elements,
-                    spacing,
-                    available_area,
-                    Orientation::Horizontal,
-                    align.unwrap_or(XAlign::Center),
-                    off_axis_align.unwrap_or(YAlign::Center),
-                    state,
-                    false,
-                );
-            }
-            NodeValue::Stack(children) => {
-                for child in children {
-                    child.layout(available_area, None, None, state)
-                }
+            NodeValue::Padding { element, .. }
+            | NodeValue::Explicit { element, .. }
+            | NodeValue::Offset { element, .. } => {
+                element.layout(allocated[0], None, None, state);
             }
             NodeValue::Draw(drawable) => {
-                drawable.area = Area {
-                    x: available_area.x,
-                    y: available_area.y,
-                    width: available_area.width.max(0.),
-                    height: available_area.height.max(0.),
-                };
-            }
-            NodeValue::Explicit {
-                options,
-                element: child,
-            } => {
-                let Size {
-                    x_align: explicit_x_align,
-                    y_align: explicit_y_align,
-                    ..
-                } = *options;
-                let x_align = explicit_x_align
-                    .or(contextual_x_align)
-                    .unwrap_or(XAlign::Center);
-                let y_align = explicit_y_align
-                    .or(contextual_y_align)
-                    .unwrap_or(YAlign::Center);
-                let available_area = available_area.constrained(
-                    &SizeConstraints::from_size(options.clone(), available_area, state),
-                    state,
-                    x_align,
-                    y_align,
-                );
-                child.layout(available_area, None, None, state);
-            }
-            NodeValue::Offset {
-                offset_x,
-                offset_y,
-                element,
-            } => {
-                element.layout(
-                    Area {
-                        x: available_area.x + *offset_x,
-                        y: available_area.y + *offset_y,
-                        width: available_area.width,
-                        height: available_area.height,
-                    },
-                    None,
-                    None,
-                    state,
-                );
+                drawable.area = allocated[0];
+                drawable.area.width = drawable.area.width.max(0.);
+                drawable.area.height = drawable.area.height.max(0.);
             }
             NodeValue::Space => (),
             NodeValue::Scope { scoped } => scoped.layout(available_area, state),
             NodeValue::AreaReader { read } => {
-                *self = read(available_area, state).inner;
-                self.layout(available_area, None, None, state);
+                *self = read(allocated[0], state).inner;
+                self.layout(allocated[0], None, None, state);
             }
             NodeValue::Group(_) | NodeValue::Empty => unreachable!(),
         }

@@ -29,21 +29,20 @@ fn my_layout_fn(ui: &mut Ui) -> Node<Ui> {
                     2024-09-20 17:23:24.141 egui-example[2388:32853] +[IMKClient subclass]: chose IMKClient_Legacy
                     2024-09-20 17:23:24.141 egui-example[2388:32853] +[IMKInputSession subclass]: chose IMKInputSession_Legacy";
     column_spaced(
-        40.,
+        10.,
         (0..6)
             .map(|_| {
                 row_spaced(
                     10.,
                     vec![
+                        draw_b(ui).aspect(2.),
                         draw_a(ui).width(40.).height(40.).align(Align::TopCenter),
                         column(vec![
                             label_common(t, 10., Color32::WHITE),
                             draw_a(ui).height(20.),
-                        ])
-                        .y_align(YAlign::Top),
+                        ]),
                     ],
                 )
-                .y_align(YAlign::Top)
             })
             .collect(),
     )

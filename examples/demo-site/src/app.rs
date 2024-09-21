@@ -121,74 +121,74 @@ fn main_view<'a>(state: &mut State<'_>) -> Node<State<'a>> {
                             10.,
                             vec![
                                 label(state, "Public profile", 18.),
-                                fit_label(state, profile_blurb, 10.).height(50.),
+                                fit_label(state, profile_blurb, 10.),
                             ],
                         )
-                        .align(Align::TopLeading),
-                        // .width_range((80.0)..),
-                        // column_spaced(
-                        //     10.,
-                        //     vec![
-                        //         stack(vec![
-                        //             rect(DEMO_FG, DEMO_BG, 5.),
-                        //             row_spaced(
-                        //                 10.,
-                        //                 vec![
-                        //                     label_color(
-                        //                         state,
-                        //                         "ejjonny.io/backer/username",
-                        //                         12.,
-                        //                         DEMO_FG_SECONDARY,
-                        //                     ),
-                        //                     icon(include_image!("../assets/copy.svg")).aspect(1.),
-                        //                 ],
-                        //             )
-                        //             .pad(3.),
-                        //         ])
-                        //         .height(25.),
-                        //         row_spaced(
-                        //             10.,
-                        //             vec![
-                        //                 stack(vec![
-                        //                     rect(DEMO_FG, DEMO_BG, 5.),
-                        //                     row_spaced(
-                        //                         10.,
-                        //                         vec![
-                        //                             icon(include_image!("../assets/share.svg"))
-                        //                                 .aspect(1.),
-                        //                             label_color(
-                        //                                 state,
-                        //                                 "Share",
-                        //                                 12.,
-                        //                                 DEMO_FG_SECONDARY,
-                        //                             ),
-                        //                         ],
-                        //                     )
-                        //                     .pad(3.),
-                        //                 ])
-                        //                 .height(25.),
-                        //                 stack(vec![
-                        //                     rect(DEMO_FG, DEMO_BG, 5.),
-                        //                     row_spaced(
-                        //                         10.,
-                        //                         vec![
-                        //                             icon(include_image!("../assets/map-pin.svg"))
-                        //                                 .aspect(1.),
-                        //                             label_color(
-                        //                                 state,
-                        //                                 "View location",
-                        //                                 12.,
-                        //                                 DEMO_FG_SECONDARY,
-                        //                             ),
-                        //                         ],
-                        //                     )
-                        //                     .pad(3.),
-                        //                 ])
-                        //                 .height(25.),
-                        //             ],
-                        //         ),
-                        //     ],
-                        // ),
+                        .align(Align::TopLeading)
+                        .width_range((80.0)..),
+                        column_spaced(
+                            10.,
+                            vec![
+                                stack(vec![
+                                    rect(DEMO_FG, DEMO_BG, 5.),
+                                    row_spaced(
+                                        10.,
+                                        vec![
+                                            label_color(
+                                                state,
+                                                "ejjonny.io/backer/username",
+                                                12.,
+                                                DEMO_FG_SECONDARY,
+                                            ),
+                                            icon(include_image!("../assets/copy.svg")).aspect(1.),
+                                        ],
+                                    )
+                                    .pad(3.),
+                                ])
+                                .height(25.),
+                                row_spaced(
+                                    10.,
+                                    vec![
+                                        stack(vec![
+                                            rect(DEMO_FG, DEMO_BG, 5.),
+                                            row_spaced(
+                                                10.,
+                                                vec![
+                                                    icon(include_image!("../assets/share.svg"))
+                                                        .aspect(1.),
+                                                    label_color(
+                                                        state,
+                                                        "Share",
+                                                        12.,
+                                                        DEMO_FG_SECONDARY,
+                                                    ),
+                                                ],
+                                            )
+                                            .pad(3.),
+                                        ])
+                                        .height(25.),
+                                        stack(vec![
+                                            rect(DEMO_FG, DEMO_BG, 5.),
+                                            row_spaced(
+                                                10.,
+                                                vec![
+                                                    icon(include_image!("../assets/map-pin.svg"))
+                                                        .aspect(1.),
+                                                    label_color(
+                                                        state,
+                                                        "View location",
+                                                        12.,
+                                                        DEMO_FG_SECONDARY,
+                                                    ),
+                                                ],
+                                            )
+                                            .pad(3.),
+                                        ])
+                                        .height(25.),
+                                    ],
+                                ),
+                            ],
+                        ),
                     ],
                 ),
                 col_divider(DEMO_GRAY).height(1.),
