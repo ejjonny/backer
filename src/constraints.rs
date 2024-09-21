@@ -151,6 +151,17 @@ impl SizeConstraints {
 }
 
 impl Constraint {
+    pub(crate) fn clamping(&self, value: f32) -> f32 {
+        match (self.lower, self.upper) {
+            (None, None) => value,
+            (None, Some(upper)) => value.min(upper),
+            (Some(lower), None) => value.max(lower),
+            (Some(lower), Some(upper)) => value.clamp(lower, upper),
+        }
+    }
+}
+
+impl Constraint {
     pub(crate) fn combine_adjacent_priority(self, other: Self) -> Self {
         // This always takes the bigger bound
         let lower = match (self.lower, other.lower) {

@@ -552,4 +552,23 @@ mod tests {
         })
         .draw(Area::new(0., 0., 1000., 100.), &mut ());
     }
+    #[test]
+    fn test_explicit_aspect() {
+        Layout::new(|()| {
+            column_spaced(
+                10.,
+                vec![
+                    draw(|a, _| {
+                        assert_eq!(a, Area::new(45., 0., 10., 20.));
+                    })
+                    .width(10.)
+                    .aspect(0.5),
+                    draw(|a, _| {
+                        assert_eq!(a, Area::new(0., 30., 100., 70.));
+                    }),
+                ],
+            )
+        })
+        .draw(Area::new(0., 0., 100., 100.), &mut ());
+    }
 }
