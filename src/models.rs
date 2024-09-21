@@ -11,6 +11,12 @@ pub enum XAlign {
     Trailing,
 }
 
+impl From<YAlign> for (Option<XAlign>, Option<YAlign>) {
+    fn from(value: YAlign) -> Self {
+        (None, Some(value))
+    }
+}
+
 /// Alignment along the Y axis
 #[derive(Debug, Clone, Copy)]
 pub enum YAlign {
@@ -20,6 +26,12 @@ pub enum YAlign {
     Center,
     /// Aligns to the bottom
     Bottom,
+}
+
+impl From<XAlign> for (Option<XAlign>, Option<YAlign>) {
+    fn from(value: XAlign) -> Self {
+        (Some(value), None)
+    }
 }
 
 /// An alignment along both the X and Y axis
@@ -43,6 +55,23 @@ pub enum Align {
     CenterLeading,
     /// Aligns to the center in LTR layout - the default alignment
     CenterCenter,
+}
+
+impl From<Align> for (Option<XAlign>, Option<YAlign>) {
+    fn from(value: Align) -> Self {
+        let (x_align, y_align) = match value {
+            Align::TopLeading => (XAlign::Leading, YAlign::Top),
+            Align::TopCenter => (XAlign::Center, YAlign::Top),
+            Align::TopTrailing => (XAlign::Trailing, YAlign::Top),
+            Align::CenterTrailing => (XAlign::Trailing, YAlign::Center),
+            Align::BottomTrailing => (XAlign::Trailing, YAlign::Bottom),
+            Align::BottomCenter => (XAlign::Center, YAlign::Bottom),
+            Align::BottomLeading => (XAlign::Leading, YAlign::Bottom),
+            Align::CenterLeading => (XAlign::Leading, YAlign::Center),
+            Align::CenterCenter => (XAlign::Center, YAlign::Center),
+        };
+        (Some(x_align), Some(y_align))
+    }
 }
 
 /// An allocation of screen space as a rectangle

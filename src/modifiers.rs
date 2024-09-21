@@ -191,11 +191,20 @@ impl<U> Node<U> {
             ..Default::default()
         })
     }
-    /// Specifies an alignment along the x axis.
+    /// Specifies an alignment along both the x and/or y axis.
     ///
-    /// This will only have an effect if the node is constrained to be smaller than the area that is available,
+    /// This will only have an effect if the node is constrained along the axis to be smaller than the area that is available,
     /// otherwise, there's no wiggle room.
-    pub fn x_align(mut self, align: XAlign) -> Self {
+    pub fn align(self, align: impl Into<(Option<XAlign>, Option<YAlign>)>) -> Self {
+        let (x, y) = align.into();
+        match (x, y) {
+            (None, None) => self,
+            (None, Some(y)) => self.y_align(y),
+            (Some(x), None) => self.x_align(x),
+            (Some(x), Some(y)) => self.x_align(x).y_align(y),
+        }
+    }
+    fn x_align(mut self, align: XAlign) -> Self {
         match self.inner {
             NodeValue::Column {
                 off_axis_align: ref mut col_align,
@@ -214,11 +223,7 @@ impl<U> Node<U> {
         }
         self
     }
-    /// Specifies an alignment along the y axis.
-    ///
-    /// This will only have an effect if the node is constrained to be smaller than the area that is available,
-    /// otherwise, there's no wiggle room.
-    pub fn y_align(mut self, align: YAlign) -> Self {
+    fn y_align(mut self, align: YAlign) -> Self {
         match self.inner {
             NodeValue::Row {
                 off_axis_align: ref mut row_align,
@@ -236,24 +241,6 @@ impl<U> Node<U> {
             }
         }
         self
-    }
-    /// Specifies an alignment along both the x & y axis.
-    ///
-    /// This will only have an effect if the node is constrained along the axis to be smaller than the area that is available,
-    /// otherwise, there's no wiggle room.
-    pub fn align(self, align: Align) -> Self {
-        let (x_align, y_align) = match align {
-            Align::TopLeading => (XAlign::Leading, YAlign::Top),
-            Align::TopCenter => (XAlign::Center, YAlign::Top),
-            Align::TopTrailing => (XAlign::Trailing, YAlign::Top),
-            Align::CenterTrailing => (XAlign::Trailing, YAlign::Center),
-            Align::BottomTrailing => (XAlign::Trailing, YAlign::Bottom),
-            Align::BottomCenter => (XAlign::Center, YAlign::Bottom),
-            Align::BottomLeading => (XAlign::Leading, YAlign::Bottom),
-            Align::CenterLeading => (XAlign::Leading, YAlign::Center),
-            Align::CenterCenter => (XAlign::Center, YAlign::Center),
-        };
-        self.x_align(x_align).y_align(y_align)
     }
     /// Constrains the node's height to `ratio` of width
     pub fn aspect(self, ratio: f32) -> Self {

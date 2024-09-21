@@ -6,7 +6,7 @@ use crate::{
     Node,
 };
 use core::f32;
-use std::{process::Child, rc::Rc};
+use std::rc::Rc;
 
 /**
 The root object used to store & calculate a layout

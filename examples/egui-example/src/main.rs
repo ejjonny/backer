@@ -1,4 +1,3 @@
-use backer::models::Align;
 use backer::Layout;
 use backer::Node;
 use backer::{models::*, nodes::*};
@@ -25,28 +24,20 @@ fn main() -> eframe::Result {
 }
 
 fn my_layout_fn(ui: &mut Ui) -> Node<Ui> {
-    let t = "long text long text long text long text long text long text target/debug/examples/egui-example`
-                    2024-09-20 17:23:24.141 egui-example[2388:32853] +[IMKClient subclass]: chose IMKClient_Legacy
-                    2024-09-20 17:23:24.141 egui-example[2388:32853] +[IMKInputSession subclass]: chose IMKInputSession_Legacy";
-    column_spaced(
-        10.,
-        (0..6)
-            .map(|_| {
-                row_spaced(
-                    10.,
-                    vec![
-                        draw_b(ui).aspect(2.),
-                        draw_a(ui).width(40.).height(40.).align(Align::TopCenter),
-                        column(vec![
-                            label_common(t, 10., Color32::WHITE),
-                            draw_a(ui).height(20.),
-                        ]),
-                    ],
-                )
-            })
-            .collect(),
-    )
-    .y_align(YAlign::Top)
+    let t = "test tests::sequence_tests::tests::test_row_basic ... ok
+    test tests::sequence_tests::tests::test_row_constrained_1 ... ok
+    test tests::sequence_tests::tests::test_row_constrained_2 ... ok
+    test tests::sequence_tests::tests::test_row_with_constrained_item ... ok
+    test tests::sequence_tests::tests::test_row_with_multiple_constrained_items ... ok
+    test tests::sequence_tests::tests::test_sequence_spacing ... ok
+    test tests::sequence_tests::tests::test_stack_basic ... ok
+    test tests::sequence_tests::tests::test_stack_alignment ... ok
+    test tests::sequence_tests::tests::test_stack_with_constrained_item ... ok";
+
+    row(vec![
+        label_common(t, 10., Color32::WHITE),
+        draw_a(ui).height(20.),
+    ])
 }
 
 fn draw_a(ui: &mut Ui) -> Node<Ui> {
