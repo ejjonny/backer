@@ -129,6 +129,107 @@ impl<State> NodeValue<State> {
         }
     }
 
+    pub(crate) fn contextual_aligns(&self) -> (Option<XAlign>, Option<YAlign>) {
+        if let NodeValue::Column {
+            align: y,
+            off_axis_align: x,
+            ..
+        }
+        | NodeValue::Row {
+            align: x,
+            off_axis_align: y,
+            ..
+        } = self
+        {
+            (*x, *y)
+        } else {
+            (None, None)
+        }
+    }
+
+    pub(crate) fn allocate_area(
+        &mut self,
+        available_area: Area,
+        contextual_x_align: Option<XAlign>,
+        contextual_y_align: Option<YAlign>,
+        state: &mut State,
+    ) -> Vec<Area> {
+        match self {
+            NodeValue::Padding { amounts, .. } => vec![Area {
+                x: available_area.x + amounts.leading,
+                y: available_area.y + amounts.top,
+                width: (available_area.width - amounts.trailing - amounts.leading).max(0.),
+                height: (available_area.height - amounts.bottom - amounts.top).max(0.),
+            }],
+            NodeValue::Column {
+                elements,
+                spacing,
+                align,
+                off_axis_align,
+            } => layout_axis(
+                elements,
+                spacing,
+                available_area,
+                Orientation::Vertical,
+                off_axis_align.unwrap_or(XAlign::Center),
+                align.unwrap_or(YAlign::Center),
+                state,
+                true,
+            ),
+            NodeValue::Row {
+                elements,
+                spacing,
+                align,
+                off_axis_align,
+            } => layout_axis(
+                elements,
+                spacing,
+                available_area,
+                Orientation::Horizontal,
+                align.unwrap_or(XAlign::Center),
+                off_axis_align.unwrap_or(YAlign::Center),
+                state,
+                true,
+            ),
+            NodeValue::Stack(children) => children.iter().map(|_| available_area).collect(),
+            NodeValue::Explicit { options, .. } => {
+                let Size {
+                    x_align: explicit_x_align,
+                    y_align: explicit_y_align,
+                    ..
+                } = *options;
+                let x_align = explicit_x_align
+                    .or(contextual_x_align)
+                    .unwrap_or(XAlign::Center);
+                let y_align = explicit_y_align
+                    .or(contextual_y_align)
+                    .unwrap_or(YAlign::Center);
+                let available_area = available_area.constrained(
+                    &SizeConstraints::from_size(options.clone(), available_area, state),
+                    state,
+                    x_align,
+                    y_align,
+                );
+                vec![available_area]
+            }
+            NodeValue::Offset {
+                offset_x, offset_y, ..
+            } => vec![Area {
+                x: available_area.x + *offset_x,
+                y: available_area.y + *offset_y,
+                width: available_area.width,
+                height: available_area.height,
+            }],
+            NodeValue::Draw(_)
+            | NodeValue::Space
+            | NodeValue::Scope { .. }
+            | NodeValue::AreaReader { .. } => {
+                vec![available_area]
+            }
+            NodeValue::Group(_) | NodeValue::Empty => unreachable!(),
+        }
+    }
+
     pub(crate) fn layout(
         &mut self,
         available_area: Area,
@@ -212,7 +313,7 @@ impl<State> NodeValue<State> {
                     .or(contextual_y_align)
                     .unwrap_or(YAlign::Center);
                 let available_area = available_area.constrained(
-                    &SizeConstraints::from(options.clone()),
+                    &SizeConstraints::from_size(options.clone(), available_area, state),
                     state,
                     x_align,
                     y_align,
@@ -315,7 +416,7 @@ pub(crate) fn layout_axis<State>(
 ) -> Vec<Area> {
     let sizes: Vec<SizeConstraints<State>> = elements
         .iter_mut()
-        .map(|element| element.constraints(available_area))
+        .map(|element| element.constraints(available_area, state))
         .collect();
     let element_count = elements.len();
 
