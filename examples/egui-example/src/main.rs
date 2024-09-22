@@ -25,8 +25,13 @@ fn main() -> eframe::Result {
 
 fn my_layout_fn(ui: &mut Ui) -> Node<Ui> {
     column(vec![
-        row(vec![draw_b(ui).width(10.)]),
-        draw_a(ui).width(30.),
+        draw_a(ui),
+        row(vec![
+            draw_b(ui).width(30.),
+            space(),
+            column(vec![draw_c(ui).width(20.), draw_b(ui).width(30.)]).align(XAlign::Trailing),
+        ])
+        .width(200.),
     ])
     .align(XAlign::Leading)
 }

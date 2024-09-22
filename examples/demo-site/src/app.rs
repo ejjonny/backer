@@ -69,7 +69,7 @@ fn my_layout_fn<'a>(state: &mut State<'_>) -> Node<State<'a>> {
                 footer(state),
             ]),
         ])
-        .y_align(YAlign::Top),
+        .align(YAlign::Top),
         if *state.sidebar {
             side_bar(state)
         } else {
@@ -90,7 +90,7 @@ fn footer<'a>(state: &mut State<'_>) -> Node<State<'a>> {
                     label_color(state, "Privacy Policy", 9., DEMO_FG_SECONDARY),
                 ],
             )
-            .x_align(XAlign::Leading),
+            .align(XAlign::Leading),
             space(),
             label_color(
                 state,
@@ -223,7 +223,7 @@ fn main_view<'a>(state: &mut State<'_>) -> Node<State<'a>> {
                                                 ),
                                             ],
                                         )
-                                        .x_align(XAlign::Leading),
+                                        .align(XAlign::Leading),
                                     ],
                                 ),
                                 row_spaced(
@@ -267,7 +267,7 @@ fn main_view<'a>(state: &mut State<'_>) -> Node<State<'a>> {
                                 stack(vec![
                                     rect(DEMO_FG, DEMO_BG, 5.),
                                     fit_label_color(state, "@UserName", 12., DEMO_FG)
-                                        .x_align(XAlign::Leading)
+                                        .align(XAlign::Leading)
                                         .pad(5.),
                                 ])
                                 .height(25.),
@@ -281,10 +281,10 @@ fn main_view<'a>(state: &mut State<'_>) -> Node<State<'a>> {
                                 .height(50.),
                             ],
                         )
-                        .x_align(XAlign::Leading),
+                        .align(XAlign::Leading),
                     ],
                 )
-                .y_align(YAlign::Top),
+                .align(YAlign::Top),
             ],
         )
         .align(Align::TopLeading)
@@ -324,7 +324,7 @@ fn side_bar<'a>(state: &mut State<'_>) -> Node<State<'a>> {
         .align(Align::TopLeading)
         .pad(30.),
     ])
-    .x_align(XAlign::Leading)
+    .align(XAlign::Leading)
     .width(200.)
 }
 
@@ -334,7 +334,7 @@ fn header<'a>(state: &mut State<'_>) -> Node<State<'a>> {
         vec![
             menu_button(state),
             label(state, "My Account", 18.)
-                .y_align(YAlign::Bottom)
+                .align(YAlign::Bottom)
                 .width(110.),
             space(),
             stack(vec![
@@ -391,58 +391,47 @@ fn icon<'a>(image: impl Into<ImageSource<'static>> + 'static) -> Node<State<'a>>
     })
 }
 
-fn label<'a, S: AsRef<str> + 'static>(state: &mut State<'_>, text: S, size: f32) -> Node<State<'a>>
-where
-    S: Clone + Copy,
-{
+fn label<'a, S: AsRef<str> + 'static + Clone + Copy>(
+    state: &mut State<'_>,
+    text: S,
+    size: f32,
+) -> Node<State<'a>> {
     label_common(state, text, size, false, Color32::WHITE)
 }
 
-fn fit_label<'a, S: AsRef<str> + 'static>(
+fn fit_label<'a, S: AsRef<str> + 'static + Clone + Copy>(
     state: &mut State<'_>,
     text: S,
     size: f32,
-) -> Node<State<'a>>
-where
-    S: Clone + Copy,
-{
+) -> Node<State<'a>> {
     label_common(state, text, size, true, Color32::WHITE)
 }
 
-fn fit_label_color<'a, S: AsRef<str> + 'static>(
+fn fit_label_color<'a, S: AsRef<str> + 'static + Clone + Copy>(
     state: &mut State<'_>,
     text: S,
     size: f32,
     color: Color32,
-) -> Node<State<'a>>
-where
-    S: Clone + Copy,
-{
+) -> Node<State<'a>> {
     label_common(state, text, size, true, color)
 }
 
-fn label_color<'a, S: AsRef<str> + 'static>(
+fn label_color<'a, S: AsRef<str> + 'static + Clone + Copy>(
     state: &mut State<'_>,
     text: S,
     size: f32,
     color: Color32,
-) -> Node<State<'a>>
-where
-    S: Clone + Copy,
-{
+) -> Node<State<'a>> {
     label_common(state, text, size, false, color)
 }
 
-fn label_common<'a, S: AsRef<str> + 'static>(
+fn label_common<'a, S: AsRef<str> + 'static + Clone + Copy>(
     state: &mut State<'_>,
     text: S,
     size: f32,
     fit_width: bool,
     color: Color32,
-) -> Node<State<'a>>
-where
-    S: Clone + Copy,
-{
+) -> Node<State<'a>> {
     fn layout_job(
         font_size: f32,
         width: f32,
