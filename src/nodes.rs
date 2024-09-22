@@ -1,4 +1,7 @@
-use crate::{anynode::AnyNode, drawable::Drawable, layout::NodeValue, models::*, Node};
+use crate::{
+    anynode::AnyNode, constraints::SizeConstraints, drawable::Drawable, layout::NodeValue,
+    models::*, Node,
+};
 use std::{any::Any, rc::Rc};
 
 /// Defines a vertical sequence of elements
@@ -149,12 +152,28 @@ pub fn scope<U: 'static, V: 'static>(scope: fn(&mut U) -> &mut V, node: Node<V>)
                             .inner
                             .draw(scope(state))
                     }),
-                    constraints: todo!(), // |any, area, state| {
-                                          //     any.downcast_ref::<Node<V>>()
-                                          //         .expect("Invalid downcast")
-                                          //         .inner
-                                          //         .constraints(area, state)
-                                          // },
+                    constraints: Rc::new(move |any, area, state| {
+                        let scoped = any
+                            .downcast_mut::<Node<V>>()
+                            .expect("Invalid downcast")
+                            .inner
+                            .constraints(area, scope(state));
+                        SizeConstraints {
+                            width: scoped.width,
+                            height: scoped.height,
+                            aspect: scoped.aspect,
+                            dynamic_height: if let Some(dynamic_height) = scoped.dynamic_height {
+                                Some(Rc::new(move |w, state| dynamic_height(w, scope(state))))
+                            } else {
+                                None
+                            },
+                            dynamic_width: if let Some(dynamic_width) = scoped.dynamic_width {
+                                Some(Rc::new(move |h, state| dynamic_width(h, scope(state))))
+                            } else {
+                                None
+                            },
+                        }
+                    }),
                 },
             },
         },

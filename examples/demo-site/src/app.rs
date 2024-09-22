@@ -106,7 +106,7 @@ fn footer<'a>(state: &mut State<'_>) -> Node<State<'a>> {
 }
 
 fn main_view<'a>(state: &mut State<'_>) -> Node<State<'a>> {
-    let profile_blurb = "Your public profile URL can be shared with anyone and allows them to immediately see your bases and activity in Backer.Your public profile URL can be shared with anyone and allows them to immediately see your bases and activity in Backer.Your public profile URL can be shared with anyone and allows them to immediately see your bases and activity in Backer.Your public profile URL can be shared with anyone and allows them to immediately see your bases and activity in Backer.Your public profile URL can be shared with anyone and allows them to immediately see your bases and activity in Backer.";
+    let profile_blurb = "Your public profile URL can be shared with anyone and allows them to immediately see your bases and activity in Backer.";
     let pic_blurb = "Upload a profile picture of yourself or the character you always wanted to be. Your avatar will be displayed all over the Backer world.";
     let info_blurb = "Tell the world about yourself. Information you add will be visible only in your profile, not for all users.";
     stack(vec![stack(vec![
