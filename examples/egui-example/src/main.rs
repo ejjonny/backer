@@ -24,20 +24,11 @@ fn main() -> eframe::Result {
 }
 
 fn my_layout_fn(ui: &mut Ui) -> Node<Ui> {
-    let t = "test tests::sequence_tests::tests::test_row_basic ... ok
-    test tests::sequence_tests::tests::test_row_constrained_1 ... ok
-    test tests::sequence_tests::tests::test_row_constrained_2 ... ok
-    test tests::sequence_tests::tests::test_row_with_constrained_item ... ok
-    test tests::sequence_tests::tests::test_row_with_multiple_constrained_items ... ok
-    test tests::sequence_tests::tests::test_sequence_spacing ... ok
-    test tests::sequence_tests::tests::test_stack_basic ... ok
-    test tests::sequence_tests::tests::test_stack_alignment ... ok
-    test tests::sequence_tests::tests::test_stack_with_constrained_item ... ok";
-
-    row(vec![
-        label_common(t, 10., Color32::WHITE),
-        draw_a(ui).height(20.),
+    column(vec![
+        row(vec![draw_b(ui).width(10.)]),
+        draw_a(ui).width(30.),
     ])
+    .align(XAlign::Leading)
 }
 
 fn draw_a(ui: &mut Ui) -> Node<Ui> {

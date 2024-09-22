@@ -244,10 +244,26 @@ impl<State> NodeValue<State> {
             contextual_aligns.1.or(contextual_y_align),
             state,
         );
+
         match self {
-            NodeValue::Column { elements, .. }
-            | NodeValue::Row { elements, .. }
-            | NodeValue::Stack(elements) => {
+            NodeValue::Column {
+                elements,
+                align: y_align,
+                off_axis_align: x_align,
+                ..
+            }
+            | NodeValue::Row {
+                elements,
+                align: x_align,
+                off_axis_align: y_align,
+                ..
+            } => {
+                elements
+                    .iter_mut()
+                    .zip(allocated)
+                    .for_each(|(el, allocation)| el.layout(allocation, *x_align, *y_align, state));
+            }
+            NodeValue::Stack(elements) => {
                 elements
                     .iter_mut()
                     .zip(allocated)
