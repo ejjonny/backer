@@ -51,9 +51,9 @@ pub(crate) enum YAlign {
     Bottom,
 }
 
-impl From<Align> for (Option<XAlign>, Option<YAlign>) {
-    fn from(value: Align) -> Self {
-        let (x_align, y_align) = match value {
+impl Align {
+    pub(crate) fn axis_aligns(&self) -> (Option<XAlign>, Option<YAlign>) {
+        let (x_align, y_align) = match self {
             Align::TopLeading => (Some(XAlign::Leading), Some(YAlign::Top)),
             Align::TopCenter => (Some(XAlign::Center), Some(YAlign::Top)),
             Align::TopTrailing => (Some(XAlign::Trailing), Some(YAlign::Top)),

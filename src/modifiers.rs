@@ -193,12 +193,10 @@ impl<U> Node<U> {
     }
     /// Specifies an alignment along both the x and/or y axis.
     ///
-    /// Pass [`XAlign`], [`YAlign`], or [`Align`]
-    ///
     /// This will only have an effect if the node is constrained along the axis to be smaller than the area that is available,
     /// otherwise, there's no wiggle room.
     pub fn align(self, align: Align) -> Self {
-        let (x, y) = align.into();
+        let (x, y) = align.axis_aligns();
         match (x, y) {
             (None, None) => self,
             (None, Some(y)) => self.y_align(y),
