@@ -206,7 +206,6 @@ impl<State> NodeValue<State> {
                     .unwrap_or(YAlign::Center);
                 let available_area = available_area.constrained(
                     &SizeConstraints::from_size(options.clone(), available_area, state),
-                    state,
                     x_align,
                     y_align,
                 );
@@ -294,7 +293,6 @@ impl Area {
     fn constrained<State>(
         self,
         constraints: &SizeConstraints<State>,
-        state: &mut State,
         x_align: XAlign,
         y_align: YAlign,
     ) -> Self {
@@ -313,12 +311,6 @@ impl Area {
         if let Some(aspect) = constraints.aspect {
             width = (height * aspect).min(width);
             height = (width / aspect).min(height);
-        }
-        if let Some(aspect) = &constraints.dynamic_height {
-            height = aspect(width, state).min(height);
-        }
-        if let Some(aspect) = &constraints.dynamic_width {
-            width = aspect(height, state).min(width);
         }
         let x = match x_align {
             XAlign::Leading => self.x,
@@ -371,9 +363,9 @@ pub(crate) fn layout_axis<State>(
     let default_size = available_size / element_count as f32;
 
     let mut pool = 0.;
-    let mut final_sizes: Vec<Option<f32>> = elements.iter().map(|_| Option::<f32>::None).collect();
-    let mut room_to_grow: Vec<f32> = elements.iter().map(|_| 0.).collect();
-    let mut room_to_shrink: Vec<f32> = elements.iter().map(|_| 0.).collect();
+    let mut final_sizes = vec![None; element_count];
+    let mut room_to_grow = vec![0.0; element_count];
+    let mut room_to_shrink = vec![0.0; element_count];
 
     for (i, size_constraint) in sizes.iter().enumerate() {
         let constraint = match orientation {
@@ -395,23 +387,6 @@ pub(crate) fn layout_axis<State>(
                 }
                 Orientation::Vertical => {
                     let value = sizes[i].width.clamp(available_area.width) / aspect;
-                    lower = Some(value);
-                    upper = Some(value);
-                }
-            }
-        }
-
-        match orientation {
-            Orientation::Horizontal => {
-                if let Some(aspect) = &size_constraint.dynamic_width {
-                    let value = aspect(sizes[i].height.clamp(available_area.height), state);
-                    lower = Some(value);
-                    upper = Some(value);
-                }
-            }
-            Orientation::Vertical => {
-                if let Some(aspect) = &size_constraint.dynamic_height {
-                    let value = aspect(sizes[i].width.clamp(available_area.width), state);
                     lower = Some(value);
                     upper = Some(value);
                 }
@@ -551,7 +526,7 @@ pub(crate) fn layout_axis<State>(
 
         if let NodeValue::Explicit { .. } = child {
         } else {
-            area = area.constrained(&sizes[i], state, x_align, y_align)
+            area = area.constrained(&sizes[i], x_align, y_align)
         }
 
         if !check {

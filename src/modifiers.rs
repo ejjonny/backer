@@ -251,18 +251,24 @@ impl<U> Node<U> {
             ..Default::default()
         })
     }
-    /// Constrains the node's height as a function of available width
+    /// Constrains the node's height as a function of available width.
     ///
-    /// Most useful for UI elements where you need a dynamic height that depends on available width; like text.
+    /// Generally you should prefer size constraints, aspect ratio constraints or area readers over dynamic height.
+    ///
+    /// **This is primarily for UI elements such as text** where node height must depend on available width & scaling is
+    /// not a simple option.
     pub fn dynamic_height(self, f: impl Fn(f32, &mut U) -> f32 + 'static) -> Self {
         self.wrap_or_update_explicit(Size {
             dynamic_height: Some(Rc::new(f)),
             ..Default::default()
         })
     }
-    /// Constrains the node's width as a function of available height
+    /// Constrains the node's width as a function of available height.
     ///
-    /// Most useful for UI elements where you need a dynamic width that depends on available height.
+    /// Generally you should prefer size constraints, aspect ratio constraints or area readers over dynamic height.
+    ///
+    /// **This is primarily for UI elements such as text** where node width must depend on available height & scaling is
+    /// not a simple option.
     pub fn dynamic_width(self, f: impl Fn(f32, &mut U) -> f32 + 'static) -> Self {
         self.wrap_or_update_explicit(Size {
             dynamic_width: Some(Rc::new(f)),
