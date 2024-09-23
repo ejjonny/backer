@@ -197,7 +197,7 @@ impl<U> Node<U> {
     ///
     /// This will only have an effect if the node is constrained along the axis to be smaller than the area that is available,
     /// otherwise, there's no wiggle room.
-    pub fn align(self, align: impl Into<(Option<XAlign>, Option<YAlign>)>) -> Self {
+    pub fn align(self, align: Align) -> Self {
         let (x, y) = align.into();
         match (x, y) {
             (None, None) => self,

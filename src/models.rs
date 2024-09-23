@@ -1,42 +1,22 @@
 use std::rc::Rc;
 
-/// Alignment along the X axis
+/// An alignment along the X and/or Y axis
 #[derive(Debug, Clone, Copy)]
-pub enum XAlign {
-    /// Aligns to the left in LTR layout
-    Leading,
-    /// Aligns to the horizontal center
-    Center,
-    /// Aligns to the right in LTR layout
-    Trailing,
-}
-
-impl From<YAlign> for (Option<XAlign>, Option<YAlign>) {
-    fn from(value: YAlign) -> Self {
-        (None, Some(value))
-    }
-}
-
-/// Alignment along the Y axis
-#[derive(Debug, Clone, Copy)]
-pub enum YAlign {
+pub enum Align {
     /// Aligns to the top
     Top,
     /// Aligns to the vertical center
-    Center,
+    CenterY,
     /// Aligns to the bottom
     Bottom,
-}
 
-impl From<XAlign> for (Option<XAlign>, Option<YAlign>) {
-    fn from(value: XAlign) -> Self {
-        (Some(value), None)
-    }
-}
+    /// Aligns to the left in LTR layout
+    Leading,
+    /// Aligns to the horizontal center
+    CenterX,
+    /// Aligns to the right in LTR layout
+    Trailing,
 
-/// An alignment along both the X and Y axis
-#[derive(Debug, Clone, Copy)]
-pub enum Align {
     /// Aligns to the top left in LTR layout
     TopLeading,
     /// Aligns to the top center
@@ -57,20 +37,40 @@ pub enum Align {
     CenterCenter,
 }
 
+#[derive(Debug, Clone, Copy)]
+pub(crate) enum XAlign {
+    Leading,
+    Center,
+    Trailing,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) enum YAlign {
+    Top,
+    Center,
+    Bottom,
+}
+
 impl From<Align> for (Option<XAlign>, Option<YAlign>) {
     fn from(value: Align) -> Self {
         let (x_align, y_align) = match value {
-            Align::TopLeading => (XAlign::Leading, YAlign::Top),
-            Align::TopCenter => (XAlign::Center, YAlign::Top),
-            Align::TopTrailing => (XAlign::Trailing, YAlign::Top),
-            Align::CenterTrailing => (XAlign::Trailing, YAlign::Center),
-            Align::BottomTrailing => (XAlign::Trailing, YAlign::Bottom),
-            Align::BottomCenter => (XAlign::Center, YAlign::Bottom),
-            Align::BottomLeading => (XAlign::Leading, YAlign::Bottom),
-            Align::CenterLeading => (XAlign::Leading, YAlign::Center),
-            Align::CenterCenter => (XAlign::Center, YAlign::Center),
+            Align::TopLeading => (Some(XAlign::Leading), Some(YAlign::Top)),
+            Align::TopCenter => (Some(XAlign::Center), Some(YAlign::Top)),
+            Align::TopTrailing => (Some(XAlign::Trailing), Some(YAlign::Top)),
+            Align::CenterTrailing => (Some(XAlign::Trailing), Some(YAlign::Center)),
+            Align::BottomTrailing => (Some(XAlign::Trailing), Some(YAlign::Bottom)),
+            Align::BottomCenter => (Some(XAlign::Center), Some(YAlign::Bottom)),
+            Align::BottomLeading => (Some(XAlign::Leading), Some(YAlign::Bottom)),
+            Align::CenterLeading => (Some(XAlign::Leading), Some(YAlign::Center)),
+            Align::CenterCenter => (Some(XAlign::Center), Some(YAlign::Center)),
+            Align::Top => (None, Some(YAlign::Top)),
+            Align::CenterY => (None, Some(YAlign::Center)),
+            Align::Bottom => (None, Some(YAlign::Bottom)),
+            Align::Leading => (Some(XAlign::Leading), None),
+            Align::CenterX => (Some(XAlign::Center), None),
+            Align::Trailing => (Some(XAlign::Trailing), None),
         };
-        (Some(x_align), Some(y_align))
+        (x_align, y_align)
     }
 }
 

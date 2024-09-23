@@ -109,7 +109,7 @@ mod tests {
                 })
                 .width(10.)
                 .height(20.)
-                .align(YAlign::Top),
+                .align(Align::Top),
                 draw(|a, _| {
                     assert_eq!(a, Area::new(10., 40., 10., 20.));
                 })
@@ -120,7 +120,7 @@ mod tests {
                 })
                 .width(10.)
                 .height(20.)
-                .align(YAlign::Bottom),
+                .align(Align::Bottom),
                 draw(|a, _| {
                     assert_eq!(a, Area::new(30., 0., 70., 100.));
                 }),
@@ -140,7 +140,7 @@ mod tests {
                 })
                 .width(10.)
                 .height(20.)
-                .align(YAlign::Top),
+                .align(Align::Top),
                 draw(|a, _| {
                     assert_eq!(a, Area::new(80., 40., 10., 20.));
                 })
@@ -151,7 +151,7 @@ mod tests {
                 })
                 .width(10.)
                 .height(20.)
-                .align(YAlign::Bottom),
+                .align(Align::Bottom),
             ])
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
@@ -165,7 +165,7 @@ mod tests {
                 })
                 .width(10.)
                 .height(20.)
-                .align(YAlign::Top),
+                .align(Align::Top),
                 draw(|a, _| {
                     assert_eq!(a, Area::new(80., 40., 10., 20.));
                 })
@@ -176,7 +176,7 @@ mod tests {
                 })
                 .width(10.)
                 .height(20.)
-                .align(YAlign::Bottom),
+                .align(Align::Bottom),
             ])
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
