@@ -69,7 +69,7 @@ fn my_layout_fn<'a>(state: &mut State<'_>) -> Node<State<'a>> {
                 footer(state),
             ]),
         ])
-        .align(YAlign::Top),
+        .align(Align::Top),
         if *state.sidebar {
             side_bar(state)
         } else {
@@ -90,7 +90,7 @@ fn footer<'a>(state: &mut State<'_>) -> Node<State<'a>> {
                     label_color(state, "Privacy Policy", 9., DEMO_FG_SECONDARY),
                 ],
             )
-            .align(XAlign::Leading),
+            .align(Align::Leading),
             space(),
             label_color(
                 state,
@@ -223,7 +223,7 @@ fn main_view<'a>(state: &mut State<'_>) -> Node<State<'a>> {
                                                 ),
                                             ],
                                         )
-                                        .align(XAlign::Leading),
+                                        .align(Align::Leading),
                                     ],
                                 ),
                                 row_spaced(
@@ -267,7 +267,7 @@ fn main_view<'a>(state: &mut State<'_>) -> Node<State<'a>> {
                                 stack(vec![
                                     rect(DEMO_FG, DEMO_BG, 5.),
                                     fit_label_color(state, "@UserName", 12., DEMO_FG)
-                                        .align(XAlign::Leading)
+                                        .align(Align::Leading)
                                         .pad(5.),
                                 ])
                                 .height(25.),
@@ -281,10 +281,10 @@ fn main_view<'a>(state: &mut State<'_>) -> Node<State<'a>> {
                                 .height(50.),
                             ],
                         )
-                        .align(XAlign::Leading),
+                        .align(Align::Leading),
                     ],
                 )
-                .align(YAlign::Top),
+                .align(Align::Top),
             ],
         )
         .align(Align::TopLeading)
@@ -324,7 +324,7 @@ fn side_bar<'a>(state: &mut State<'_>) -> Node<State<'a>> {
         .align(Align::TopLeading)
         .pad(30.),
     ])
-    .align(XAlign::Leading)
+    .align(Align::Leading)
     .width(200.)
 }
 
@@ -334,7 +334,7 @@ fn header<'a>(state: &mut State<'_>) -> Node<State<'a>> {
         vec![
             menu_button(state),
             label(state, "My Account", 18.)
-                .align(YAlign::Bottom)
+                .align(Align::Bottom)
                 .width(110.),
             space(),
             stack(vec![
