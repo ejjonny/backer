@@ -93,7 +93,7 @@ pub(crate) enum NodeValue<State> {
     },
     Draw(Drawable<State>),
     Explicit {
-        options: Size,
+        options: Size<State>,
         element: Box<NodeValue<State>>,
     },
     Empty,
@@ -129,26 +129,38 @@ impl<State> NodeValue<State> {
         }
     }
 
-    pub(crate) fn layout(
+    pub(crate) fn contextual_aligns(&self) -> (Option<XAlign>, Option<YAlign>) {
+        if let NodeValue::Column {
+            align: y,
+            off_axis_align: x,
+            ..
+        }
+        | NodeValue::Row {
+            align: x,
+            off_axis_align: y,
+            ..
+        } = self
+        {
+            (*x, *y)
+        } else {
+            (None, None)
+        }
+    }
+
+    pub(crate) fn allocate_area(
         &mut self,
         available_area: Area,
         contextual_x_align: Option<XAlign>,
         contextual_y_align: Option<YAlign>,
         state: &mut State,
-    ) {
+    ) -> Vec<Area> {
         match self {
-            NodeValue::Padding {
-                amounts,
-                element: child,
-            } => {
-                let inner_area = Area {
-                    x: available_area.x + amounts.leading,
-                    y: available_area.y + amounts.top,
-                    width: (available_area.width - amounts.trailing - amounts.leading).max(0.),
-                    height: (available_area.height - amounts.bottom - amounts.top).max(0.),
-                };
-                child.layout(inner_area, None, None, state);
-            }
+            NodeValue::Padding { amounts, .. } => vec![Area {
+                x: available_area.x + amounts.leading,
+                y: available_area.y + amounts.top,
+                width: (available_area.width - amounts.trailing - amounts.leading).max(0.),
+                height: (available_area.height - amounts.bottom - amounts.top).max(0.),
+            }],
             NodeValue::Column {
                 elements,
                 spacing,
@@ -162,6 +174,7 @@ impl<State> NodeValue<State> {
                 off_axis_align.unwrap_or(XAlign::Center),
                 align.unwrap_or(YAlign::Center),
                 state,
+                true,
             ),
             NodeValue::Row {
                 elements,
@@ -176,24 +189,10 @@ impl<State> NodeValue<State> {
                 align.unwrap_or(XAlign::Center),
                 off_axis_align.unwrap_or(YAlign::Center),
                 state,
+                true,
             ),
-            NodeValue::Stack(children) => {
-                for child in children {
-                    child.layout(available_area, None, None, state)
-                }
-            }
-            NodeValue::Draw(drawable) => {
-                drawable.area = Area {
-                    x: available_area.x,
-                    y: available_area.y,
-                    width: available_area.width.max(0.),
-                    height: available_area.height.max(0.),
-                };
-            }
-            NodeValue::Explicit {
-                options,
-                element: child,
-            } => {
+            NodeValue::Stack(children) => children.iter().map(|_| available_area).collect(),
+            NodeValue::Explicit { options, .. } => {
                 let Size {
                     x_align: explicit_x_align,
                     y_align: explicit_y_align,
@@ -205,32 +204,85 @@ impl<State> NodeValue<State> {
                 let y_align = explicit_y_align
                     .or(contextual_y_align)
                     .unwrap_or(YAlign::Center);
-                let available_area =
-                    available_area.constrained(SizeConstraints::from(*options), x_align, y_align);
-                child.layout(available_area, None, None, state);
+                let available_area = available_area.constrained(
+                    &SizeConstraints::from_size(options.clone(), available_area, state),
+                    x_align,
+                    y_align,
+                );
+                vec![available_area]
             }
             NodeValue::Offset {
-                offset_x,
-                offset_y,
-                element,
+                offset_x, offset_y, ..
+            } => vec![Area {
+                x: available_area.x + *offset_x,
+                y: available_area.y + *offset_y,
+                width: available_area.width,
+                height: available_area.height,
+            }],
+            NodeValue::Draw(_)
+            | NodeValue::Space
+            | NodeValue::Scope { .. }
+            | NodeValue::AreaReader { .. } => {
+                vec![available_area]
+            }
+            NodeValue::Group(_) | NodeValue::Empty => unreachable!(),
+        }
+    }
+
+    pub(crate) fn layout(
+        &mut self,
+        available_area: Area,
+        contextual_x_align: Option<XAlign>,
+        contextual_y_align: Option<YAlign>,
+        state: &mut State,
+    ) {
+        let contextual_aligns = self.contextual_aligns();
+        let allocated = self.allocate_area(
+            available_area,
+            contextual_aligns.0.or(contextual_x_align),
+            contextual_aligns.1.or(contextual_y_align),
+            state,
+        );
+
+        match self {
+            NodeValue::Column {
+                elements,
+                align: y_align,
+                off_axis_align: x_align,
+                ..
+            }
+            | NodeValue::Row {
+                elements,
+                align: x_align,
+                off_axis_align: y_align,
+                ..
             } => {
-                element.layout(
-                    Area {
-                        x: available_area.x + *offset_x,
-                        y: available_area.y + *offset_y,
-                        width: available_area.width,
-                        height: available_area.height,
-                    },
-                    None,
-                    None,
-                    state,
-                );
+                elements
+                    .iter_mut()
+                    .zip(allocated)
+                    .for_each(|(el, allocation)| el.layout(allocation, *x_align, *y_align, state));
+            }
+            NodeValue::Stack(elements) => {
+                elements
+                    .iter_mut()
+                    .zip(allocated)
+                    .for_each(|(el, allocation)| el.layout(allocation, None, None, state));
+            }
+            NodeValue::Padding { element, .. }
+            | NodeValue::Explicit { element, .. }
+            | NodeValue::Offset { element, .. } => {
+                element.layout(allocated[0], None, None, state);
+            }
+            NodeValue::Draw(drawable) => {
+                drawable.area = allocated[0];
+                drawable.area.width = drawable.area.width.max(0.);
+                drawable.area.height = drawable.area.height.max(0.);
             }
             NodeValue::Space => (),
             NodeValue::Scope { scoped } => scoped.layout(available_area, state),
             NodeValue::AreaReader { read } => {
-                *self = read(available_area, state).inner;
-                self.layout(available_area, None, None, state);
+                *self = read(allocated[0], state).inner;
+                self.layout(allocated[0], None, None, state);
             }
             NodeValue::Group(_) | NodeValue::Empty => unreachable!(),
         }
@@ -238,7 +290,7 @@ impl<State> NodeValue<State> {
 }
 
 impl Area {
-    fn constrained(self, constraints: SizeConstraints, x_align: XAlign, y_align: YAlign) -> Self {
+    fn constrained(self, constraints: &SizeConstraints, x_align: XAlign, y_align: YAlign) -> Self {
         let mut width = match (constraints.width.lower, constraints.width.upper) {
             (None, None) => self.width,
             (None, Some(upper)) => self.width.min(upper),
@@ -275,12 +327,13 @@ impl Area {
 }
 
 #[derive(Debug, Clone, Copy)]
-enum Orientation {
+pub(crate) enum Orientation {
     Horizontal,
     Vertical,
 }
 
-fn layout_axis<State>(
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn layout_axis<State>(
     elements: &mut [NodeValue<State>],
     spacing: &f32,
     available_area: Area,
@@ -288,10 +341,11 @@ fn layout_axis<State>(
     x_align: XAlign,
     y_align: YAlign,
     state: &mut State,
-) {
+    check: bool,
+) -> Vec<Area> {
     let sizes: Vec<SizeConstraints> = elements
         .iter_mut()
-        .map(|element| element.constraints(available_area))
+        .map(|element| element.constraints(available_area, state))
         .collect();
     let element_count = elements.len();
 
@@ -304,9 +358,9 @@ fn layout_axis<State>(
     let default_size = available_size / element_count as f32;
 
     let mut pool = 0.;
-    let mut final_sizes: Vec<Option<f32>> = elements.iter().map(|_| Option::<f32>::None).collect();
-    let mut room_to_grow: Vec<f32> = elements.iter().map(|_| 0.).collect();
-    let mut room_to_shrink: Vec<f32> = elements.iter().map(|_| 0.).collect();
+    let mut final_sizes = vec![None; element_count];
+    let mut room_to_grow = vec![0.0; element_count];
+    let mut room_to_shrink = vec![0.0; element_count];
 
     for (i, size_constraint) in sizes.iter().enumerate() {
         let constraint = match orientation {
@@ -446,6 +500,7 @@ fn layout_axis<State>(
         },
     };
 
+    let mut areas = Vec::<Area>::new();
     for (i, child) in elements.iter_mut().enumerate() {
         let child_size = final_sizes[i].unwrap();
 
@@ -466,11 +521,16 @@ fn layout_axis<State>(
 
         if let NodeValue::Explicit { .. } = child {
         } else {
-            area = area.constrained(sizes[i], x_align, y_align)
+            area = area.constrained(&sizes[i], x_align, y_align)
         }
 
-        child.layout(area, Some(x_align), Some(y_align), state);
+        if !check {
+            child.layout(area, Some(x_align), Some(y_align), state);
+        } else {
+            areas.push(area);
+        }
 
         current_pos += child_size + *spacing;
     }
+    areas
 }

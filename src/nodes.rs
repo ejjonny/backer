@@ -1,4 +1,7 @@
-use crate::{anynode::AnyNode, drawable::Drawable, layout::NodeValue, models::*, Node};
+use crate::{
+    anynode::AnyNode, constraints::SizeConstraints, drawable::Drawable, layout::NodeValue,
+    models::*, Node,
+};
 use std::{any::Any, rc::Rc};
 
 /// Defines a vertical sequence of elements
@@ -149,12 +152,18 @@ pub fn scope<U: 'static, V: 'static>(scope: fn(&mut U) -> &mut V, node: Node<V>)
                             .inner
                             .draw(scope(state))
                     }),
-                    constraints: |any, area| {
-                        any.downcast_ref::<Node<V>>()
+                    constraints: Rc::new(move |any, area, state| {
+                        let scoped = any
+                            .downcast_mut::<Node<V>>()
                             .expect("Invalid downcast")
                             .inner
-                            .constraints(area)
-                    },
+                            .constraints(area, scope(state));
+                        SizeConstraints {
+                            width: scoped.width,
+                            height: scoped.height,
+                            aspect: scoped.aspect,
+                        }
+                    }),
                 },
             },
         },

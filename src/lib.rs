@@ -8,7 +8,9 @@ Dependency free & framework-agnostic. Backer can be used in an index-based layou
 _This library **only** implements layout & could be integrated with a range of UI crates._
 
 # Quick Start
-See [`Layout`]
+See [`Layout`] for setup.
+
+See [`Node`] for layout customization.
 */
 
 mod anynode;

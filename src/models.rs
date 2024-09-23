@@ -1,28 +1,22 @@
-/// Alignment along the X axis
-#[derive(Debug, Clone, Copy)]
-pub enum XAlign {
-    /// Aligns to the left in LTR layout
-    Leading,
-    /// Aligns to the horizontal center
-    Center,
-    /// Aligns to the right in LTR layout
-    Trailing,
-}
+use std::rc::Rc;
 
-/// Alignment along the Y axis
+/// An alignment along the X and/or Y axis
 #[derive(Debug, Clone, Copy)]
-pub enum YAlign {
+pub enum Align {
     /// Aligns to the top
     Top,
     /// Aligns to the vertical center
-    Center,
+    CenterY,
     /// Aligns to the bottom
     Bottom,
-}
 
-/// An alignment along both the X and Y axis
-#[derive(Debug, Clone, Copy)]
-pub enum Align {
+    /// Aligns to the left in LTR layout
+    Leading,
+    /// Aligns to the horizontal center
+    CenterX,
+    /// Aligns to the right in LTR layout
+    Trailing,
+
     /// Aligns to the top left in LTR layout
     TopLeading,
     /// Aligns to the top center
@@ -41,6 +35,43 @@ pub enum Align {
     CenterLeading,
     /// Aligns to the center in LTR layout - the default alignment
     CenterCenter,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) enum XAlign {
+    Leading,
+    Center,
+    Trailing,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) enum YAlign {
+    Top,
+    Center,
+    Bottom,
+}
+
+impl Align {
+    pub(crate) fn axis_aligns(&self) -> (Option<XAlign>, Option<YAlign>) {
+        let (x_align, y_align) = match self {
+            Align::TopLeading => (Some(XAlign::Leading), Some(YAlign::Top)),
+            Align::TopCenter => (Some(XAlign::Center), Some(YAlign::Top)),
+            Align::TopTrailing => (Some(XAlign::Trailing), Some(YAlign::Top)),
+            Align::CenterTrailing => (Some(XAlign::Trailing), Some(YAlign::Center)),
+            Align::BottomTrailing => (Some(XAlign::Trailing), Some(YAlign::Bottom)),
+            Align::BottomCenter => (Some(XAlign::Center), Some(YAlign::Bottom)),
+            Align::BottomLeading => (Some(XAlign::Leading), Some(YAlign::Bottom)),
+            Align::CenterLeading => (Some(XAlign::Leading), Some(YAlign::Center)),
+            Align::CenterCenter => (Some(XAlign::Center), Some(YAlign::Center)),
+            Align::Top => (None, Some(YAlign::Top)),
+            Align::CenterY => (None, Some(YAlign::Center)),
+            Align::Bottom => (None, Some(YAlign::Bottom)),
+            Align::Leading => (Some(XAlign::Leading), None),
+            Align::CenterX => (Some(XAlign::Center), None),
+            Align::Trailing => (Some(XAlign::Trailing), None),
+        };
+        (x_align, y_align)
+    }
 }
 
 /// An allocation of screen space as a rectangle
@@ -85,10 +116,9 @@ pub(crate) struct Padding {
     pub(crate) bottom: f32,
 }
 
-/// A builder for specifying size constraints. Used with `modifiers::size`.
-/// Create a `Size::new()` & add constraints such as `Size::new().width(10.)`
-#[derive(Debug, Clone, Copy)]
-pub(crate) struct Size {
+type DimensionFn<U> = Option<Rc<dyn Fn(f32, &mut U) -> f32>>;
+
+pub(crate) struct Size<U> {
     pub(crate) width_min: Option<f32>,
     pub(crate) width_max: Option<f32>,
     pub(crate) height_min: Option<f32>,
@@ -96,15 +126,39 @@ pub(crate) struct Size {
     pub(crate) x_align: Option<XAlign>,
     pub(crate) y_align: Option<YAlign>,
     pub(crate) aspect: Option<f32>,
+    pub(crate) dynamic_height: DimensionFn<U>,
+    pub(crate) dynamic_width: DimensionFn<U>,
 }
 
-impl Default for Size {
+impl<U> Clone for Size<U> {
+    fn clone(&self) -> Self {
+        Self {
+            width_min: self.width_min,
+            width_max: self.width_max,
+            height_min: self.height_min,
+            height_max: self.height_max,
+            x_align: self.x_align,
+            y_align: self.y_align,
+            aspect: self.aspect,
+            dynamic_height: self.dynamic_height.clone(),
+            dynamic_width: self.dynamic_width.clone(),
+        }
+    }
+}
+
+impl<U> std::fmt::Debug for Size<U> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Size")
+    }
+}
+
+impl<U> Default for Size<U> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl Size {
+impl<U> Size<U> {
     /// Creates a default size object to add constraints to
     pub(crate) fn new() -> Self {
         Size {
@@ -115,6 +169,8 @@ impl Size {
             x_align: None,
             y_align: None,
             aspect: None,
+            dynamic_height: None,
+            dynamic_width: None,
         }
     }
 }

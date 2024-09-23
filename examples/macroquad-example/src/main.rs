@@ -55,10 +55,10 @@ fn layout_for_highlight(ctx: &mut State) -> Node<State> {
                         text("Alignment & Offset", 15., WHITE),
                         stack(vec![
                             rect(BLUE),
-                            rect(WHITE).height(30.).width(30.).x_align(XAlign::Leading),
-                            rect(WHITE).height(30.).width(30.).x_align(XAlign::Trailing),
-                            rect(WHITE).height(30.).width(30.).y_align(YAlign::Top),
-                            rect(WHITE).height(30.).width(30.).y_align(YAlign::Bottom),
+                            rect(WHITE).height(30.).width(30.).align(Align::Leading),
+                            rect(WHITE).height(30.).width(30.).align(Align::Trailing),
+                            rect(WHITE).height(30.).width(30.).align(Align::Top),
+                            rect(WHITE).height(30.).width(30.).align(Align::Bottom),
                             rect(WHITE).height(30.).width(30.).align(Align::TopLeading),
                             rect(WHITE)
                                 .height(30.)
@@ -88,7 +88,7 @@ fn layout_for_highlight(ctx: &mut State) -> Node<State> {
                             }
                         })
                         .height(BTN_SIZE)
-                        .y_align(YAlign::Bottom),
+                        .align(Align::Bottom),
                     ],
                 )
             } else {
@@ -117,7 +117,7 @@ fn rel_abs_seq(highlight: HighlightedCase) -> Node<HighlightedCase> {
                     }
                 })
                 .height(BTN_SIZE)
-                .y_align(YAlign::Bottom),
+                .align(Align::Bottom),
             ],
         );
     }

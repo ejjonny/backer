@@ -1,5 +1,5 @@
 use backer::{
-  models::{Area, XAlign, YAlign},
+  models::{Align, Area},
   nodes::*,
   Layout, Node,
 };
@@ -149,7 +149,7 @@ impl eframe::App for MyApp {
                                         .color(Color32::WHITE)
                                         .size(18.),
                                     )
-                                    .x_align(XAlign::Leading),
+                                    .align(Align::Leading),
                                     draw_label(
                                       state.ui,
                                       RichText::new(format!("{}XP", item.points))
@@ -163,11 +163,11 @@ impl eframe::App for MyApp {
                                     .color(Color32::from_rgb(200, 200, 200))
                                     .size(10.),
                                 )
-                                .x_align(XAlign::Leading)
+                                .align(Align::Leading)
                                 .pad_leading(3.),
                               ],
                             )
-                            .x_align(XAlign::Leading)
+                            .align(Align::Leading)
                             .width_range(120.0..),
                             draw(|area, state: &mut State| {
                               if state
@@ -195,7 +195,7 @@ impl eframe::App for MyApp {
                 space(),
               ],
             )
-            .y_align(YAlign::Top)
+            .align(Align::Top)
             .pad(10.)
           })
           .draw(area, &mut state);

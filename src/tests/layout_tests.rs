@@ -16,7 +16,7 @@ mod tests {
                 })
                 .width(30.),
             ])
-            .x_align(XAlign::Leading)
+            .align(Align::Leading)
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
         Layout::new(|()| {
@@ -30,7 +30,7 @@ mod tests {
                 })
                 .width(30.),
             ])
-            .x_align(XAlign::Center)
+            .align(Align::CenterX)
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
         Layout::new(|()| {
@@ -44,7 +44,7 @@ mod tests {
                 })
                 .width(30.),
             ])
-            .x_align(XAlign::Trailing)
+            .align(Align::Trailing)
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
         Layout::new(|()| {
@@ -58,7 +58,7 @@ mod tests {
                 })
                 .height(30.),
             ])
-            .y_align(YAlign::Top)
+            .align(Align::Top)
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
         Layout::new(|()| {
@@ -72,7 +72,7 @@ mod tests {
                 })
                 .height(30.),
             ])
-            .y_align(YAlign::Center)
+            .align(Align::CenterY)
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
         Layout::new(|()| {
@@ -86,7 +86,7 @@ mod tests {
                 })
                 .height(30.),
             ])
-            .y_align(YAlign::Bottom)
+            .align(Align::Bottom)
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
     }
@@ -103,7 +103,7 @@ mod tests {
                 })
                 .width(30.),
             ])
-            .x_align(XAlign::Leading)
+            .align(Align::Leading)
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
         Layout::new(|()| {
@@ -117,7 +117,7 @@ mod tests {
                 })
                 .width(30.),
             ])
-            .x_align(XAlign::Center)
+            .align(Align::CenterX)
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
         Layout::new(|()| {
@@ -131,7 +131,7 @@ mod tests {
                 })
                 .width(30.),
             ])
-            .x_align(XAlign::Trailing)
+            .align(Align::Trailing)
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
         Layout::new(|()| {
@@ -145,7 +145,7 @@ mod tests {
                 })
                 .height(30.),
             ])
-            .y_align(YAlign::Top)
+            .align(Align::Top)
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
         Layout::new(|()| {
@@ -159,7 +159,7 @@ mod tests {
                 })
                 .height(30.),
             ])
-            .y_align(YAlign::Center)
+            .align(Align::CenterY)
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
         Layout::new(|()| {
@@ -173,7 +173,7 @@ mod tests {
                 })
                 .height(30.),
             ])
-            .y_align(YAlign::Bottom)
+            .align(Align::Bottom)
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
     }
@@ -190,7 +190,7 @@ mod tests {
                 })
                 .width(30.),
             ])
-            .x_align(XAlign::Leading)
+            .align(Align::Leading)
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
         Layout::new(|()| {
@@ -204,7 +204,7 @@ mod tests {
                 })
                 .width(30.),
             ])
-            .x_align(XAlign::Center)
+            .align(Align::CenterX)
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
         Layout::new(|()| {
@@ -218,7 +218,7 @@ mod tests {
                 })
                 .width(30.),
             ])
-            .x_align(XAlign::Trailing)
+            .align(Align::Trailing)
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
         Layout::new(|()| {
@@ -232,7 +232,7 @@ mod tests {
                 })
                 .height(30.),
             ])
-            .y_align(YAlign::Top)
+            .align(Align::Top)
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
         Layout::new(|()| {
@@ -246,7 +246,7 @@ mod tests {
                 })
                 .height(30.),
             ])
-            .y_align(YAlign::Center)
+            .align(Align::CenterY)
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
         Layout::new(|()| {
@@ -260,7 +260,7 @@ mod tests {
                 })
                 .height(30.),
             ])
-            .y_align(YAlign::Bottom)
+            .align(Align::Bottom)
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
     }
@@ -277,7 +277,7 @@ mod tests {
                 })
                 .width(30.),
             ])
-            .x_align(XAlign::Leading)
+            .align(Align::Leading)
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
         Layout::new(|()| {
@@ -291,7 +291,7 @@ mod tests {
                 })
                 .width(30.),
             ])
-            .x_align(XAlign::Center)
+            .align(Align::CenterX)
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
         Layout::new(|()| {
@@ -305,7 +305,7 @@ mod tests {
                 })
                 .width(30.),
             ])
-            .x_align(XAlign::Trailing)
+            .align(Align::Trailing)
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
         Layout::new(|()| {
@@ -319,7 +319,7 @@ mod tests {
                 })
                 .height(30.),
             ])
-            .y_align(YAlign::Top)
+            .align(Align::Top)
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
         Layout::new(|()| {
@@ -333,7 +333,7 @@ mod tests {
                 })
                 .height(30.),
             ])
-            .y_align(YAlign::Center)
+            .align(Align::CenterY)
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
         Layout::new(|()| {
@@ -347,7 +347,7 @@ mod tests {
                 })
                 .height(30.),
             ])
-            .y_align(YAlign::Bottom)
+            .align(Align::Bottom)
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
     }
@@ -372,7 +372,7 @@ mod tests {
                 assert_eq!(a, Area::new(0., 0., 50., 100.));
             })
             .aspect(0.5)
-            .x_align(XAlign::Leading)
+            .align(Align::Leading)
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
         Layout::new(|()| {
@@ -380,7 +380,7 @@ mod tests {
                 assert_eq!(a, Area::new(50., 0., 50., 100.));
             })
             .aspect(0.5)
-            .x_align(XAlign::Trailing)
+            .align(Align::Trailing)
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
 
@@ -396,7 +396,7 @@ mod tests {
                 assert_eq!(a, Area::new(0., 0., 100., 50.));
             })
             .aspect(2.)
-            .y_align(YAlign::Top)
+            .align(Align::Top)
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
         Layout::new(|()| {
@@ -404,7 +404,7 @@ mod tests {
                 assert_eq!(a, Area::new(0., 50., 100., 50.));
             })
             .aspect(2.)
-            .y_align(YAlign::Bottom)
+            .align(Align::Bottom)
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
     }
@@ -429,7 +429,7 @@ mod tests {
                 assert_eq!(a, Area::new(0., -50., 100., 200.));
             })
             .aspect(0.5)
-            .x_align(XAlign::Leading)])
+            .align(Align::Leading)])
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
         Layout::new(|()| {
@@ -437,7 +437,7 @@ mod tests {
                 assert_eq!(a, Area::new(50., 0., 50., 100.));
             })
             .aspect(0.5)
-            .x_align(XAlign::Trailing)])
+            .align(Align::Trailing)])
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
     }

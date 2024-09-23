@@ -1,5 +1,5 @@
 use crate::{layout::NodeValue, models::*, Node};
-use std::ops::RangeBounds;
+use std::{ops::RangeBounds, rc::Rc};
 
 impl<U> Node<U> {
     /// Adds padding to the node along the leading edge
@@ -191,11 +191,20 @@ impl<U> Node<U> {
             ..Default::default()
         })
     }
-    /// Specifies an alignment along the x axis.
+    /// Specifies an alignment along the x and/or y axis.
     ///
-    /// This will only have an effect if the node is constrained to be smaller than the area that is available,
+    /// This will only have an effect if the node is constrained along the axis to be smaller than the area that is available,
     /// otherwise, there's no wiggle room.
-    pub fn x_align(mut self, align: XAlign) -> Self {
+    pub fn align(self, align: Align) -> Self {
+        let (x, y) = align.axis_aligns();
+        match (x, y) {
+            (None, None) => self,
+            (None, Some(y)) => self.y_align(y),
+            (Some(x), None) => self.x_align(x),
+            (Some(x), Some(y)) => self.x_align(x).y_align(y),
+        }
+    }
+    fn x_align(mut self, align: XAlign) -> Self {
         match self.inner {
             NodeValue::Column {
                 off_axis_align: ref mut col_align,
@@ -214,11 +223,7 @@ impl<U> Node<U> {
         }
         self
     }
-    /// Specifies an alignment along the y axis.
-    ///
-    /// This will only have an effect if the node is constrained to be smaller than the area that is available,
-    /// otherwise, there's no wiggle room.
-    pub fn y_align(mut self, align: YAlign) -> Self {
+    fn y_align(mut self, align: YAlign) -> Self {
         match self.inner {
             NodeValue::Row {
                 off_axis_align: ref mut row_align,
@@ -237,24 +242,6 @@ impl<U> Node<U> {
         }
         self
     }
-    /// Specifies an alignment along both the x & y axis.
-    ///
-    /// This will only have an effect if the node is constrained along the axis to be smaller than the area that is available,
-    /// otherwise, there's no wiggle room.
-    pub fn align(self, align: Align) -> Self {
-        let (x_align, y_align) = match align {
-            Align::TopLeading => (XAlign::Leading, YAlign::Top),
-            Align::TopCenter => (XAlign::Center, YAlign::Top),
-            Align::TopTrailing => (XAlign::Trailing, YAlign::Top),
-            Align::CenterTrailing => (XAlign::Trailing, YAlign::Center),
-            Align::BottomTrailing => (XAlign::Trailing, YAlign::Bottom),
-            Align::BottomCenter => (XAlign::Center, YAlign::Bottom),
-            Align::BottomLeading => (XAlign::Leading, YAlign::Bottom),
-            Align::CenterLeading => (XAlign::Leading, YAlign::Center),
-            Align::CenterCenter => (XAlign::Center, YAlign::Center),
-        };
-        self.x_align(x_align).y_align(y_align)
-    }
     /// Constrains the node's height to `ratio` of width
     pub fn aspect(self, ratio: f32) -> Self {
         self.wrap_or_update_explicit(Size {
@@ -262,7 +249,31 @@ impl<U> Node<U> {
             ..Default::default()
         })
     }
-    fn wrap_or_update_explicit(mut self, size: Size) -> Self {
+    /// Constrains the node's height as a function of available width.
+    ///
+    /// Generally you should prefer size constraints, aspect ratio constraints or area readers over dynamic height.
+    ///
+    /// **This is primarily for UI elements such as text** where node height must depend on available width & scaling is
+    /// not a simple option.
+    pub fn dynamic_height(self, f: impl Fn(f32, &mut U) -> f32 + 'static) -> Self {
+        self.wrap_or_update_explicit(Size {
+            dynamic_height: Some(Rc::new(f)),
+            ..Default::default()
+        })
+    }
+    /// Constrains the node's width as a function of available height.
+    ///
+    /// Generally you should prefer size constraints, aspect ratio constraints or area readers over dynamic height.
+    ///
+    /// **This is primarily for UI elements such as text** where node width must depend on available height & scaling is
+    /// not a simple option.
+    pub fn dynamic_width(self, f: impl Fn(f32, &mut U) -> f32 + 'static) -> Self {
+        self.wrap_or_update_explicit(Size {
+            dynamic_width: Some(Rc::new(f)),
+            ..Default::default()
+        })
+    }
+    fn wrap_or_update_explicit(mut self, size: Size<U>) -> Self {
         match self.inner {
             NodeValue::Explicit {
                 ref mut options,
@@ -294,6 +305,8 @@ impl<U> Node<U> {
                     x_align: size.x_align.or(options.x_align),
                     y_align: size.y_align.or(options.y_align),
                     aspect: size.aspect.or(options.aspect),
+                    dynamic_height: size.dynamic_height.or(options.dynamic_height.clone()),
+                    dynamic_width: size.dynamic_width.or(options.dynamic_width.clone()),
                 };
             }
             _ => {
@@ -320,7 +333,7 @@ mod tests {
             .width(10.)
             .width_range(5.0..)
             .inner
-            .constraints(Area::zero());
+            .constraints(Area::zero(), &mut ());
         assert!(c.width.upper.is_none());
         assert_eq!(c.width.lower.unwrap(), 5.);
     }
