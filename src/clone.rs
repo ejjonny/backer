@@ -54,6 +54,15 @@ impl<State> Clone for NodeValue<State> {
             },
             NodeValue::Empty => NodeValue::Empty,
             NodeValue::AreaReader { read } => NodeValue::AreaReader { read: read.clone() },
+            NodeValue::Coupled {
+                element,
+                coupled,
+                over,
+            } => NodeValue::Coupled {
+                element: element.clone(),
+                coupled: coupled.clone(),
+                over: *over,
+            },
         }
     }
 }

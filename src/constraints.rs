@@ -153,6 +153,7 @@ impl<State> NodeValue<State> {
                     aspect: None,
                 }
             }
+            NodeValue::Coupled { element, .. } => element.constraints(allocations[0], state),
             NodeValue::Empty | NodeValue::Group(_) => unreachable!(),
         }
     }

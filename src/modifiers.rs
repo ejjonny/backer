@@ -249,6 +249,32 @@ impl<U> Node<U> {
             ..Default::default()
         })
     }
+    /// Attaches `node` over this node as an overlay
+    ///
+    /// The area available to the attached node is the size of the node it's attached to.
+    /// Useful for adding an unconstrained node as an ornament, background, or overlay to a constrained node.
+    pub fn attach_over(self, node: Self) -> Self {
+        Node {
+            inner: NodeValue::Coupled {
+                over: true,
+                element: Box::new(self.inner),
+                coupled: Box::new(node.inner),
+            },
+        }
+    }
+    /// Attaches `node` under this node as a background
+    ///
+    /// The area available to the attached node is the size of the node it's attached to.
+    /// Useful for adding an unconstrained node as an ornament, background, or overlay to a constrained node.
+    pub fn attach_under(self, node: Self) -> Self {
+        Node {
+            inner: NodeValue::Coupled {
+                over: false,
+                element: Box::new(self.inner),
+                coupled: Box::new(node.inner),
+            },
+        }
+    }
     /// Constrains the node's height as a function of available width.
     ///
     /// Generally you should prefer size constraints, aspect ratio constraints or area readers over dynamic height.

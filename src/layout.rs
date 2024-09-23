@@ -104,6 +104,11 @@ pub(crate) enum NodeValue<State> {
     AreaReader {
         read: AreaReaderFn<State>,
     },
+    Coupled {
+        over: bool,
+        element: Box<NodeValue<State>>,
+        coupled: Box<NodeValue<State>>,
+    },
 }
 
 impl<State> NodeValue<State> {
@@ -123,6 +128,19 @@ impl<State> NodeValue<State> {
             }
             NodeValue::Space => (),
             NodeValue::Scope { scoped } => scoped.draw(state),
+            NodeValue::Coupled {
+                element,
+                coupled,
+                over,
+            } => {
+                if *over {
+                    element.draw(state);
+                    coupled.draw(state);
+                } else {
+                    coupled.draw(state);
+                    element.draw(state);
+                }
+            }
             NodeValue::Group(_) | NodeValue::Empty | NodeValue::AreaReader { .. } => {
                 unreachable!()
             }
@@ -222,7 +240,8 @@ impl<State> NodeValue<State> {
             NodeValue::Draw(_)
             | NodeValue::Space
             | NodeValue::Scope { .. }
-            | NodeValue::AreaReader { .. } => {
+            | NodeValue::AreaReader { .. }
+            | NodeValue::Coupled { .. } => {
                 vec![available_area]
             }
             NodeValue::Group(_) | NodeValue::Empty => unreachable!(),
@@ -283,6 +302,12 @@ impl<State> NodeValue<State> {
             NodeValue::AreaReader { read } => {
                 *self = read(allocated[0], state).inner;
                 self.layout(allocated[0], None, None, state);
+            }
+            NodeValue::Coupled {
+                element, coupled, ..
+            } => {
+                element.layout(allocated[0], None, None, state);
+                coupled.layout(allocated[0], None, None, state);
             }
             NodeValue::Group(_) | NodeValue::Empty => unreachable!(),
         }
