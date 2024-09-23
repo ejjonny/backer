@@ -35,31 +35,6 @@ Backer relies on simple rules that can compose to create complex, flexible layou
 <summary>See some code</summary>
 
 ```rust
-    // #1
-    row_spaced(
-        10.,
-        vec![
-            // Custom draw nodes
-            draw_a(ui),
-            draw_b(ui).height(150.).width(50.).y_align(YAlign::Bottom),
-            draw_c(ui),
-        ],
-    )
-    .pad(10.)
-    // #2
-    column_spaced(
-        10.,
-        vec![
-            draw_a(ui),
-            draw_b(ui)
-                .height(100.)
-                .width(150.)
-                .x_align(XAlign::Leading),
-            draw_c(ui),
-        ],
-    )
-    .pad(10.)
-    // #3 & #4
     column_spaced(
         10.,
         vec![
@@ -67,7 +42,7 @@ Backer relies on simple rules that can compose to create complex, flexible layou
             row_spaced(
                 10.,
                 vec![
-                    draw_b(ui).size(Size::new().width(180.).x_align(XAlign::Leading)),
+                    draw_b(ui).width(180.).align(Align::Leading),
                     column_spaced(10., vec![draw_a(ui), draw_b(ui), draw_c(ui)]),
                 ],
             ),
@@ -92,17 +67,7 @@ let layout = Layout::new(my_layout_fn);
 fn my_layout_fn(state: &mut MyState) -> Node<MyState> { todo!() }
 ```
 
-## 2. Combine nodes to define your layout
-
-```rust
-fn my_layout_fn(state: &mut MyState) -> Node<MyState> {
-  row(vec![
-    ...
-  ])
-}
-```
-
-## 3. Implement a `draw` node
+## 2. Implement a `draw` node
 
 For reuse, you can construct your drawable in a function
 
@@ -116,7 +81,17 @@ fn my_drawable(state: &mut MyState) -> Node<MyState> {
 }
 ```
 
-## 4. Run your layout
+## 3. Combine nodes to define & customize your layout
+
+```rust
+fn my_layout_fn(state: &mut MyState) -> Node<MyState> {
+  row(vec![
+      my_drawable(state)
+  ])
+}
+```
+
+## 4. Draw your layout
 
 ```rust
 // UI libraries generally will expose methods to get the available screen size
@@ -136,6 +111,6 @@ layout.draw(available_area, &mut my_state);
 
 ## Status
 
-The crate is currently usable but is very new! Breaking changes may be relatively frequent as the crate matures.
+The crate is currently usable but new! Breaking changes may be relatively frequent as the crate matures.
 
 Contributions are always welcome 🤗

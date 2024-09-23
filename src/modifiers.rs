@@ -191,7 +191,7 @@ impl<U> Node<U> {
             ..Default::default()
         })
     }
-    /// Specifies an alignment along both the x and/or y axis.
+    /// Specifies an alignment along the x and/or y axis.
     ///
     /// This will only have an effect if the node is constrained along the axis to be smaller than the area that is available,
     /// otherwise, there's no wiggle room.
