@@ -2,29 +2,12 @@ use crate::{
     layout::NodeValue,
     models::{Area, Size},
 };
-use std::rc::Rc;
 
-type MeasuredDimensionFn<U> = Option<Rc<dyn Fn(f32, &mut U) -> f32>>;
-
-#[derive(Clone)]
-pub(crate) struct SizeConstraints<U> {
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub(crate) struct SizeConstraints {
     pub(crate) width: Constraint,
     pub(crate) height: Constraint,
     pub(crate) aspect: Option<f32>,
-    pub(crate) dynamic_height: MeasuredDimensionFn<U>,
-    pub(crate) dynamic_width: MeasuredDimensionFn<U>,
-}
-
-impl<U> std::fmt::Debug for SizeConstraints<U> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("SizeConstraints")
-            .field("width", &self.width)
-            .field("height", &self.height)
-            .field("aspect", &self.aspect)
-            .field("dynamic_height", &"<function>")
-            .field("dynamic_width", &"<function>")
-            .finish()
-    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -49,7 +32,7 @@ impl<State> NodeValue<State> {
         &mut self,
         available_area: Area,
         state: &mut State,
-    ) -> SizeConstraints<State> {
+    ) -> SizeConstraints {
         let contextual_aligns = self.contextual_aligns();
         let allocations = self.allocate_area(
             available_area,
@@ -70,8 +53,6 @@ impl<State> NodeValue<State> {
                             upper: None,
                         },
                         aspect: None,
-                        dynamic_height: None,
-                        dynamic_width: None,
                     },
                     0.,
                 )
@@ -84,7 +65,7 @@ impl<State> NodeValue<State> {
                 .iter_mut()
                 .zip(allocations.iter())
                 .fold(
-                    Option::<SizeConstraints<State>>::None,
+                    Option::<SizeConstraints>::None,
                     |current, (element, allocated)| {
                         if let Some(current) = current {
                             Some(SizeConstraints {
@@ -96,8 +77,6 @@ impl<State> NodeValue<State> {
                                     *spacing,
                                 ),
                                 aspect: None,
-                                dynamic_height: None,
-                                dynamic_width: None,
                             })
                         } else {
                             Some(element.constraints(*allocated, state))
@@ -108,8 +87,6 @@ impl<State> NodeValue<State> {
                     width: Constraint::none(),
                     height: Constraint::none(),
                     aspect: None,
-                    dynamic_height: None,
-                    dynamic_width: None,
                 }),
             NodeValue::Row {
                 ref mut elements,
@@ -119,7 +96,7 @@ impl<State> NodeValue<State> {
                 .iter_mut()
                 .zip(allocations.iter())
                 .fold(
-                    Option::<SizeConstraints<State>>::None,
+                    Option::<SizeConstraints>::None,
                     |current, (element, allocated)| {
                         if let Some(current) = current {
                             Some(SizeConstraints {
@@ -131,8 +108,6 @@ impl<State> NodeValue<State> {
                                     element.constraints(*allocated, state).height,
                                 ),
                                 aspect: None,
-                                dynamic_height: None,
-                                dynamic_width: None,
                             })
                         } else {
                             Some(element.constraints(*allocated, state))
@@ -143,14 +118,11 @@ impl<State> NodeValue<State> {
                     width: Constraint::none(),
                     height: Constraint::none(),
                     aspect: None,
-                    dynamic_height: None,
-                    dynamic_width: None,
                 }),
-            NodeValue::Stack(elements) => elements
-                .iter_mut()
-                .fold(
-                    Option::<SizeConstraints<State>>::None,
-                    |current, element| {
+            NodeValue::Stack(elements) => {
+                elements
+                    .iter_mut()
+                    .fold(Option::<SizeConstraints>::None, |current, element| {
                         if let Some(current) = current {
                             Some(current.combine_adjacent_priority(
                                 element.constraints(allocations[0], state),
@@ -158,15 +130,13 @@ impl<State> NodeValue<State> {
                         } else {
                             Some(element.constraints(allocations[0], state))
                         }
-                    },
-                )
-                .unwrap_or(SizeConstraints {
-                    width: Constraint::none(),
-                    height: Constraint::none(),
-                    aspect: None,
-                    dynamic_height: None,
-                    dynamic_width: None,
-                }),
+                    })
+                    .unwrap_or(SizeConstraints {
+                        width: Constraint::none(),
+                        height: Constraint::none(),
+                        aspect: None,
+                    })
+            }
             NodeValue::Explicit { options, element } => element
                 .constraints(allocations[0], state)
                 .combine_equal_priority(SizeConstraints::from_size(
@@ -181,8 +151,6 @@ impl<State> NodeValue<State> {
                     width: Constraint::none(),
                     height: Constraint::none(),
                     aspect: None,
-                    dynamic_height: None,
-                    dynamic_width: None,
                 }
             }
             NodeValue::Empty | NodeValue::Group(_) => unreachable!(),
@@ -199,14 +167,12 @@ impl Constraint {
     }
 }
 
-impl<State> SizeConstraints<State> {
+impl SizeConstraints {
     pub(crate) fn combine_adjacent_priority(self, other: Self) -> Self {
         SizeConstraints {
             width: self.width.combine_adjacent_priority(other.width),
             height: self.height.combine_adjacent_priority(other.height),
             aspect: None,
-            dynamic_height: None,
-            dynamic_width: None,
         }
     }
     pub(crate) fn combine_equal_priority(self, other: Self) -> Self {
@@ -214,8 +180,6 @@ impl<State> SizeConstraints<State> {
             width: self.width.combine_equal_priority(other.width),
             height: self.height.combine_equal_priority(other.height),
             aspect: self.aspect.or(other.aspect),
-            dynamic_height: self.dynamic_height.or(other.dynamic_height),
-            dynamic_width: self.dynamic_width.or(other.dynamic_width),
         }
     }
     pub(crate) fn combine_sum(self, other: Self, spacing: f32) -> Self {
@@ -223,8 +187,6 @@ impl<State> SizeConstraints<State> {
             width: self.width.combine_sum(other.width, spacing),
             height: self.height.combine_sum(other.height, spacing),
             aspect: None,
-            dynamic_height: None,
-            dynamic_width: None,
         }
     }
 }
@@ -273,8 +235,8 @@ impl Constraint {
     }
 }
 
-impl<U> SizeConstraints<U> {
-    pub(crate) fn from_size(value: Size<U>, area: Area, state: &mut U) -> Self {
+impl SizeConstraints {
+    pub(crate) fn from_size<U>(value: Size<U>, area: Area, state: &mut U) -> Self {
         let mut initial = SizeConstraints {
             width: if value.width_min.is_some() || value.width_max.is_some() {
                 Constraint {
@@ -299,8 +261,6 @@ impl<U> SizeConstraints<U> {
                 }
             },
             aspect: value.aspect,
-            dynamic_height: None,
-            dynamic_width: None,
         };
         if let Some(dynamic) = value.dynamic_height {
             let result = Some(initial.height.clamp(dynamic(area.width, state)));

@@ -290,12 +290,7 @@ impl<State> NodeValue<State> {
 }
 
 impl Area {
-    fn constrained<State>(
-        self,
-        constraints: &SizeConstraints<State>,
-        x_align: XAlign,
-        y_align: YAlign,
-    ) -> Self {
+    fn constrained(self, constraints: &SizeConstraints, x_align: XAlign, y_align: YAlign) -> Self {
         let mut width = match (constraints.width.lower, constraints.width.upper) {
             (None, None) => self.width,
             (None, Some(upper)) => self.width.min(upper),
@@ -348,7 +343,7 @@ pub(crate) fn layout_axis<State>(
     state: &mut State,
     check: bool,
 ) -> Vec<Area> {
-    let sizes: Vec<SizeConstraints<State>> = elements
+    let sizes: Vec<SizeConstraints> = elements
         .iter_mut()
         .map(|element| element.constraints(available_area, state))
         .collect();

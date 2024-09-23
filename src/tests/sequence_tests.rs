@@ -1,5 +1,7 @@
 #[cfg(test)]
 mod tests {
+    use crate::constraints::Constraint;
+    use crate::constraints::SizeConstraints;
     use crate::layout::*;
     use crate::models::*;
     use crate::nodes::*;
@@ -386,120 +388,120 @@ mod tests {
         .draw(Area::new(0., 0., 100., 100.), &mut ());
     }
 
-    // #[test]
-    // fn test_constraint_combination() {
-    //     assert_eq!(
-    //         row::<()>(vec![space(), space().height(30.)])
-    //             .inner
-    //             .constraints(Area::zero()),
-    //         SizeConstraints {
-    //             width: Constraint::none(),
-    //             height: Constraint {
-    //                 lower: Some(30.),
-    //                 upper: None
-    //             },
-    //             aspect: None
-    //         }
-    //     );
-    //     assert_eq!(
-    //         row::<()>(vec![space().height(40.), space().height(30.)])
-    //             .inner
-    //             .constraints(Area::zero()),
-    //         SizeConstraints {
-    //             width: Constraint::none(),
-    //             height: Constraint {
-    //                 lower: Some(40.),
-    //                 upper: Some(40.)
-    //             },
-    //             aspect: None
-    //         }
-    //     );
-    //     assert_eq!(
-    //         column::<()>(vec![space(), space().width(10.)])
-    //             .inner
-    //             .constraints(Area::zero()),
-    //         SizeConstraints {
-    //             width: Constraint {
-    //                 lower: Some(10.),
-    //                 upper: None
-    //             },
-    //             height: Constraint::none(),
-    //             aspect: None
-    //         }
-    //     );
-    //     assert_eq!(
-    //         column::<()>(vec![space().width(20.), space().width(10.)])
-    //             .inner
-    //             .constraints(Area::zero()),
-    //         SizeConstraints {
-    //             width: Constraint {
-    //                 lower: Some(20.),
-    //                 upper: Some(20.)
-    //             },
-    //             height: Constraint::none(),
-    //             aspect: None
-    //         }
-    //     );
-    //     assert_eq!(
-    //         stack::<()>(vec![space(), space().height(10.)])
-    //             .inner
-    //             .constraints(Area::zero()),
-    //         SizeConstraints {
-    //             width: Constraint::none(),
-    //             height: Constraint {
-    //                 lower: Some(10.),
-    //                 upper: None
-    //             },
-    //             aspect: None
-    //         }
-    //     );
-    //     assert_eq!(
-    //         stack::<()>(vec![space().height(20.), space().width(10.)])
-    //             .inner
-    //             .constraints(Area::zero()),
-    //         SizeConstraints {
-    //             width: Constraint {
-    //                 lower: Some(10.),
-    //                 upper: None
-    //             },
-    //             height: Constraint {
-    //                 lower: Some(20.),
-    //                 upper: None
-    //             },
-    //             aspect: None
-    //         }
-    //     );
-    //     assert_eq!(
-    //         stack::<()>(vec![space().height(20.), space().height(10.)])
-    //             .inner
-    //             .constraints(Area::zero()),
-    //         SizeConstraints {
-    //             width: Constraint {
-    //                 lower: None,
-    //                 upper: None
-    //             },
-    //             height: Constraint {
-    //                 lower: Some(20.),
-    //                 upper: Some(20.)
-    //             },
-    //             aspect: None
-    //         }
-    //     );
-    //     assert_eq!(
-    //         stack::<()>(vec![space().width(20.), space().width(10.)])
-    //             .inner
-    //             .constraints(Area::zero()),
-    //         SizeConstraints {
-    //             width: Constraint {
-    //                 lower: Some(20.),
-    //                 upper: Some(20.)
-    //             },
-    //             height: Constraint {
-    //                 lower: None,
-    //                 upper: None
-    //             },
-    //             aspect: None
-    //         }
-    //     );
-    // }
+    #[test]
+    fn test_constraint_combination() {
+        assert_eq!(
+            row::<()>(vec![space(), space().height(30.)])
+                .inner
+                .constraints(Area::zero(), &mut ()),
+            SizeConstraints {
+                width: Constraint::none(),
+                height: Constraint {
+                    lower: Some(30.),
+                    upper: None
+                },
+                aspect: None
+            }
+        );
+        assert_eq!(
+            row::<()>(vec![space().height(40.), space().height(30.)])
+                .inner
+                .constraints(Area::zero(), &mut ()),
+            SizeConstraints {
+                width: Constraint::none(),
+                height: Constraint {
+                    lower: Some(40.),
+                    upper: Some(40.)
+                },
+                aspect: None
+            }
+        );
+        assert_eq!(
+            column::<()>(vec![space(), space().width(10.)])
+                .inner
+                .constraints(Area::zero(), &mut ()),
+            SizeConstraints {
+                width: Constraint {
+                    lower: Some(10.),
+                    upper: None
+                },
+                height: Constraint::none(),
+                aspect: None
+            }
+        );
+        assert_eq!(
+            column::<()>(vec![space().width(20.), space().width(10.)])
+                .inner
+                .constraints(Area::zero(), &mut ()),
+            SizeConstraints {
+                width: Constraint {
+                    lower: Some(20.),
+                    upper: Some(20.)
+                },
+                height: Constraint::none(),
+                aspect: None
+            }
+        );
+        assert_eq!(
+            stack::<()>(vec![space(), space().height(10.)])
+                .inner
+                .constraints(Area::zero(), &mut ()),
+            SizeConstraints {
+                width: Constraint::none(),
+                height: Constraint {
+                    lower: Some(10.),
+                    upper: None
+                },
+                aspect: None
+            }
+        );
+        assert_eq!(
+            stack::<()>(vec![space().height(20.), space().width(10.)])
+                .inner
+                .constraints(Area::zero(), &mut ()),
+            SizeConstraints {
+                width: Constraint {
+                    lower: Some(10.),
+                    upper: None
+                },
+                height: Constraint {
+                    lower: Some(20.),
+                    upper: None
+                },
+                aspect: None
+            }
+        );
+        assert_eq!(
+            stack::<()>(vec![space().height(20.), space().height(10.)])
+                .inner
+                .constraints(Area::zero(), &mut ()),
+            SizeConstraints {
+                width: Constraint {
+                    lower: None,
+                    upper: None
+                },
+                height: Constraint {
+                    lower: Some(20.),
+                    upper: Some(20.)
+                },
+                aspect: None
+            }
+        );
+        assert_eq!(
+            stack::<()>(vec![space().width(20.), space().width(10.)])
+                .inner
+                .constraints(Area::zero(), &mut ()),
+            SizeConstraints {
+                width: Constraint {
+                    lower: Some(20.),
+                    upper: Some(20.)
+                },
+                height: Constraint {
+                    lower: None,
+                    upper: None
+                },
+                aspect: None
+            }
+        );
+    }
 }

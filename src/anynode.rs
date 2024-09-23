@@ -3,7 +3,7 @@ use std::{any::Any, fmt, rc::Rc};
 
 type AnyDrawFn<State> = Rc<dyn Fn(&dyn Any, &mut State)>;
 type AnyLayoutFn<State> = Rc<dyn Fn(&mut dyn Any, Area, &mut State)>;
-type AnyConstraintFn<State> = Rc<dyn Fn(&mut dyn Any, Area, &mut State) -> SizeConstraints<State>>;
+type AnyConstraintFn<State> = Rc<dyn Fn(&mut dyn Any, Area, &mut State) -> SizeConstraints>;
 pub(crate) struct AnyNode<State> {
     pub(crate) inner: Box<dyn Any>,
     pub(crate) clone: fn(&Box<dyn Any>) -> Box<dyn Any>,
@@ -21,7 +21,7 @@ impl<State> AnyNode<State> {
         (self.layout)(&mut *self.inner, available_area, state)
     }
 
-    pub(crate) fn constraints(&mut self, area: Area, state: &mut State) -> SizeConstraints<State> {
+    pub(crate) fn constraints(&mut self, area: Area, state: &mut State) -> SizeConstraints {
         (self.constraints)(&mut *self.inner, area, state)
     }
 }

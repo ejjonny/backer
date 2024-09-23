@@ -162,16 +162,6 @@ pub fn scope<U: 'static, V: 'static>(scope: fn(&mut U) -> &mut V, node: Node<V>)
                             width: scoped.width,
                             height: scoped.height,
                             aspect: scoped.aspect,
-                            dynamic_height: if let Some(dynamic_height) = scoped.dynamic_height {
-                                Some(Rc::new(move |w, state| dynamic_height(w, scope(state))))
-                            } else {
-                                None
-                            },
-                            dynamic_width: if let Some(dynamic_width) = scoped.dynamic_width {
-                                Some(Rc::new(move |h, state| dynamic_width(h, scope(state))))
-                            } else {
-                                None
-                            },
                         }
                     }),
                 },
