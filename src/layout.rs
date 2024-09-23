@@ -376,12 +376,12 @@ pub(crate) fn layout_axis<State>(
         if let Some(aspect) = size_constraint.aspect {
             match orientation {
                 Orientation::Horizontal => {
-                    let value = sizes[i].height.clamp(available_area.height) * aspect;
+                    let value = sizes[i].height.clamping(available_area.height) * aspect;
                     lower = Some(value);
                     upper = Some(value);
                 }
                 Orientation::Vertical => {
-                    let value = sizes[i].width.clamp(available_area.width) / aspect;
+                    let value = sizes[i].width.clamping(available_area.width) / aspect;
                     lower = Some(value);
                     upper = Some(value);
                 }
