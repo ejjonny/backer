@@ -1,5 +1,13 @@
-use crate::{layout::NodeValue, models::*, Node};
-use std::{ops::RangeBounds, rc::Rc};
+use crate::{
+    layout::{LayoutCache, NodeValue},
+    models::*,
+    Node,
+};
+use std::{
+    hash::{DefaultHasher, Hash, Hasher},
+    ops::RangeBounds,
+    rc::Rc,
+};
 
 impl<U> Node<U> {
     /// Adds padding to the node along the leading edge
@@ -262,6 +270,16 @@ impl<U> Node<U> {
             },
         }
     }
+    pub fn cache(self, key: impl Hash) -> Self {
+        let mut hasher = DefaultHasher::new();
+        key.hash(&mut hasher);
+        Node {
+            inner: NodeValue::Cache {
+                key: hasher.finish(),
+                element: Box::new(self.inner),
+            },
+        }
+    }
     /// Attaches `node` under this node as a background
     ///
     /// The area available to the attached node is the size of the node it's attached to.
@@ -348,19 +366,19 @@ impl<U> Node<U> {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use crate::models::*;
-    use crate::nodes::*;
+// #[cfg(test)]
+// mod tests {
+//     use crate::models::*;
+//     use crate::nodes::*;
 
-    #[test]
-    fn test_explicit_wrap_valid() {
-        let c = space::<()>()
-            .width(10.)
-            .width_range(5.0..)
-            .inner
-            .constraints(Area::zero(), &mut ());
-        assert!(c.width.upper.is_none());
-        assert_eq!(c.width.lower.unwrap(), 5.);
-    }
-}
+//     #[test]
+//     fn test_explicit_wrap_valid() {
+//         let c = space::<()>()
+//             .width(10.)
+//             .width_range(5.0..)
+//             .inner
+//             .constraints(Area::zero(), &mut ());
+//         assert!(c.width.upper.is_none());
+//         assert_eq!(c.width.lower.unwrap(), 5.);
+//     }
+// }

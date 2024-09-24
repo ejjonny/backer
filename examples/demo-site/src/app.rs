@@ -4,12 +4,23 @@ use egui::{
     Pos2, Rect, Stroke, Ui,
 };
 
-#[derive(Default)]
 pub struct TemplateApp {
     zoom_set: bool,
     web: bool,
     sidebar: bool,
+    layout: Layout,
 }
+
+// impl<'a> Default for TemplateApp<'a> {
+//     fn default() -> Self {
+//         Self {
+//             zoom_set: false,
+//             web,
+//             sidebar: false,
+//             layout: Layout::new(my_layout_fn),
+//         }
+//     }
+// }
 
 impl TemplateApp {
     pub fn new(web: bool) -> Self {
@@ -17,6 +28,7 @@ impl TemplateApp {
             zoom_set: false,
             web,
             sidebar: false,
+            layout: Layout::new(),
         }
     }
 }
@@ -36,14 +48,13 @@ impl eframe::App for TemplateApp {
             ctx.set_zoom_factor(zoom_factor);
         }
         egui::CentralPanel::default().show(ctx, |ui| {
-            let layout = Layout::new(my_layout_fn);
             let viewport = ctx.input(|i| i.screen_rect());
             let available_area = area_from(viewport);
             let mut state = State {
                 ui: &mut *ui,
                 sidebar: &mut self.sidebar,
             };
-            layout.draw(available_area, &mut state);
+            self.layout.draw(available_area, my_layout_fn, &mut state);
         });
     }
 }

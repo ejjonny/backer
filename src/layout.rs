@@ -6,7 +6,7 @@ use crate::{
     Node,
 };
 use core::f32;
-use std::rc::Rc;
+use std::{collections::HashMap, f32::consts::PI, hash::Hash, rc::Rc};
 
 /**
 The root object used to store & calculate a layout
@@ -45,24 +45,47 @@ struct MyState {}
 ```
  */
 #[derive(Debug, Clone)]
-pub struct Layout<State> {
-    tree: fn(&mut State) -> Node<State>,
+pub struct Layout {
+    cache: HashMap<Vec<usize>, LayoutCache>,
 }
 
-impl<State> Layout<State> {
+impl Layout {
     /// Creates a new [`Layout<State>`].
-    pub fn new(tree: fn(&mut State) -> Node<State>) -> Self {
-        Self { tree }
+    pub fn new() -> Self {
+        Self {
+            cache: HashMap::new(),
+        }
     }
 }
 
-impl<State> Layout<State> {
+impl Default for Layout {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl Layout {
     /// Calculates layout and draws all draw nodes in the tree
-    pub fn draw(&self, area: Area, state: &mut State) {
-        let mut layout = (self.tree)(state);
-        layout.inner.layout(area, None, None, state);
+    pub fn draw<State>(
+        &mut self,
+        area: Area,
+        state: &mut State,
+        tree: fn(&mut State) -> Node<State>,
+    ) {
+        let mut layout = (tree)(state);
+        layout
+            .inner
+            .layout(area, None, None, state, &mut None, &mut vec![0]);
         layout.inner.draw(state);
     }
+}
+
+#[derive(Debug, Clone)]
+pub(crate) struct LayoutCache {
+    current_index_path: Vec<usize>,
+    area: Area,
+    state: u64,
+    layout: HashMap<Vec<usize>, Area>,
 }
 
 type AreaReaderFn<State> = Rc<dyn Fn(Area, &mut State) -> Node<State>>;
@@ -109,6 +132,10 @@ pub(crate) enum NodeValue<State> {
         element: Box<NodeValue<State>>,
         coupled: Box<NodeValue<State>>,
     },
+    Cache {
+        key: u64,
+        element: Box<NodeValue<State>>,
+    },
 }
 
 impl<State> NodeValue<State> {
@@ -120,11 +147,18 @@ impl<State> NodeValue<State> {
             | NodeValue::Offset { element, .. } => {
                 element.draw(state);
             }
+            NodeValue::Cache { element, .. } => {
+                element.draw(state);
+            }
             NodeValue::Stack(elements) => {
-                elements.iter().for_each(|el| el.draw(state));
+                elements.iter().enumerate().for_each(|(i, el)| {
+                    el.draw(state);
+                });
             }
             NodeValue::Column { elements, .. } | NodeValue::Row { elements, .. } => {
-                elements.iter().rev().for_each(|el| el.draw(state));
+                elements.iter().enumerate().rev().for_each(|(i, el)| {
+                    el.draw(state);
+                });
             }
             NodeValue::Space => (),
             NodeValue::Scope { scoped } => scoped.draw(state),
@@ -171,6 +205,8 @@ impl<State> NodeValue<State> {
         contextual_x_align: Option<XAlign>,
         contextual_y_align: Option<YAlign>,
         state: &mut State,
+        cache: &mut Option<LayoutCache>,
+        index_path: &mut Vec<usize>,
     ) -> Vec<Area> {
         match self {
             NodeValue::Padding { amounts, .. } => vec![Area {
@@ -193,6 +229,8 @@ impl<State> NodeValue<State> {
                 align.unwrap_or(YAlign::Center),
                 state,
                 true,
+                cache,
+                index_path,
             ),
             NodeValue::Row {
                 elements,
@@ -208,6 +246,8 @@ impl<State> NodeValue<State> {
                 off_axis_align.unwrap_or(YAlign::Center),
                 state,
                 true,
+                cache,
+                index_path,
             ),
             NodeValue::Stack(children) => children.iter().map(|_| available_area).collect(),
             NodeValue::Explicit { options, .. } => {
@@ -244,6 +284,14 @@ impl<State> NodeValue<State> {
             | NodeValue::Coupled { .. } => {
                 vec![available_area]
             }
+            NodeValue::Cache { element, .. } => element.allocate_area(
+                available_area,
+                contextual_x_align,
+                contextual_y_align,
+                state,
+                cache,
+                index_path,
+            ),
             NodeValue::Group(_) | NodeValue::Empty => unreachable!(),
         }
     }
@@ -254,6 +302,8 @@ impl<State> NodeValue<State> {
         contextual_x_align: Option<XAlign>,
         contextual_y_align: Option<YAlign>,
         state: &mut State,
+        cache: &mut Option<LayoutCache>,
+        index_path: &mut Vec<usize>,
     ) {
         let contextual_aligns = self.contextual_aligns();
         let allocated = self.allocate_area(
@@ -261,6 +311,8 @@ impl<State> NodeValue<State> {
             contextual_aligns.0.or(contextual_x_align),
             contextual_aligns.1.or(contextual_y_align),
             state,
+            cache,
+            index_path,
         );
 
         match self {
@@ -278,39 +330,94 @@ impl<State> NodeValue<State> {
             } => {
                 elements
                     .iter_mut()
+                    .enumerate()
                     .zip(allocated)
-                    .for_each(|(el, allocation)| el.layout(allocation, *x_align, *y_align, state));
+                    .for_each(|((i, el), allocation)| {
+                        index_path.push(i);
+                        el.layout(allocation, *x_align, *y_align, state, cache, index_path)
+                    });
             }
             NodeValue::Stack(elements) => {
                 elements
                     .iter_mut()
+                    .enumerate()
                     .zip(allocated)
-                    .for_each(|(el, allocation)| el.layout(allocation, None, None, state));
+                    .for_each(|((i, el), allocation)| {
+                        index_path.push(i);
+                        el.layout(allocation, None, None, state, cache, index_path)
+                    });
             }
             NodeValue::Padding { element, .. }
             | NodeValue::Explicit { element, .. }
             | NodeValue::Offset { element, .. } => {
-                element.layout(allocated[0], None, None, state);
+                index_path.push(0);
+                element.layout(allocated[0], None, None, state, cache, index_path);
             }
             NodeValue::Draw(drawable) => {
-                drawable.area = allocated[0];
-                drawable.area.width = drawable.area.width.max(0.);
-                drawable.area.height = drawable.area.height.max(0.);
+                index_path.push(0);
+                if let Some(cache) = cache {
+                    if let Some(&cached) = cache.layout.get(index_path) {
+                        drawable.area = cached;
+                    } else {
+                        drawable.area = allocated[0];
+                        drawable.area.width = drawable.area.width.max(0.);
+                        drawable.area.height = drawable.area.height.max(0.);
+                        cache.layout.insert(index_path.clone(), drawable.area);
+                    }
+                } else {
+                    drawable.area = allocated[0];
+                    drawable.area.width = drawable.area.width.max(0.);
+                    drawable.area.height = drawable.area.height.max(0.);
+                }
             }
             NodeValue::Space => (),
-            NodeValue::Scope { scoped } => scoped.layout(available_area, state),
+            NodeValue::Scope { scoped } => {
+                index_path.push(0);
+                scoped.layout(available_area, state)
+            }
             NodeValue::AreaReader { read } => {
+                index_path.push(0);
                 *self = read(allocated[0], state).inner;
-                self.layout(allocated[0], None, None, state);
+                self.layout(allocated[0], None, None, state, cache, index_path);
             }
             NodeValue::Coupled {
                 element, coupled, ..
             } => {
-                element.layout(allocated[0], None, None, state);
-                coupled.layout(allocated[0], None, None, state);
+                index_path.push(0);
+                element.layout(allocated[0], None, None, state, cache, index_path);
+                index_path.pop();
+                index_path.push(1);
+                coupled.layout(allocated[0], None, None, state, cache, index_path);
+            }
+            NodeValue::Cache { element, key, .. } => {
+                index_path.push(0);
+                if cache.is_some() {
+                    element.layout(
+                        available_area,
+                        contextual_x_align,
+                        contextual_y_align,
+                        state,
+                        cache,
+                        index_path,
+                    );
+                }
+                // if let Some(last) = last_area {
+                //     if available_area != *last || !cache.cache.contains_key(&key) {
+                //         element.layout(
+                //             available_area,
+                //             contextual_x_align,
+                //             contextual_y_align,
+                //             state,
+                //             cache,
+                //         );
+                //     } else {
+                //         cache.use_cache = true;
+                //     }
+                // }
             }
             NodeValue::Group(_) | NodeValue::Empty => unreachable!(),
         }
+        index_path.pop();
     }
 }
 
@@ -367,10 +474,12 @@ pub(crate) fn layout_axis<State>(
     y_align: YAlign,
     state: &mut State,
     check: bool,
+    cache: &mut Option<LayoutCache>,
+    index_path: &mut Vec<usize>,
 ) -> Vec<Area> {
     let sizes: Vec<SizeConstraints> = elements
         .iter_mut()
-        .map(|element| element.constraints(available_area, state))
+        .map(|element| element.constraints(available_area, state, cache, index_path))
         .collect();
     let element_count = elements.len();
 
@@ -550,7 +659,7 @@ pub(crate) fn layout_axis<State>(
         }
 
         if !check {
-            child.layout(area, Some(x_align), Some(y_align), state);
+            child.layout(area, Some(x_align), Some(y_align), state, cache, index_path);
         } else {
             areas.push(area);
         }

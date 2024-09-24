@@ -1,3 +1,5 @@
+use std::hash::{DefaultHasher, Hash};
+
 use backer::{
   models::{Align, Area},
   nodes::*,
@@ -29,6 +31,7 @@ struct MyApp {
   show_backer: bool,
 }
 
+#[derive(Hash)]
 struct Item {
   title: String,
   points: i32,
@@ -82,6 +85,13 @@ struct State<'a> {
   backer_on: &'a mut bool,
 }
 
+impl<'a> Hash for State<'a> {
+  fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+    self.bounties.hash(state);
+    self.backer_on.hash(state);
+  }
+}
+
 impl eframe::App for MyApp {
   fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
     egui::CentralPanel::default().show(ctx, |ui| {
@@ -96,7 +106,8 @@ impl eframe::App for MyApp {
           let mut area = area_from(scroll_rect);
           area.y = -area.y;
           area.width = viewport.width();
-          Layout::new(|state: &mut State| {
+          let mut layout = Layout::new();
+          layout.draw(area, &mut state, |state: &mut State| {
             column_spaced(
               10.,
               vec![
@@ -197,8 +208,10 @@ impl eframe::App for MyApp {
             )
             .align(Align::Top)
             .pad(10.)
-          })
-          .draw(area, &mut state);
+            // .cache(state, |cached| {
+            //   cached != state.hash(&mut DefaultHasher::new())
+            // })
+          });
         });
       } else {
         ScrollArea::vertical().show(ui, |ui| {

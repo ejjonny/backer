@@ -23,7 +23,7 @@ async fn main() {
     let mut state = State {
         highlight: HighlightedCase::None,
     };
-    let layout = Layout::new(layout_for_highlight);
+    let mut layout = Layout::new();
     loop {
         layout.draw(
             Area {
@@ -33,6 +33,7 @@ async fn main() {
                 height: screen_height(),
             },
             &mut state,
+            layout_for_highlight,
         );
         next_frame().await
     }

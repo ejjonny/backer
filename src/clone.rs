@@ -63,6 +63,10 @@ impl<State> Clone for NodeValue<State> {
                 coupled: coupled.clone(),
                 over: *over,
             },
+            NodeValue::Cache { key, element } => NodeValue::Cache {
+                key: *key,
+                element: element.clone(),
+            },
         }
     }
 }

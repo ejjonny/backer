@@ -1,7 +1,4 @@
-use crate::{
-    anynode::AnyNode, constraints::SizeConstraints, drawable::Drawable, layout::NodeValue,
-    models::*, Node,
-};
+use crate::{anynode::AnyNode, drawable::Drawable, layout::NodeValue, models::*, Node};
 use std::{any::Any, rc::Rc};
 
 /// Defines a vertical sequence of elements
@@ -140,30 +137,33 @@ pub fn scope<U: 'static, V: 'static>(scope: fn(&mut U) -> &mut V, node: Node<V>)
                                 .clone(),
                         ) as Box<dyn Any>
                     },
-                    layout: Rc::new(move |any, area, state| {
-                        any.downcast_mut::<Node<V>>()
-                            .expect("Invalid downcast")
-                            .inner
-                            .layout(area, None, None, scope(state))
-                    }),
-                    draw: Rc::new(move |any, state| {
-                        any.downcast_ref::<Node<V>>()
-                            .expect("Invalid downcast")
-                            .inner
-                            .draw(scope(state))
-                    }),
-                    constraints: Rc::new(move |any, area, state| {
-                        let scoped = any
-                            .downcast_mut::<Node<V>>()
-                            .expect("Invalid downcast")
-                            .inner
-                            .constraints(area, scope(state));
-                        SizeConstraints {
-                            width: scoped.width,
-                            height: scoped.height,
-                            aspect: scoped.aspect,
-                        }
-                    }),
+                    layout: todo!(),
+                    // Rc::new(move |any, area, state| {
+                    //     any.downcast_mut::<Node<V>>()
+                    //         .expect("Invalid downcast")
+                    //         .inner
+                    //         .layout(area, None, None, scope(state), cache)
+                    // }),
+                    draw: todo!(),
+                    // Rc::new(move |any, state| {
+                    //     any.downcast_ref::<Node<V>>()
+                    //         .expect("Invalid downcast")
+                    //         .inner
+                    //         .draw(scope(state))
+                    // }),
+                    constraints: todo!(),
+                    // Rc::new(move |any, area, state| {
+                    //     let scoped = any
+                    //         .downcast_mut::<Node<V>>()
+                    //         .expect("Invalid downcast")
+                    //         .inner
+                    //         .constraints(area, scope(state));
+                    //     SizeConstraints {
+                    //         width: scoped.width,
+                    //         height: scoped.height,
+                    //         aspect: scoped.aspect,
+                    //     }
+                    // }),
                 },
             },
         },
