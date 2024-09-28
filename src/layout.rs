@@ -6,7 +6,12 @@ use crate::{
     Node,
 };
 use core::f32;
-use std::{collections::HashMap, f32::consts::PI, hash::Hash, rc::Rc};
+use std::hash::Hasher;
+use std::{
+    collections::HashMap,
+    hash::{DefaultHasher, Hash},
+    rc::Rc,
+};
 
 /**
 The root object used to store & calculate a layout
@@ -46,7 +51,7 @@ struct MyState {}
  */
 #[derive(Debug, Clone)]
 pub struct Layout {
-    cache: HashMap<Vec<usize>, LayoutCache>,
+    cache: HashMap<u64, HashMap<Vec<usize>, Area>>,
 }
 
 impl Layout {
@@ -70,22 +75,27 @@ impl Layout {
         &mut self,
         area: Area,
         state: &mut State,
-        tree: fn(&mut State) -> Node<State>,
+        tree: impl Fn(&mut State) -> Node<State>,
     ) {
         let mut layout = (tree)(state);
+        let mut cache = Cache::Unmatched(self.cache.clone());
         layout
             .inner
-            .layout(area, None, None, state, &mut None, &mut vec![0]);
+            .layout(area, None, None, state, &mut cache, &mut vec![]);
+        self.cache = match cache {
+            Cache::Filled(_) => todo!(),
+            Cache::Filling(_) => todo!(),
+            Cache::Unmatched(c) => c.to_owned(),
+        };
         layout.inner.draw(state);
     }
 }
 
-#[derive(Debug, Clone)]
-pub(crate) struct LayoutCache {
-    current_index_path: Vec<usize>,
-    area: Area,
-    state: u64,
-    layout: HashMap<Vec<usize>, Area>,
+#[derive(Debug)]
+pub(crate) enum Cache {
+    Filled(HashMap<Vec<usize>, Area>),
+    Filling(HashMap<Vec<usize>, Area>),
+    Unmatched(HashMap<u64, HashMap<Vec<usize>, Area>>),
 }
 
 type AreaReaderFn<State> = Rc<dyn Fn(Area, &mut State) -> Node<State>>;
@@ -151,12 +161,12 @@ impl<State> NodeValue<State> {
                 element.draw(state);
             }
             NodeValue::Stack(elements) => {
-                elements.iter().enumerate().for_each(|(i, el)| {
+                elements.iter().for_each(|el| {
                     el.draw(state);
                 });
             }
             NodeValue::Column { elements, .. } | NodeValue::Row { elements, .. } => {
-                elements.iter().enumerate().rev().for_each(|(i, el)| {
+                elements.iter().rev().for_each(|el| {
                     el.draw(state);
                 });
             }
@@ -205,7 +215,7 @@ impl<State> NodeValue<State> {
         contextual_x_align: Option<XAlign>,
         contextual_y_align: Option<YAlign>,
         state: &mut State,
-        cache: &mut Option<LayoutCache>,
+        cache: &mut Cache,
         index_path: &mut Vec<usize>,
     ) -> Vec<Area> {
         match self {
@@ -302,18 +312,23 @@ impl<State> NodeValue<State> {
         contextual_x_align: Option<XAlign>,
         contextual_y_align: Option<YAlign>,
         state: &mut State,
-        cache: &mut Option<LayoutCache>,
+        cache: &mut Cache,
         index_path: &mut Vec<usize>,
     ) {
+        let initial_index_len = index_path.len();
         let contextual_aligns = self.contextual_aligns();
-        let allocated = self.allocate_area(
-            available_area,
-            contextual_aligns.0.or(contextual_x_align),
-            contextual_aligns.1.or(contextual_y_align),
-            state,
-            cache,
-            index_path,
-        );
+        let allocated = if let Cache::Unmatched(_) | Cache::Filling(_) = cache {
+            Some(self.allocate_area(
+                available_area,
+                contextual_aligns.0.or(contextual_x_align),
+                contextual_aligns.1.or(contextual_y_align),
+                state,
+                cache,
+                index_path,
+            ))
+        } else {
+            None
+        };
 
         match self {
             NodeValue::Column {
@@ -328,96 +343,137 @@ impl<State> NodeValue<State> {
                 off_axis_align: y_align,
                 ..
             } => {
-                elements
-                    .iter_mut()
-                    .enumerate()
-                    .zip(allocated)
-                    .for_each(|((i, el), allocation)| {
-                        index_path.push(i);
-                        el.layout(allocation, *x_align, *y_align, state, cache, index_path)
-                    });
+                elements.iter_mut().enumerate().for_each(|(i, el)| {
+                    index_path.push(i);
+                    el.layout(
+                        allocated.as_ref().map(|a| a[i]).unwrap_or(Area::zero()),
+                        *x_align,
+                        *y_align,
+                        state,
+                        cache,
+                        index_path,
+                    );
+                    index_path.pop();
+                });
             }
             NodeValue::Stack(elements) => {
-                elements
-                    .iter_mut()
-                    .enumerate()
-                    .zip(allocated)
-                    .for_each(|((i, el), allocation)| {
-                        index_path.push(i);
-                        el.layout(allocation, None, None, state, cache, index_path)
-                    });
+                elements.iter_mut().enumerate().for_each(|(i, el)| {
+                    index_path.push(i);
+                    el.layout(
+                        allocated.as_ref().map(|a| a[i]).unwrap_or(Area::zero()),
+                        None,
+                        None,
+                        state,
+                        cache,
+                        index_path,
+                    );
+                    index_path.pop();
+                });
             }
             NodeValue::Padding { element, .. }
             | NodeValue::Explicit { element, .. }
             | NodeValue::Offset { element, .. } => {
                 index_path.push(0);
-                element.layout(allocated[0], None, None, state, cache, index_path);
+                element.layout(
+                    allocated.map(|a| a[0]).unwrap_or(Area::zero()),
+                    None,
+                    None,
+                    state,
+                    cache,
+                    index_path,
+                );
+                index_path.pop();
             }
             NodeValue::Draw(drawable) => {
                 index_path.push(0);
-                if let Some(cache) = cache {
-                    if let Some(&cached) = cache.layout.get(index_path) {
-                        drawable.area = cached;
-                    } else {
-                        drawable.area = allocated[0];
+                match cache {
+                    Cache::Filling(c) | Cache::Filled(c) => {
+                        if let Some(&cached) = c.get(index_path) {
+                            dbg!("Success");
+                            drawable.area = cached;
+                        } else {
+                            drawable.area = allocated.map(|a| a[0]).unwrap_or(Area::zero());
+                            drawable.area.width = drawable.area.width.max(0.);
+                            drawable.area.height = drawable.area.height.max(0.);
+                            c.insert(index_path.clone(), drawable.area);
+                        }
+                    }
+                    Cache::Unmatched(_) => {
+                        drawable.area = allocated.map(|a| a[0]).unwrap_or(Area::zero());
                         drawable.area.width = drawable.area.width.max(0.);
                         drawable.area.height = drawable.area.height.max(0.);
-                        cache.layout.insert(index_path.clone(), drawable.area);
                     }
-                } else {
-                    drawable.area = allocated[0];
-                    drawable.area.width = drawable.area.width.max(0.);
-                    drawable.area.height = drawable.area.height.max(0.);
                 }
+                index_path.pop();
             }
             NodeValue::Space => (),
             NodeValue::Scope { scoped } => {
                 index_path.push(0);
-                scoped.layout(available_area, state)
+                scoped.layout(available_area, state);
+                index_path.pop();
             }
             NodeValue::AreaReader { read } => {
                 index_path.push(0);
-                *self = read(allocated[0], state).inner;
-                self.layout(allocated[0], None, None, state, cache, index_path);
+                let area = allocated.map(|a| a[0]).unwrap_or(Area::zero());
+                *self = read(area, state).inner;
+                self.layout(area, None, None, state, cache, index_path);
+                index_path.pop();
             }
             NodeValue::Coupled {
                 element, coupled, ..
             } => {
                 index_path.push(0);
-                element.layout(allocated[0], None, None, state, cache, index_path);
+                let area = allocated.map(|a| a[0]).unwrap_or(Area::zero());
+                element.layout(area, None, None, state, cache, index_path);
                 index_path.pop();
                 index_path.push(1);
-                coupled.layout(allocated[0], None, None, state, cache, index_path);
+                coupled.layout(area, None, None, state, cache, index_path);
+                index_path.pop();
             }
             NodeValue::Cache { element, key, .. } => {
                 index_path.push(0);
-                if cache.is_some() {
-                    element.layout(
+                let mut hasher = DefaultHasher::new();
+                available_area.hash(&mut hasher);
+                key.hash(&mut hasher);
+                let key = hasher.finish();
+                match cache {
+                    Cache::Unmatched(bank) => {
+                        let temp = &mut bank
+                            .remove(&key)
+                            .map(Cache::Filled)
+                            .unwrap_or(Cache::Filling(HashMap::new()));
+                        element.layout(
+                            available_area,
+                            contextual_x_align,
+                            contextual_y_align,
+                            state,
+                            temp,
+                            index_path,
+                        );
+                        let unwrapped = match temp {
+                            Cache::Filling(m) | Cache::Filled(m) => m.to_owned(),
+                            _ => unreachable!(),
+                        };
+                        bank.insert(key, unwrapped);
+                    }
+                    _ => element.layout(
                         available_area,
                         contextual_x_align,
                         contextual_y_align,
                         state,
                         cache,
                         index_path,
-                    );
+                    ),
                 }
-                // if let Some(last) = last_area {
-                //     if available_area != *last || !cache.cache.contains_key(&key) {
-                //         element.layout(
-                //             available_area,
-                //             contextual_x_align,
-                //             contextual_y_align,
-                //             state,
-                //             cache,
-                //         );
-                //     } else {
-                //         cache.use_cache = true;
-                //     }
-                // }
+                index_path.pop();
             }
             NodeValue::Group(_) | NodeValue::Empty => unreachable!(),
         }
-        index_path.pop();
+        if index_path.len() != initial_index_len {
+            dbg!(&self);
+            dbg!(index_path);
+            panic!()
+        }
     }
 }
 
@@ -474,7 +530,7 @@ pub(crate) fn layout_axis<State>(
     y_align: YAlign,
     state: &mut State,
     check: bool,
-    cache: &mut Option<LayoutCache>,
+    cache: &mut Cache,
     index_path: &mut Vec<usize>,
 ) -> Vec<Area> {
     let sizes: Vec<SizeConstraints> = elements

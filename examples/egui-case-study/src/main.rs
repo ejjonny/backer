@@ -1,4 +1,4 @@
-use std::hash::{DefaultHasher, Hash};
+use std::hash::{DefaultHasher, Hash, Hasher};
 
 use backer::{
   models::{Align, Area},
@@ -29,6 +29,7 @@ fn main() -> eframe::Result {
 struct MyApp {
   items: Vec<Item>,
   show_backer: bool,
+  layout: Layout,
 }
 
 #[derive(Hash)]
@@ -40,7 +41,7 @@ struct Item {
 impl Default for MyApp {
   fn default() -> Self {
     MyApp {
-      items: (0..30)
+      items: (0..100)
         .flat_map(|_| {
           vec![
             Item {
@@ -58,7 +59,8 @@ impl Default for MyApp {
           ]
         })
         .collect(),
-      show_backer: false,
+      show_backer: true,
+      layout: Layout::new(),
     }
   }
 }
@@ -104,114 +106,115 @@ impl eframe::App for MyApp {
             backer_on: &mut self.show_backer,
           };
           let mut area = area_from(scroll_rect);
-          area.y = -area.y;
+          let offset = -area.y;
+          area.y = 0.;
           area.width = viewport.width();
-          let mut layout = Layout::new();
-          layout.draw(area, &mut state, |state: &mut State| {
-            column_spaced(
-              10.,
-              vec![
-                draw(|area, state: &mut State| {
-                  if state
-                    .ui
-                    .put(rect(area), Button::new("Backer Off"))
-                    .clicked()
-                  {
-                    *state.backer_on = false
-                  }
-                })
-                .height(15.),
-                group(
-                  state
-                    .bounties
-                    .iter()
-                    .enumerate()
-                    .map(|(i, item)| {
-                      stack(vec![
-                        draw(|area, state: &mut State| {
-                          state.ui.painter().rect_stroke(
-                            rect(area),
+          self
+            .layout
+            .draw(area, &mut state, move |state: &mut State| {
+              column_spaced(
+                10.,
+                vec![
+                  draw(|area, state: &mut State| {
+                    if state
+                      .ui
+                      .put(rect(area), Button::new("Backer Off"))
+                      .clicked()
+                    {
+                      *state.backer_on = false
+                    }
+                  })
+                  .height(15.),
+                  group(
+                    state
+                      .bounties
+                      .iter()
+                      .enumerate()
+                      .map(|(i, item)| {
+                        stack(vec![
+                          draw(|area, state: &mut State| {
+                            state.ui.painter().rect_stroke(
+                              rect(area),
+                              10.,
+                              Stroke::new(2., Color32::from_rgb(50, 50, 50)),
+                            );
+                          }),
+                          row_spaced(
                             10.,
-                            Stroke::new(2., Color32::from_rgb(50, 50, 50)),
-                          );
-                        }),
-                        row_spaced(
-                          10.,
-                          vec![
-                            draw(|area, state: &mut State| {
-                              state.ui.put(
-                                rect(area),
-                                Image::new(egui::include_image!("../frs.png"))
-                                  .show_loading_spinner(true)
-                                  .fit_to_exact_size(egui::Vec2::new(area.width, area.height))
-                                  .rounding(4.),
-                              );
-                            })
-                            .aspect(1.),
-                            column_spaced(
-                              3.,
-                              vec![
-                                row_spaced(
-                                  10.,
-                                  vec![
-                                    draw_label(
-                                      state.ui,
-                                      RichText::new(state.bounties[i].title.as_str())
-                                        .color(Color32::WHITE)
-                                        .size(18.),
-                                    )
-                                    .align(Align::Leading),
-                                    draw_label(
-                                      state.ui,
-                                      RichText::new(format!("{}XP", item.points))
-                                        .color(Color32::WHITE),
-                                    ),
-                                  ],
-                                ),
-                                draw_label(
-                                  state.ui,
-                                  RichText::new("EXPIRES IN: 3h 2m")
-                                    .color(Color32::from_rgb(200, 200, 200))
-                                    .size(10.),
-                                )
-                                .align(Align::Leading)
-                                .pad_leading(3.),
-                              ],
-                            )
-                            .align(Align::Leading)
-                            .width_range(120.0..),
-                            draw(|area, state: &mut State| {
-                              if state
-                                .ui
-                                .put(
+                            vec![
+                              draw(|area, state: &mut State| {
+                                state.ui.put(
                                   rect(area),
-                                  Button::new(RichText::new("Open").color(Color32::WHITE))
-                                    .fill(Color32::from_rgb(150, 0, 150))
+                                  Image::new(egui::include_image!("../frs.png"))
+                                    .show_loading_spinner(true)
+                                    .fit_to_exact_size(egui::Vec2::new(area.width, area.height))
                                     .rounding(4.),
-                                )
-                                .clicked()
-                              {
-                                dbg!("Click");
-                              }
-                            })
-                            .aspect(1.),
-                          ],
-                        )
-                        .pad(7.),
-                      ])
-                      .height(58.)
-                    })
-                    .collect(),
-                ),
-                space(),
-              ],
-            )
-            .align(Align::Top)
-            .pad(10.)
-            // .cache(state, |cached| {
-            //   cached != state.hash(&mut DefaultHasher::new())
-            // })
-          });
+                                );
+                              })
+                              .aspect(1.),
+                              column_spaced(
+                                3.,
+                                vec![
+                                  row_spaced(
+                                    10.,
+                                    vec![
+                                      draw_label(
+                                        state.ui,
+                                        RichText::new(state.bounties[i].title.as_str())
+                                          .color(Color32::WHITE)
+                                          .size(18.),
+                                      )
+                                      .align(Align::Leading),
+                                      draw_label(
+                                        state.ui,
+                                        RichText::new(format!("{}XP", item.points))
+                                          .color(Color32::WHITE),
+                                      ),
+                                    ],
+                                  ),
+                                  draw_label(
+                                    state.ui,
+                                    RichText::new("EXPIRES IN: 3h 2m")
+                                      .color(Color32::from_rgb(200, 200, 200))
+                                      .size(10.),
+                                  )
+                                  .align(Align::Leading)
+                                  .pad_leading(3.),
+                                ],
+                              )
+                              .align(Align::Leading)
+                              .width_range(120.0..),
+                              draw(|area, state: &mut State| {
+                                if state
+                                  .ui
+                                  .put(
+                                    rect(area),
+                                    Button::new(RichText::new("Open").color(Color32::WHITE))
+                                      .fill(Color32::from_rgb(150, 0, 150))
+                                      .rounding(4.),
+                                  )
+                                  .clicked()
+                                {
+                                  dbg!("Click");
+                                }
+                              })
+                              .aspect(1.),
+                            ],
+                          )
+                          .pad(7.),
+                        ])
+                        .height(58.)
+                      })
+                      .collect(),
+                  ),
+                  space(),
+                ],
+              )
+              .align(Align::Top)
+              .pad(10.)
+              .cache(&1)
+              .offset_y(offset)
+            });
         });
       } else {
         ScrollArea::vertical().show(ui, |ui| {

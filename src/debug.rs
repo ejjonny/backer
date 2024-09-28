@@ -65,13 +65,11 @@ impl<State> fmt::Debug for NodeValue<State> {
                 .field("coupled", coupled)
                 .field("over", over)
                 .finish(),
-            NodeValue::Cache { element, .. } => f.debug_struct("Cache").finish(),
-            // f
-            // .debug_struct("Cache")
-            // .field("last_area", last_area)
-            // .field("needs_update", &"<function>")
-            // .field("element", element)
-            // .finish(),
+            NodeValue::Cache { element, key } => f
+                .debug_struct("Cache")
+                .field("element", &element)
+                .field("key", &key)
+                .finish(),
         }
     }
 }

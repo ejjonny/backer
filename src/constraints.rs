@@ -1,5 +1,5 @@
 use crate::{
-    layout::{LayoutCache, NodeValue},
+    layout::{Cache, NodeValue},
     models::{Area, Size},
 };
 
@@ -32,7 +32,7 @@ impl<State> NodeValue<State> {
         &mut self,
         available_area: Area,
         state: &mut State,
-        cache: &mut Option<LayoutCache>,
+        cache: &mut Cache,
         index_path: &mut Vec<usize>,
     ) -> SizeConstraints {
         let contextual_aligns = self.contextual_aligns();

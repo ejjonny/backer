@@ -1,4 +1,7 @@
-use std::rc::Rc;
+use std::{
+    hash::{DefaultHasher, Hash},
+    rc::Rc,
+};
 
 /// An alignment along the X and/or Y axis
 #[derive(Debug, Clone, Copy)]
@@ -85,6 +88,15 @@ pub struct Area {
     pub width: f32,
     /// Available height, starting at `y`
     pub height: f32,
+}
+
+impl Hash for Area {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.x.to_bits().hash(state);
+        self.y.to_bits().hash(state);
+        self.width.to_bits().hash(state);
+        self.height.to_bits().hash(state);
+    }
 }
 
 impl Area {

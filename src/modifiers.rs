@@ -1,8 +1,4 @@
-use crate::{
-    layout::{LayoutCache, NodeValue},
-    models::*,
-    Node,
-};
+use crate::{layout::NodeValue, models::*, Node};
 use std::{
     hash::{DefaultHasher, Hash, Hasher},
     ops::RangeBounds,
@@ -270,12 +266,13 @@ impl<U> Node<U> {
             },
         }
     }
-    pub fn cache(self, key: impl Hash) -> Self {
+    pub fn cache(self, key: &impl Hash) -> Self {
         let mut hasher = DefaultHasher::new();
         key.hash(&mut hasher);
+        let key = hasher.finish();
         Node {
             inner: NodeValue::Cache {
-                key: hasher.finish(),
+                key,
                 element: Box::new(self.inner),
             },
         }

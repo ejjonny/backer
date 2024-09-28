@@ -11,9 +11,9 @@ fn main() -> eframe::Result {
         ..Default::default()
     };
 
+    let mut layout = Layout::new();
     eframe::run_simple_native("Layout Example", options, move |ctx, _frame| {
         egui::CentralPanel::default().show(ctx, |ui| {
-            let mut layout = Layout::new();
             let viewport = ctx.input(|i| i.screen_rect());
             let available_area = area_from(viewport);
             layout.draw(available_area, ui, my_layout_fn);
@@ -36,6 +36,7 @@ fn my_layout_fn(ui: &mut Ui) -> Node<Ui> {
             draw_c(ui),
         ],
     )
+    .cache(&1)
 }
 
 fn draw_a(ui: &mut Ui) -> Node<Ui> {
