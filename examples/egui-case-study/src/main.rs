@@ -169,6 +169,7 @@ impl eframe::App for MyApp {
                             )
                             .align(Align::Leading)
                             .width_range(120.0..),
+                            space(),
                             draw(|area, state: &mut State| {
                               if state
                                 .ui

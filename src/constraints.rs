@@ -42,20 +42,28 @@ impl<State> NodeValue<State> {
         );
         match self {
             NodeValue::Padding { amounts, element } => {
-                element.constraints(allocations[0], state).combine_sum(
-                    SizeConstraints {
-                        width: Constraint {
-                            lower: Some(amounts.trailing + amounts.leading),
-                            upper: None,
-                        },
-                        height: Constraint {
-                            lower: Some(amounts.bottom + amounts.top),
-                            upper: None,
-                        },
-                        aspect: None,
+                let child = element.constraints(allocations[0], state);
+                SizeConstraints {
+                    width: Constraint {
+                        lower: Some(
+                            amounts.leading + child.width.lower.unwrap_or(0.) + amounts.trailing,
+                        ),
+                        upper: child
+                            .width
+                            .upper
+                            .map(|upper| upper + amounts.leading + amounts.trailing),
                     },
-                    0.,
-                )
+                    height: Constraint {
+                        lower: Some(
+                            amounts.top + child.height.lower.unwrap_or(0.) + amounts.bottom,
+                        ),
+                        upper: child
+                            .height
+                            .upper
+                            .map(|upper| upper + amounts.top + amounts.bottom),
+                    },
+                    aspect: None,
+                }
             }
             NodeValue::Column {
                 ref mut elements,
@@ -181,13 +189,6 @@ impl SizeConstraints {
             width: self.width.combine_equal_priority(other.width),
             height: self.height.combine_equal_priority(other.height),
             aspect: self.aspect.or(other.aspect),
-        }
-    }
-    pub(crate) fn combine_sum(self, other: Self, spacing: f32) -> Self {
-        SizeConstraints {
-            width: self.width.combine_sum(other.width, spacing),
-            height: self.height.combine_sum(other.height, spacing),
-            aspect: None,
         }
     }
 }
