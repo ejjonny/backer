@@ -191,13 +191,6 @@ impl SizeConstraints {
             aspect: self.aspect.or(other.aspect),
         }
     }
-    pub(crate) fn combine_sum(self, other: Self, spacing: f32) -> Self {
-        SizeConstraints {
-            width: self.width.combine_sum(other.width, spacing),
-            height: self.height.combine_sum(other.height, spacing),
-            aspect: None,
-        }
-    }
 }
 
 impl Constraint {
