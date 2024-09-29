@@ -571,4 +571,20 @@ mod tests {
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
     }
+    #[test]
+    fn test_explicit_with_padding() {
+        Layout::new(|()| {
+            column(vec![
+                draw(|a, _| {
+                    assert_eq!(a, Area::new(10., 10., 80., 20.));
+                })
+                .height(20.)
+                .pad(10.),
+                draw(|a, _| {
+                    assert_eq!(a, Area::new(0., 40., 100., 60.));
+                }),
+            ])
+        })
+        .draw(Area::new(0., 0., 100., 100.), &mut ());
+    }
 }
