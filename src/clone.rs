@@ -49,7 +49,8 @@ impl<State> Clone for NodeValue<State> {
             },
             NodeValue::Group(elements) => NodeValue::Group(elements.clone()),
             NodeValue::Space => NodeValue::Space,
-            NodeValue::Scope { scoped } => NodeValue::Scope {
+            NodeValue::Scope { scope, scoped } => NodeValue::Scope {
+                scope: scope.clone(),
                 scoped: scoped.clone(),
             },
             NodeValue::Empty => NodeValue::Empty,

@@ -126,35 +126,39 @@ pub fn area_reader<U>(func: impl Fn(Area, &mut U) -> Node<U> + 'static) -> Node<
     }
 }
 /// Narrows or scopes the mutable state available to the children of this node
-pub fn scope<U: 'static, V: 'static>(scope: fn(&mut U) -> &mut V, node: Node<V>) -> Node<U> {
+pub fn scope<T, U: 'static>(
+    scope: impl Fn(&mut T) -> &mut U + 'static + Copy,
+    node: impl Fn(&mut U) -> Node<U> + 'static + Copy,
+) -> Node<T> {
     Node {
-        inner: match node.inner {
-            NodeValue::Empty => empty().inner,
-            _ => NodeValue::<U>::Scope {
-                scoped: AnyNode {
-                    inner: Box::new(node),
-                    clone: |any| {
+        inner: NodeValue::Scope {
+            scope: Rc::new(move |i| scope(i)),
+            scoped: Rc::new(move |i| {
+                let anynode = node(i.downcast_mut::<U>().expect("Invalid downcast"));
+                AnyNode {
+                    inner: Box::new(anynode),
+                    clone: move |any| {
                         Box::new(
-                            any.downcast_ref::<Node<V>>()
+                            any.downcast_ref::<Node<U>>()
                                 .expect("Invalid downcast")
                                 .clone(),
                         ) as Box<dyn Any>
                     },
                     layout: Rc::new(move |any, area, state| {
-                        any.downcast_mut::<Node<V>>()
+                        any.downcast_mut::<Node<U>>()
                             .expect("Invalid downcast")
                             .inner
                             .layout(area, None, None, scope(state))
                     }),
                     draw: Rc::new(move |any, state| {
-                        any.downcast_ref::<Node<V>>()
+                        any.downcast_ref::<Node<U>>()
                             .expect("Invalid downcast")
                             .inner
                             .draw(scope(state))
                     }),
                     constraints: Rc::new(move |any, area, state| {
                         let scoped = any
-                            .downcast_mut::<Node<V>>()
+                            .downcast_mut::<Node<U>>()
                             .expect("Invalid downcast")
                             .inner
                             .constraints(area, scope(state));
@@ -164,8 +168,8 @@ pub fn scope<U: 'static, V: 'static>(scope: fn(&mut U) -> &mut V, node: Node<V>)
                             aspect: scoped.aspect,
                         }
                     }),
-                },
-            },
+                }
+            }),
         },
     }
 }

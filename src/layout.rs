@@ -6,7 +6,7 @@ use crate::{
     Node,
 };
 use core::f32;
-use std::rc::Rc;
+use std::{any::Any, rc::Rc};
 
 /**
 The root object used to store & calculate a layout
@@ -66,6 +66,8 @@ impl<State> Layout<State> {
 }
 
 type AreaReaderFn<State> = Rc<dyn Fn(Area, &mut State) -> Node<State>>;
+type ScopeStateFn<State> = Rc<dyn Fn(&mut State) -> &mut dyn Any>;
+type ScopeNodeFn<State> = Rc<dyn Fn(&mut dyn Any) -> AnyNode<State>>;
 
 pub(crate) enum NodeValue<State> {
     Padding {
@@ -99,7 +101,8 @@ pub(crate) enum NodeValue<State> {
     Empty,
     Space,
     Scope {
-        scoped: AnyNode<State>,
+        scope: ScopeStateFn<State>,
+        scoped: ScopeNodeFn<State>,
     },
     AreaReader {
         read: AreaReaderFn<State>,
@@ -127,7 +130,7 @@ impl<State> NodeValue<State> {
                 elements.iter().rev().for_each(|el| el.draw(state));
             }
             NodeValue::Space => (),
-            NodeValue::Scope { scoped } => scoped.draw(state),
+            NodeValue::Scope { scope, scoped } => scoped(scope(state)).draw(state),
             NodeValue::Coupled {
                 element,
                 coupled,
@@ -298,7 +301,9 @@ impl<State> NodeValue<State> {
                 drawable.area.height = drawable.area.height.max(0.);
             }
             NodeValue::Space => (),
-            NodeValue::Scope { scoped } => scoped.layout(available_area, state),
+            NodeValue::Scope { scope, scoped } => {
+                scoped(scope(state)).layout(available_area, state)
+            }
             NodeValue::AreaReader { read } => {
                 *self = read(allocated[0], state).inner;
                 self.layout(allocated[0], None, None, state);

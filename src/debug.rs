@@ -54,7 +54,11 @@ impl<State> fmt::Debug for NodeValue<State> {
             NodeValue::Space => write!(f, "Space"),
             NodeValue::Empty => write!(f, "Empty"),
             NodeValue::AreaReader { .. } => write!(f, "WidthReader"),
-            NodeValue::Scope { scoped } => f.debug_struct("Scope").field("scoped", scoped).finish(),
+            NodeValue::Scope { .. } => f
+                .debug_struct("Scope")
+                .field("scope", &"<function>")
+                .field("scoped", &"<function>")
+                .finish(),
             NodeValue::Coupled {
                 element,
                 coupled,

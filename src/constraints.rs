@@ -153,7 +153,9 @@ impl<State> NodeValue<State> {
                     state,
                 )),
             NodeValue::Offset { element, .. } => element.constraints(allocations[0], state),
-            NodeValue::Scope { scoped, .. } => scoped.constraints(allocations[0], state),
+            NodeValue::Scope { scope, scoped } => {
+                scoped(scope(state)).constraints(allocations[0], state)
+            }
             NodeValue::Draw(_) | NodeValue::Space | NodeValue::AreaReader { .. } => {
                 SizeConstraints {
                     width: Constraint::none(),
