@@ -635,5 +635,8 @@ mod tests {
         Layout::new(layout).draw(Area::new(0., 0., 100., 100.), &mut a);
         assert!(!a.test);
         assert!(!a.b.test);
+        Layout::new(layout).draw(Area::new(0., 0., 100., 100.), &mut a);
+        assert!(a.test);
+        assert!(a.b.test);
     }
 }

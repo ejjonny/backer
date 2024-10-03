@@ -132,6 +132,7 @@ pub fn scope<T, U: 'static>(
 ) -> Node<T> {
     Node {
         inner: NodeValue::Scope {
+            node: None,
             scope: Rc::new(move |i| scope(i)),
             scoped: Rc::new(move |i| {
                 let anynode = node(i.downcast_mut::<U>().expect("Invalid downcast"));
@@ -162,6 +163,7 @@ pub fn scope<T, U: 'static>(
                             .expect("Invalid downcast")
                             .inner
                             .constraints(area, scope(state));
+                        dbg!(scoped);
                         SizeConstraints {
                             width: scoped.width,
                             height: scoped.height,

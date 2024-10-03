@@ -101,6 +101,7 @@ pub(crate) enum NodeValue<State> {
     Empty,
     Space,
     Scope {
+        node: Option<AnyNode<State>>,
         scope: ScopeStateFn<State>,
         scoped: ScopeNodeFn<State>,
     },
@@ -130,7 +131,11 @@ impl<State> NodeValue<State> {
                 elements.iter().rev().for_each(|el| el.draw(state));
             }
             NodeValue::Space => (),
-            NodeValue::Scope { scope, scoped } => scoped(scope(state)).draw(state),
+            NodeValue::Scope { node, .. } => {
+                if let Some(node) = node {
+                    node.draw(state)
+                }
+            }
             NodeValue::Coupled {
                 element,
                 coupled,
@@ -301,8 +306,14 @@ impl<State> NodeValue<State> {
                 drawable.area.height = drawable.area.height.max(0.);
             }
             NodeValue::Space => (),
-            NodeValue::Scope { scope, scoped } => {
-                scoped(scope(state)).layout(available_area, state)
+            NodeValue::Scope {
+                node,
+                scope,
+                scoped,
+            } => {
+                let mut laid_out = scoped(scope(state));
+                laid_out.layout(available_area, state);
+                *node = Some(laid_out);
             }
             NodeValue::AreaReader { read } => {
                 *self = read(allocated[0], state).inner;
