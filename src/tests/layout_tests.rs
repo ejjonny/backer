@@ -681,8 +681,18 @@ mod tests {
                 draw(|area, _: &mut TupleA| {
                     assert_eq!(area, Area::new(0., 0., 100., 100.));
                 }),
-                // This sort of partial scoping seems to be impossible to implement with the current API
+                // TODO: This sort of partial scoping seems to be impossible to implement with the current API
                 // I would like to find a way to make it possible! but how??
+                //
+                // The Any type is used because rust recursive polymorphism isn't really supported
+                //
+                // UI frameworks like egui offer an &mut <UIHandle> when you create your UI elements
+                // & you often have some of your own app state to pass through the layout tree
+                //
+                // You can easily scope when your state is just &mut B, but you can't scope B in &mut (&mut A, &mut B)
+                // because the closure can't return a reference to a temporary tuple
+                //
+                //
                 // scope(|t: &mut TupleA| &mut (&mut *t.0, &mut *t.1), |_| space()),
             ])
         }
