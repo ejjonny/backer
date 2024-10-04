@@ -639,4 +639,54 @@ mod tests {
         assert!(a.test);
         assert!(a.b.test);
     }
+    #[test]
+    fn test_scope_variadic() {
+        struct A;
+        struct B;
+        let b = &mut B;
+        type Tuple<'a> = (&'a mut A, (&'a mut B, ()));
+        fn layout<'a>(_: &mut Tuple<'_>) -> Node<Tuple<'a>> {
+            stack(vec![
+                draw(|area, _: &mut Tuple| {
+                    assert_eq!(area, Area::new(0., 0., 100., 100.));
+                }),
+                scope(
+                    |t: &mut Tuple| t.1 .0,
+                    |_| {
+                        draw(|area, _: &mut B| {
+                            assert_eq!(area, Area::new(0., 0., 100., 100.));
+                        })
+                    },
+                ),
+            ])
+        }
+        let mut tuple: Tuple = (&mut A, (b, ()));
+        for _ in 0..10 {
+            Layout::new(layout).draw(Area::new(0., 0., 100., 100.), &mut tuple);
+        }
+    }
+    #[test]
+    fn test_partial_scope_variadic() {
+        struct A;
+        struct C;
+        #[allow(dead_code)]
+        struct B {
+            c: C,
+        }
+        type TupleA<'a> = (&'a mut A, &'a mut B);
+        // type TupleB<'a> = (&'a mut A, &'a mut C);
+
+        fn layout<'a>(_: &mut TupleA<'_>) -> Node<TupleA<'a>> {
+            stack(vec![
+                draw(|area, _: &mut TupleA| {
+                    assert_eq!(area, Area::new(0., 0., 100., 100.));
+                }),
+                // This sort of partial scoping seems to be impossible to implement with the current API
+                // I would like to find a way to make it possible! but how??
+                // scope(|t: &mut TupleA| &mut (&mut *t.0, &mut *t.1), |_| space()),
+            ])
+        }
+        let mut tuple: TupleA = (&mut A, &mut B { c: C });
+        Layout::new(layout).draw(Area::new(0., 0., 100., 100.), &mut tuple);
+    }
 }
