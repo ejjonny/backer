@@ -3,7 +3,7 @@ mod tests {
     use crate::layout::*;
     use crate::models::*;
     use crate::nodes::*;
-    use crate::Node;
+    use crate::NodeWith;
     #[test]
     fn test_seq_align_on_axis() {
         Layout::new(|()| {
@@ -601,7 +601,7 @@ mod tests {
             test: true,
             b: B { test: true },
         };
-        fn layout(a: &mut A) -> Node<A, ()> {
+        fn layout(a: &mut A) -> NodeWith<A, ()> {
             stack(vec![
                 if a.test {
                     draw(|area, a: &mut A| {
@@ -645,7 +645,7 @@ mod tests {
         struct B;
         let b = &mut B;
         type Tuple<'a> = (&'a mut A, (&'a mut B, ()));
-        fn layout<'a>(_: &mut Tuple<'_>) -> Node<Tuple<'a>, ()> {
+        fn layout<'a>(_: &mut Tuple<'_>) -> NodeWith<Tuple<'a>, ()> {
             stack(vec![
                 draw(|area, _: &mut Tuple| {
                     assert_eq!(area, Area::new(0., 0., 100., 100.));
@@ -676,7 +676,7 @@ mod tests {
         type TupleA<'a> = (&'a mut A, &'a mut B);
         // type TupleB<'a> = (&'a mut A, &'a mut C);
 
-        fn layout<'a>(_: &mut TupleA<'_>) -> Node<TupleA<'a>, ()> {
+        fn layout<'a>(_: &mut TupleA<'_>) -> NodeWith<TupleA<'a>, ()> {
             stack(vec![
                 draw(|area, _: &mut TupleA| {
                     assert_eq!(area, Area::new(0., 0., 100., 100.));

@@ -25,6 +25,7 @@ mod tests;
 
 pub use layout::Layout;
 pub use node::Node;
+pub use node::NodeWith;
 
 /// Structs involved in layout definitions
 pub mod models;

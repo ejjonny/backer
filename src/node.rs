@@ -1,14 +1,16 @@
 use crate::layout::NodeValue;
 
+pub type Node<A> = NodeWith<A, ()>;
+
 /// A layout tree node. Use methods in [`crate::nodes`] to create nodes.
 #[derive(Debug)]
-pub struct Node<A, B> {
+pub struct NodeWith<A, B> {
     pub(crate) inner: NodeValue<A, B>,
 }
 
-impl<A, B> Clone for Node<A, B> {
+impl<A, B> Clone for NodeWith<A, B> {
     fn clone(&self) -> Self {
-        Node {
+        NodeWith {
             inner: self.inner.clone(),
         }
     }

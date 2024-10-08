@@ -1,7 +1,7 @@
-use crate::{layout::NodeValue, models::*, Node};
+use crate::{layout::NodeValue, models::*, NodeWith};
 use std::{ops::RangeBounds, rc::Rc};
 
-impl<A> Node<A, ()> {
+impl<A> NodeWith<A, ()> {
     /// Constrains the node's height as a function of available width.
     ///
     /// Generally you should prefer size constraints, aspect ratio constraints or area readers over dynamic height.
@@ -28,10 +28,10 @@ impl<A> Node<A, ()> {
     }
 }
 
-impl<A, B> Node<A, B> {
+impl<A, B> NodeWith<A, B> {
     /// Adds padding to the node along the leading edge
-    pub fn pad_leading(self, amount: f32) -> Node<A, B> {
-        Node {
+    pub fn pad_leading(self, amount: f32) -> NodeWith<A, B> {
+        NodeWith {
             inner: NodeValue::Padding {
                 amounts: Padding {
                     leading: amount,
@@ -44,8 +44,8 @@ impl<A, B> Node<A, B> {
         }
     }
     /// Adds horizontal padding to the node (leading & trailing)
-    pub fn pad_x(self, amount: f32) -> Node<A, B> {
-        Node {
+    pub fn pad_x(self, amount: f32) -> NodeWith<A, B> {
+        NodeWith {
             inner: NodeValue::Padding {
                 amounts: Padding {
                     leading: amount,
@@ -58,8 +58,8 @@ impl<A, B> Node<A, B> {
         }
     }
     /// Adds padding to the node along the trailing edge
-    pub fn pad_trailing(self, amount: f32) -> Node<A, B> {
-        Node {
+    pub fn pad_trailing(self, amount: f32) -> NodeWith<A, B> {
+        NodeWith {
             inner: NodeValue::Padding {
                 amounts: Padding {
                     leading: 0.,
@@ -72,8 +72,8 @@ impl<A, B> Node<A, B> {
         }
     }
     /// Adds padding to the node along the top edge
-    pub fn pad_top(self, amount: f32) -> Node<A, B> {
-        Node {
+    pub fn pad_top(self, amount: f32) -> NodeWith<A, B> {
+        NodeWith {
             inner: NodeValue::Padding {
                 amounts: Padding {
                     leading: 0.,
@@ -87,8 +87,8 @@ impl<A, B> Node<A, B> {
     }
 
     /// Adds vertical padding to the node (top & bottom)
-    pub fn pad_y(self, amount: f32) -> Node<A, B> {
-        Node {
+    pub fn pad_y(self, amount: f32) -> NodeWith<A, B> {
+        NodeWith {
             inner: NodeValue::Padding {
                 amounts: Padding {
                     leading: 0.,
@@ -101,8 +101,8 @@ impl<A, B> Node<A, B> {
         }
     }
     /// Adds padding to the node along the bottom edge
-    pub fn pad_bottom(self, amount: f32) -> Node<A, B> {
-        Node {
+    pub fn pad_bottom(self, amount: f32) -> NodeWith<A, B> {
+        NodeWith {
             inner: NodeValue::Padding {
                 amounts: Padding {
                     leading: 0.,
@@ -115,8 +115,8 @@ impl<A, B> Node<A, B> {
         }
     }
     /// Adds padding to the node on all sides
-    pub fn pad(self, amount: f32) -> Node<A, B> {
-        Node {
+    pub fn pad(self, amount: f32) -> NodeWith<A, B> {
+        NodeWith {
             inner: NodeValue::Padding {
                 amounts: Padding {
                     leading: amount,
@@ -131,8 +131,8 @@ impl<A, B> Node<A, B> {
     /// Offsets the node along the x axis.
     /// This is an absolute offset that simply shifts nodes away from their calculated position
     /// This won't impact layout besides child nodes also being offset
-    pub fn offset_x(self, amount: f32) -> Node<A, B> {
-        Node {
+    pub fn offset_x(self, amount: f32) -> NodeWith<A, B> {
+        NodeWith {
             inner: NodeValue::Offset {
                 offset_x: amount,
                 offset_y: 0.,
@@ -143,8 +143,8 @@ impl<A, B> Node<A, B> {
     /// Offsets the node along the y axis.
     /// This is an absolute offset that simply shifts nodes away from their calculated position
     /// This won't impact layout besides child nodes also being offset
-    pub fn offset_y(self, amount: f32) -> Node<A, B> {
-        Node {
+    pub fn offset_y(self, amount: f32) -> NodeWith<A, B> {
+        NodeWith {
             inner: NodeValue::Offset {
                 offset_x: 0.,
                 offset_y: amount,
@@ -155,8 +155,8 @@ impl<A, B> Node<A, B> {
     /// Offsets the node along the x & y axis.
     /// This is an absolute offset that simply shifts nodes away from their calculated position
     /// This won't impact layout besides child nodes also being offset
-    pub fn offset(self, offset_x: f32, offset_y: f32) -> Node<A, B> {
-        Node {
+    pub fn offset(self, offset_x: f32, offset_y: f32) -> NodeWith<A, B> {
+        NodeWith {
             inner: NodeValue::Offset {
                 offset_x,
                 offset_y,
@@ -281,7 +281,7 @@ impl<A, B> Node<A, B> {
     /// The area available to the attached node is the size of the node it's attached to.
     /// Useful for adding an unconstrained node as an ornament, background, or overlay to a constrained node.
     pub fn attach_over(self, node: Self) -> Self {
-        Node {
+        NodeWith {
             inner: NodeValue::Coupled {
                 over: true,
                 element: Box::new(self.inner),
@@ -294,7 +294,7 @@ impl<A, B> Node<A, B> {
     /// The area available to the attached node is the size of the node it's attached to.
     /// Useful for adding an unconstrained node as an ornament, background, or overlay to a constrained node.
     pub fn attach_under(self, node: Self) -> Self {
-        Node {
+        NodeWith {
             inner: NodeValue::Coupled {
                 over: false,
                 element: Box::new(self.inner),
@@ -339,7 +339,7 @@ impl<A, B> Node<A, B> {
                 };
             }
             _ => {
-                return Node {
+                return NodeWith {
                     inner: NodeValue::Explicit {
                         options: size,
                         element: Box::new(self.inner),

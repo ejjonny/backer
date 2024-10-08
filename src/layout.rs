@@ -3,7 +3,7 @@ use crate::{
     constraints::{Constraint, SizeConstraints},
     drawable::Drawable,
     models::*,
-    Node,
+    NodeWith,
 };
 use core::f32;
 use std::{any::Any, rc::Rc};
@@ -48,11 +48,11 @@ pub struct Layout<A, B> {
     tree: LayoutFn<A, B>,
 }
 
-pub type LayoutFn<A, B> = Box<dyn Fn(&mut A, &mut B) -> Node<A, B>>;
+pub type LayoutFn<A, B> = Box<dyn Fn(&mut A, &mut B) -> NodeWith<A, B>>;
 
 impl<A, B> Layout<A, B> {
     /// Creates a new [`Layout<A, B>`].
-    pub fn new_with(tree: impl Fn(&mut A, &mut B) -> Node<A, B> + 'static) -> Self {
+    pub fn new_with(tree: impl Fn(&mut A, &mut B) -> NodeWith<A, B> + 'static) -> Self {
         Self {
             tree: Box::new(tree),
         }
@@ -61,7 +61,7 @@ impl<A, B> Layout<A, B> {
 
 impl<A> Layout<A, ()> {
     /// Creates a new [`Layout<A, B>`].
-    pub fn new(tree: impl Fn(&mut A) -> Node<A, ()> + 'static) -> Self {
+    pub fn new(tree: impl Fn(&mut A) -> NodeWith<A, ()> + 'static) -> Self {
         Self {
             tree: Box::new(move |a, _| tree(a)),
         }
@@ -87,7 +87,7 @@ impl<A, B> Layout<A, B> {
     }
 }
 
-type AreaReaderFn<A, B> = Rc<dyn Fn(Area, &mut A, &mut B) -> Node<A, B>>;
+type AreaReaderFn<A, B> = Rc<dyn Fn(Area, &mut A, &mut B) -> NodeWith<A, B>>;
 type ScopeAStateFn<A> = Rc<dyn Fn(&mut A) -> &mut dyn Any>;
 type ScopeBStateFn<A> = Rc<dyn Fn(&mut A) -> &mut dyn Any>;
 type ScopeNodeFn<A, B> = Rc<dyn Fn(&mut dyn Any, &mut dyn Any) -> AnyNode<A, B>>;

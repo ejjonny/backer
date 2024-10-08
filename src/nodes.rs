@@ -1,12 +1,12 @@
 use crate::{
     anynode::AnyNode, constraints::SizeConstraints, drawable::Drawable, layout::NodeValue,
-    models::*, Node,
+    models::*, Node, NodeWith,
 };
 use std::{any::Any, rc::Rc};
 
 /// Defines a vertical sequence of elements
-pub fn column<A, B>(elements: Vec<Node<A, B>>) -> Node<A, B> {
-    Node {
+pub fn column<A, B>(elements: Vec<NodeWith<A, B>>) -> NodeWith<A, B> {
+    NodeWith {
         inner: NodeValue::Column {
             elements: filter_empty(ungroup(elements)),
             spacing: 0.,
@@ -23,7 +23,7 @@ pub fn column<A, B>(elements: Vec<Node<A, B>>) -> Node<A, B> {
 /// use backer::models::*;
 /// use backer::nodes::*;
 ///
-/// column::<()>(vec![
+/// column::<(), ()>(vec![
 ///     empty(),
 ///     group(
 ///         (0..5)
@@ -33,14 +33,14 @@ pub fn column<A, B>(elements: Vec<Node<A, B>>) -> Node<A, B> {
 ///     ),
 /// ]);
 /// ```
-pub fn group<A, B>(elements: Vec<Node<A, B>>) -> Node<A, B> {
-    Node {
+pub fn group<A, B>(elements: Vec<NodeWith<A, B>>) -> NodeWith<A, B> {
+    NodeWith {
         inner: NodeValue::Group(filter_empty(ungroup(elements))),
     }
 }
 /// Defines a vertical sequence of elements with the specified spacing between each element.
-pub fn column_spaced<A, B>(spacing: f32, elements: Vec<Node<A, B>>) -> Node<A, B> {
-    Node {
+pub fn column_spaced<A, B>(spacing: f32, elements: Vec<NodeWith<A, B>>) -> NodeWith<A, B> {
+    NodeWith {
         inner: NodeValue::Column {
             elements: filter_empty(ungroup(elements)),
             spacing,
@@ -50,8 +50,8 @@ pub fn column_spaced<A, B>(spacing: f32, elements: Vec<Node<A, B>>) -> Node<A, B
     }
 }
 /// Defines a horizontal sequence of elements
-pub fn row<A, B>(elements: Vec<Node<A, B>>) -> Node<A, B> {
-    Node {
+pub fn row<A, B>(elements: Vec<NodeWith<A, B>>) -> NodeWith<A, B> {
+    NodeWith {
         inner: NodeValue::Row {
             elements: filter_empty(ungroup(elements)),
             spacing: 0.,
@@ -61,8 +61,8 @@ pub fn row<A, B>(elements: Vec<Node<A, B>>) -> Node<A, B> {
     }
 }
 /// Defines a horizontal sequence of elements with the specified spacing between each element.
-pub fn row_spaced<A, B>(spacing: f32, elements: Vec<Node<A, B>>) -> Node<A, B> {
-    Node {
+pub fn row_spaced<A, B>(spacing: f32, elements: Vec<NodeWith<A, B>>) -> NodeWith<A, B> {
+    NodeWith {
         inner: NodeValue::Row {
             elements: filter_empty(ungroup(elements)),
             spacing,
@@ -72,8 +72,8 @@ pub fn row_spaced<A, B>(spacing: f32, elements: Vec<Node<A, B>>) -> Node<A, B> {
     }
 }
 /// Defines a sequence of elements to be laid out on top of each other.
-pub fn stack<A, B>(elements: Vec<Node<A, B>>) -> Node<A, B> {
-    Node {
+pub fn stack<A, B>(elements: Vec<NodeWith<A, B>>) -> NodeWith<A, B> {
+    NodeWith {
         inner: NodeValue::Stack(filter_empty(ungroup(elements))),
     }
 }
@@ -93,8 +93,8 @@ pub fn stack<A, B>(elements: Vec<Node<A, B>>) -> Node<A, B> {
 ///  })
 ///}
 /// ```
-pub fn draw<A>(drawable: impl Fn(Area, &mut A) + 'static) -> Node<A, ()> {
-    Node {
+pub fn draw<A>(drawable: impl Fn(Area, &mut A) + 'static) -> NodeWith<A, ()> {
+    NodeWith {
         inner: NodeValue::Draw(Drawable {
             area: Area::default(),
             draw: Rc::new(move |area, a, _| drawable(area, a)),
@@ -102,15 +102,15 @@ pub fn draw<A>(drawable: impl Fn(Area, &mut A) + 'static) -> Node<A, ()> {
     }
 }
 /// Defines an empty space which is laid out the same as any other node.
-pub fn space<A, B>() -> Node<A, B> {
-    Node {
+pub fn space<A, B>() -> NodeWith<A, B> {
+    NodeWith {
         inner: NodeValue::Space,
     }
 }
 /// Nothing! This will not have any impact on layout - useful for conditionally
 /// adding elements to a layout in the case where nothing should be added.
-pub fn empty<A, B>() -> Node<A, B> {
-    Node {
+pub fn empty<A, B>() -> NodeWith<A, B> {
+    NodeWith {
         inner: NodeValue::Empty,
     }
 }
@@ -119,9 +119,9 @@ pub fn empty<A, B>() -> Node<A, B> {
 /// This node comes with caveats! Constraints within an area reader **cannot** expand the area reader itself.
 /// If it could - it would create cyclical dependency which may be impossible to resolve.
 pub fn area_reader<A, B>(
-    func: impl Fn(Area, &mut A, &mut B) -> Node<A, B> + 'static,
-) -> Node<A, B> {
-    Node {
+    func: impl Fn(Area, &mut A, &mut B) -> NodeWith<A, B> + 'static,
+) -> NodeWith<A, B> {
+    NodeWith {
         inner: NodeValue::AreaReader {
             read: Rc::new(func),
         },
@@ -131,41 +131,41 @@ pub fn area_reader<A, B>(
 pub fn scope_with<T, U, A: 'static, B: 'static>(
     scope_a: impl Fn(&mut T) -> &mut A + 'static + Copy,
     scope_b: impl Fn(&mut U) -> &mut B + 'static + Copy,
-    node: impl Fn(&mut A, &mut B) -> Node<A, B> + 'static + Copy,
-) -> Node<T, U> {
-    Node {
+    node: impl Fn(&mut A, &mut B) -> NodeWith<A, B> + 'static + Copy,
+) -> NodeWith<T, U> {
+    NodeWith {
         inner: NodeValue::Scope {
             node: None,
             scope_a: Rc::new(move |a| scope_a(a)),
             scope_b: Rc::new(move |b| scope_b(b)),
             scoped: Rc::new(move |any_a, any_b| {
-                let downcast_a = any_a.downcast_mut::<&mut A>().expect("Invalid downcast");
-                let downcast_b = any_b.downcast_mut::<&mut B>().expect("Invalid downcast");
+                let downcast_a = any_a.downcast_mut::<A>().expect("Invalid downcast");
+                let downcast_b = any_b.downcast_mut::<B>().expect("Invalid downcast");
                 let anynode = node(downcast_a, downcast_b);
                 AnyNode {
                     inner: Box::new(anynode),
                     clone: move |any| {
                         Box::new(
-                            any.downcast_ref::<Node<A, B>>()
+                            any.downcast_ref::<NodeWith<A, B>>()
                                 .expect("Invalid downcast")
                                 .clone(),
                         ) as Box<dyn Any>
                     },
                     layout: Rc::new(move |any, area, a, b| {
-                        any.downcast_mut::<Node<A, B>>()
+                        any.downcast_mut::<NodeWith<A, B>>()
                             .expect("Invalid downcast")
                             .inner
                             .layout(area, None, None, scope_a(a), scope_b(b))
                     }),
                     draw: Rc::new(move |any, a, b| {
-                        any.downcast_ref::<Node<A, B>>()
+                        any.downcast_ref::<NodeWith<A, B>>()
                             .expect("Invalid downcast")
                             .inner
                             .draw(scope_a(a), scope_b(b))
                     }),
                     constraints: Rc::new(move |any, area, a, b| {
                         let scoped = any
-                            .downcast_mut::<Node<A, B>>()
+                            .downcast_mut::<NodeWith<A, B>>()
                             .expect("Invalid downcast")
                             .inner
                             .constraints(area, scope_a(a), scope_b(b));
@@ -184,12 +184,12 @@ pub fn scope_with<T, U, A: 'static, B: 'static>(
 /// Narrows or scopes the mutable state available to the children of this node
 pub fn scope<T, A: 'static>(
     scope_a: impl Fn(&mut T) -> &mut A + 'static + Copy,
-    node: impl Fn(&mut A) -> Node<A, ()> + 'static + Copy,
-) -> Node<T, ()> {
+    node: impl Fn(&mut A) -> NodeWith<A, ()> + 'static + Copy,
+) -> Node<T> {
     scope_with(scope_a, |b| b, move |a, _| node(a))
 }
 
-fn ungroup<A, B>(elements: Vec<Node<A, B>>) -> Vec<NodeValue<A, B>> {
+fn ungroup<A, B>(elements: Vec<NodeWith<A, B>>) -> Vec<NodeValue<A, B>> {
     elements
         .into_iter()
         .flat_map(|el| {
