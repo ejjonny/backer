@@ -1,5 +1,6 @@
 use crate::layout::NodeValue;
 
+/// A layout tree node. Use methods in [`crate::nodes`] to create nodes.
 pub type Node<A> = NodeWith<A, ()>;
 
 /// A layout tree node. Use methods in [`crate::nodes`] to create nodes.
