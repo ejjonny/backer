@@ -45,8 +45,10 @@ struct MyState {}
 ```
  */
 pub struct Layout<A, B> {
-    tree: Box<dyn Fn(&mut A, &mut B) -> Node<A, B>>,
+    tree: LayoutFn<A, B>,
 }
+
+pub type LayoutFn<A, B> = Box<dyn Fn(&mut A, &mut B) -> Node<A, B>>;
 
 impl<A, B> Layout<A, B> {
     /// Creates a new [`Layout<A, B>`].

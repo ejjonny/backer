@@ -128,7 +128,7 @@ pub fn area_reader<A, B>(
     }
 }
 /// Narrows or scopes the mutable state available to the children of this node
-pub fn scope<T, U, A: 'static, B: 'static>(
+pub fn scope_with<T, U, A: 'static, B: 'static>(
     scope_a: impl Fn(&mut T) -> &mut A + 'static + Copy,
     scope_b: impl Fn(&mut U) -> &mut B + 'static + Copy,
     node: impl Fn(&mut A, &mut B) -> Node<A, B> + 'static + Copy,
@@ -179,6 +179,14 @@ pub fn scope<T, U, A: 'static, B: 'static>(
             }),
         },
     }
+}
+
+/// Narrows or scopes the mutable state available to the children of this node
+pub fn scope<T, A: 'static>(
+    scope_a: impl Fn(&mut T) -> &mut A + 'static + Copy,
+    node: impl Fn(&mut A) -> Node<A, ()> + 'static + Copy,
+) -> Node<T, ()> {
+    scope_with(scope_a, |b| b, move |a, _| node(a))
 }
 
 fn ungroup<A, B>(elements: Vec<Node<A, B>>) -> Vec<NodeValue<A, B>> {
