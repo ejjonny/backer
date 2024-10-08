@@ -1,8 +1,12 @@
 #[cfg(test)]
 mod tests {
+    use std::any::Any;
+    use std::rc::Rc;
+
     use crate::layout::*;
     use crate::models::*;
     use crate::nodes::*;
+    use crate::AnyNode;
     use crate::Node;
     #[test]
     fn test_seq_align_on_axis() {
@@ -674,26 +678,44 @@ mod tests {
             c: C,
         }
         type TupleA<'a> = (&'a mut A, &'a mut B);
-        // type TupleB<'a> = (&'a mut A, &'a mut C);
+        type TupleB<'a> = (&'a mut A, &'a mut C);
+
+        fn my_subtree<'a>(_: &mut TupleB<'_>) -> Node<TupleB<'a>> {
+            space::<TupleB>()
+        }
 
         fn layout<'a>(_: &mut TupleA<'_>) -> Node<TupleA<'a>> {
             stack(vec![
                 draw(|area, _: &mut TupleA| {
                     assert_eq!(area, Area::new(0., 0., 100., 100.));
                 }),
-                // TODO: This sort of partial scoping seems to be impossible to implement with the current API
-                // I would like to find a way to make it possible! but how??
-                //
-                // The Any type is used because rust recursive polymorphism isn't really supported
-                //
-                // UI frameworks like egui offer an &mut <UIHandle> when you create your UI elements
-                // & you often have some of your own app state to pass through the layout tree
-                //
-                // You can easily scope when your state is just &mut B, but you can't scope B in &mut (&mut A, &mut B)
-                // because the closure can't return a reference to a temporary tuple
-                //
-                //
-                // scope(|t: &mut TupleA| &mut (&mut *t.0, &mut *t.1), |_| space()),
+                subtree(|state: &mut TupleA| AnyNode {
+                    inner: Box::new(my_subtree(&mut (&mut *state.0, &mut state.1.c))),
+                    clone: move |any| {
+                        Box::new(
+                            any.downcast_ref::<Node<TupleB>>()
+                                .expect("Invalid downcast")
+                                .clone(),
+                        ) as Box<dyn Any>
+                    },
+                    layout: Rc::new(move |area, state| {
+                        let substate: &mut TupleB = &mut (&mut *state.0, &mut state.1.c);
+                        my_subtree(substate)
+                            .inner
+                            .layout(area, None, None, substate);
+                    }),
+                    constraints: Rc::new(move |area, state| {
+                        let substate: &mut TupleB = &mut (&mut *state.0, &mut state.1.c);
+                        my_subtree(substate).inner.constraints(area, substate)
+                    }),
+                    draw: Rc::new(move |any, state| {
+                        let substate: &mut TupleB = &mut (&mut *state.0, &mut state.1.c);
+                        any.downcast_ref::<Node<TupleB>>()
+                            .expect("Invalid downcast")
+                            .inner
+                            .draw(substate)
+                    }),
+                }),
             ])
         }
         let mut tuple: TupleA = (&mut A, &mut B { c: C });

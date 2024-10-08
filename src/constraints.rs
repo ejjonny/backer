@@ -153,14 +153,10 @@ impl<State> NodeValue<State> {
                     state,
                 )),
             NodeValue::Offset { element, .. } => element.constraints(allocations[0], state),
-            NodeValue::Scope { node, .. } => node
+            NodeValue::Scope { node, scope } => node
                 .as_mut()
-                .map(|node| node.constraints(allocations[0], state))
-                .unwrap_or(SizeConstraints {
-                    width: Constraint::none(),
-                    height: Constraint::none(),
-                    aspect: None,
-                }),
+                .unwrap_or(&mut scope(state))
+                .constraints(allocations[0], state),
             NodeValue::Draw(_) | NodeValue::Space | NodeValue::AreaReader { .. } => {
                 SizeConstraints {
                     width: Constraint::none(),

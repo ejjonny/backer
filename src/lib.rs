@@ -23,6 +23,7 @@ mod modifiers;
 mod node;
 mod tests;
 
+pub use anynode::AnyNode;
 pub use layout::Layout;
 pub use node::Node;
 

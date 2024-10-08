@@ -1,15 +1,16 @@
-use crate::{constraints::SizeConstraints, models::Area};
+use crate::{constraints::SizeConstraints, models::Area, Node};
 use std::{any::Any, fmt, rc::Rc};
 
 type AnyDrawFn<State> = Rc<dyn Fn(&dyn Any, &mut State)>;
-type AnyLayoutFn<State> = Rc<dyn Fn(&mut dyn Any, Area, &mut State)>;
-type AnyConstraintFn<State> = Rc<dyn Fn(&mut dyn Any, Area, &mut State) -> SizeConstraints>;
-pub(crate) struct AnyNode<State> {
-    pub(crate) inner: Box<dyn Any>,
-    pub(crate) clone: fn(&Box<dyn Any>) -> Box<dyn Any>,
-    pub(crate) layout: AnyLayoutFn<State>,
-    pub(crate) constraints: AnyConstraintFn<State>,
-    pub(crate) draw: AnyDrawFn<State>,
+pub type AnyLayoutFn<State> = Rc<dyn Fn(Area, &mut State)>;
+pub type AnyConstraintFn<State> = Rc<dyn Fn(Area, &mut State) -> SizeConstraints>;
+
+pub struct AnyNode<State> {
+    pub inner: Box<dyn Any>,
+    pub clone: fn(&Box<dyn Any>) -> Box<dyn Any>,
+    pub layout: AnyLayoutFn<State>,
+    pub constraints: AnyConstraintFn<State>,
+    pub draw: AnyDrawFn<State>,
 }
 
 impl<State> AnyNode<State> {
@@ -18,11 +19,11 @@ impl<State> AnyNode<State> {
     }
 
     pub(crate) fn layout(&mut self, available_area: Area, state: &mut State) {
-        (self.layout)(&mut *self.inner, available_area, state)
+        (self.layout)(available_area, state)
     }
 
     pub(crate) fn constraints(&mut self, area: Area, state: &mut State) -> SizeConstraints {
-        (self.constraints)(&mut *self.inner, area, state)
+        (self.constraints)(area, state)
     }
 }
 

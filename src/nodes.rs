@@ -1,6 +1,6 @@
 use crate::{
-    anynode::AnyNode, constraints::SizeConstraints, drawable::Drawable, layout::NodeValue,
-    models::*, Node,
+    anynode::AnyNode, constraints::Constraint, drawable::Drawable, layout::NodeValue, models::*,
+    Node,
 };
 use std::{any::Any, rc::Rc};
 
@@ -125,6 +125,17 @@ pub fn area_reader<U>(func: impl Fn(Area, &mut U) -> Node<U> + 'static) -> Node<
         },
     }
 }
+
+/// Narrows or scopes the mutable state available to the children of this node
+pub fn subtree<T>(scope: impl Fn(&mut T) -> AnyNode<T> + 'static + Copy) -> Node<T> {
+    Node {
+        inner: NodeValue::Scope {
+            node: None,
+            scope: Rc::new(scope),
+        },
+    }
+}
+
 /// Narrows or scopes the mutable state available to the children of this node
 pub fn scope<T, U: 'static>(
     scope: impl Fn(&mut T) -> &mut U + 'static + Copy,
@@ -133,9 +144,8 @@ pub fn scope<T, U: 'static>(
     Node {
         inner: NodeValue::Scope {
             node: None,
-            scope: Rc::new(move |i| scope(i)),
-            scoped: Rc::new(move |i| {
-                let anynode = node(i.downcast_mut::<U>().expect("Invalid downcast"));
+            scope: Rc::new(move |i| {
+                let anynode = node(scope(i));
                 AnyNode {
                     inner: Box::new(anynode),
                     clone: move |any| {
@@ -145,9 +155,8 @@ pub fn scope<T, U: 'static>(
                                 .clone(),
                         ) as Box<dyn Any>
                     },
-                    layout: Rc::new(move |any, area, state| {
-                        any.downcast_mut::<Node<U>>()
-                            .expect("Invalid downcast")
+                    layout: Rc::new(move |area, state| {
+                        node(scope(state))
                             .inner
                             .layout(area, None, None, scope(state))
                     }),
@@ -157,18 +166,8 @@ pub fn scope<T, U: 'static>(
                             .inner
                             .draw(scope(state))
                     }),
-                    constraints: Rc::new(move |any, area, state| {
-                        let scoped = any
-                            .downcast_mut::<Node<U>>()
-                            .expect("Invalid downcast")
-                            .inner
-                            .constraints(area, scope(state));
-                        dbg!(scoped);
-                        SizeConstraints {
-                            width: scoped.width,
-                            height: scoped.height,
-                            aspect: scoped.aspect,
-                        }
+                    constraints: Rc::new(move |area, state| {
+                        node(scope(state)).inner.constraints(area, scope(state))
                     }),
                 }
             }),

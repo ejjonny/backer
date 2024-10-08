@@ -6,7 +6,7 @@ use crate::{
     Node,
 };
 use core::f32;
-use std::{any::Any, rc::Rc};
+use std::rc::Rc;
 
 /**
 The root object used to store & calculate a layout
@@ -66,8 +66,7 @@ impl<State> Layout<State> {
 }
 
 type AreaReaderFn<State> = Rc<dyn Fn(Area, &mut State) -> Node<State>>;
-type ScopeStateFn<State> = Rc<dyn Fn(&mut State) -> &mut dyn Any>;
-type ScopeNodeFn<State> = Rc<dyn Fn(&mut dyn Any) -> AnyNode<State>>;
+type ScopeNodeFn<State> = Rc<dyn Fn(&mut State) -> AnyNode<State>>;
 
 pub(crate) enum NodeValue<State> {
     Padding {
@@ -102,8 +101,7 @@ pub(crate) enum NodeValue<State> {
     Space,
     Scope {
         node: Option<AnyNode<State>>,
-        scope: ScopeStateFn<State>,
-        scoped: ScopeNodeFn<State>,
+        scope: ScopeNodeFn<State>,
     },
     AreaReader {
         read: AreaReaderFn<State>,
@@ -256,6 +254,15 @@ impl<State> NodeValue<State> {
         }
     }
 
+    pub(crate) fn tester<'a, 'b>(
+        &mut self,
+        available_area: Area,
+        contextual_x_align: Option<XAlign>,
+        contextual_y_align: Option<YAlign>,
+        state: &'_ mut State,
+    ) {
+    }
+
     pub(crate) fn layout(
         &mut self,
         available_area: Area,
@@ -306,12 +313,8 @@ impl<State> NodeValue<State> {
                 drawable.area.height = drawable.area.height.max(0.);
             }
             NodeValue::Space => (),
-            NodeValue::Scope {
-                node,
-                scope,
-                scoped,
-            } => {
-                let mut laid_out = scoped(scope(state));
+            NodeValue::Scope { node, scope } => {
+                let mut laid_out = scope(state);
                 laid_out.layout(available_area, state);
                 *node = Some(laid_out);
             }
