@@ -665,6 +665,83 @@ mod tests {
             Layout::new(layout).draw(Area::new(0., 0., 100., 100.), &mut tuple);
         }
     }
+    // #[test]
+    // fn test_scope() {
+    //     struct A {
+    //         test: bool,
+    //         b: B,
+    //     }
+    //     struct B {
+    //         test: bool,
+    //     }
+    //     let mut a = A {
+    //         test: true,
+    //         b: B { test: true },
+    //     };
+    //     fn layout(a: &mut A) -> Node<A> {
+    //         stack(vec![
+    //             if a.test {
+    //                 draw(|area, a: &mut A| {
+    //                     assert_eq!(area, Area::new(0., 0., 100., 100.));
+    //                     a.test = false;
+    //                 })
+    //             } else {
+    //                 draw(|area, a: &mut A| {
+    //                     assert_eq!(area, Area::new(0., 0., 100., 100.));
+    //                     a.test = true;
+    //                 })
+    //             },
+    //             scope(
+    //                 |a: &mut A| &mut a.b,
+    //                 |b| {
+    //                     if b.test {
+    //                         draw(|area, b: &mut B| {
+    //                             assert_eq!(area, Area::new(0., 0., 100., 100.));
+    //                             b.test = false;
+    //                         })
+    //                     } else {
+    //                         draw(|area, b: &mut B| {
+    //                             assert_eq!(area, Area::new(0., 0., 100., 100.));
+    //                             b.test = true;
+    //                         })
+    //                     }
+    //                 },
+    //             ),
+    //         ])
+    //     }
+    //     Layout::new(layout).draw(Area::new(0., 0., 100., 100.), &mut a);
+    //     assert!(!a.test);
+    //     assert!(!a.b.test);
+    //     Layout::new(layout).draw(Area::new(0., 0., 100., 100.), &mut a);
+    //     assert!(a.test);
+    //     assert!(a.b.test);
+    // }
+    // #[test]
+    // fn test_scope_variadic() {
+    //     struct A;
+    //     struct B;
+    //     let b = &mut B;
+    //     type Tuple<'a> = (&'a mut A, (&'a mut B, ()));
+    //     fn layout<'a>(_: &mut Tuple<'_>) -> Node<Tuple<'a>> {
+    //         stack(vec![
+    //             draw(|area, _: &mut Tuple| {
+    //                 assert_eq!(area, Area::new(0., 0., 100., 100.));
+    //             }),
+    //             scope(
+    //                 |t: &mut Tuple| t.1 .0,
+    //                 |_| {
+    //                     draw(|area, _: &mut B| {
+    //                         assert_eq!(area, Area::new(0., 0., 100., 100.));
+    //                     })
+    //                 },
+    //             ),
+    //         ])
+    //     }
+    //     let mut tuple: Tuple = (&mut A, (b, ()));
+    //     for _ in 0..10 {
+    //         Layout::new(layout).draw(Area::new(0., 0., 100., 100.), &mut tuple);
+    //     }
+    // }
     #[test]
     fn test_partial_scope_variadic() {
         struct A;
@@ -676,27 +753,27 @@ mod tests {
         type TupleA<'a> = (&'a mut A, &'a mut B);
         // type TupleB<'a> = (&'a mut A, &'a mut C);
 
-        fn layout<'a>(_: &mut TupleA<'_>) -> Node<TupleA<'a>> {
-            stack(vec![
-                draw(|area, _: &mut TupleA| {
-                    assert_eq!(area, Area::new(0., 0., 100., 100.));
-                }),
-                // TODO: This sort of partial scoping seems to be impossible to implement with the current API
-                // I would like to find a way to make it possible! but how??
-                //
-                // The Any type is used because rust recursive polymorphism isn't really supported
-                //
-                // UI frameworks like egui offer an &mut <UIHandle> when you create your UI elements
-                // & you often have some of your own app state to pass through the layout tree
-                //
-                // You can easily scope when your state is just &mut B, but you can't scope B in &mut (&mut A, &mut B)
-                // because the closure can't return a reference to a temporary tuple
-                //
-                //
-                // scope(|t: &mut TupleA| &mut (&mut *t.0, &mut *t.1), |_| space()),
-            ])
-        }
-        let mut tuple: TupleA = (&mut A, &mut B { c: C });
-        Layout::new(layout).draw(Area::new(0., 0., 100., 100.), &mut tuple);
+        // fn layout<'a>(_: &mut TupleA<'_>) -> Node<TupleA<'a>> {
+        //     stack(vec![
+        //         draw(|area, _: &mut TupleA| {
+        //             assert_eq!(area, Area::new(0., 0., 100., 100.));
+        //         }),
+        // TODO: This sort of partial scoping seems to be impossible to implement with the current API
+        // I would like to find a way to make it possible! but how??
+        //
+        // The Any type is used because rust recursive polymorphism isn't really supported
+        //
+        // UI frameworks like egui offer an &mut <UIHandle> when you create your UI elements
+        // & you often have some of your own app state to pass through the layout tree
+        //
+        // You can easily scope when your state is just &mut B, but you can't scope B in &mut (&mut A, &mut B)
+        // because the closure can't return a reference to a temporary tuple
+        //
+        //
+        // scope(|t: &mut TupleA| &mut (&mut *t.0, &mut *t.1), |_| space()),
+        //     ])
+        // }
+        // let mut tuple: TupleA = (&mut A, &mut B { c: C });
+        // Layout::new(layout).draw(Area::new(0., 0., 100., 100.), &mut tuple);
     }
 }

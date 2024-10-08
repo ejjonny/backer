@@ -5,7 +5,7 @@ use crate::{
 use std::{any::Any, rc::Rc};
 
 /// Defines a vertical sequence of elements
-pub fn column<U>(elements: Vec<Node<U>>) -> Node<U> {
+pub fn column<A, B>(elements: Vec<Node<A, B>>) -> Node<A, B> {
     Node {
         inner: NodeValue::Column {
             elements: filter_empty(ungroup(elements)),
@@ -33,13 +33,13 @@ pub fn column<U>(elements: Vec<Node<U>>) -> Node<U> {
 ///     ),
 /// ]);
 /// ```
-pub fn group<U>(elements: Vec<Node<U>>) -> Node<U> {
+pub fn group<A, B>(elements: Vec<Node<A, B>>) -> Node<A, B> {
     Node {
         inner: NodeValue::Group(filter_empty(ungroup(elements))),
     }
 }
 /// Defines a vertical sequence of elements with the specified spacing between each element.
-pub fn column_spaced<U>(spacing: f32, elements: Vec<Node<U>>) -> Node<U> {
+pub fn column_spaced<A, B>(spacing: f32, elements: Vec<Node<A, B>>) -> Node<A, B> {
     Node {
         inner: NodeValue::Column {
             elements: filter_empty(ungroup(elements)),
@@ -50,7 +50,7 @@ pub fn column_spaced<U>(spacing: f32, elements: Vec<Node<U>>) -> Node<U> {
     }
 }
 /// Defines a horizontal sequence of elements
-pub fn row<U>(elements: Vec<Node<U>>) -> Node<U> {
+pub fn row<A, B>(elements: Vec<Node<A, B>>) -> Node<A, B> {
     Node {
         inner: NodeValue::Row {
             elements: filter_empty(ungroup(elements)),
@@ -61,7 +61,7 @@ pub fn row<U>(elements: Vec<Node<U>>) -> Node<U> {
     }
 }
 /// Defines a horizontal sequence of elements with the specified spacing between each element.
-pub fn row_spaced<U>(spacing: f32, elements: Vec<Node<U>>) -> Node<U> {
+pub fn row_spaced<A, B>(spacing: f32, elements: Vec<Node<A, B>>) -> Node<A, B> {
     Node {
         inner: NodeValue::Row {
             elements: filter_empty(ungroup(elements)),
@@ -72,7 +72,7 @@ pub fn row_spaced<U>(spacing: f32, elements: Vec<Node<U>>) -> Node<U> {
     }
 }
 /// Defines a sequence of elements to be laid out on top of each other.
-pub fn stack<U>(elements: Vec<Node<U>>) -> Node<U> {
+pub fn stack<A, B>(elements: Vec<Node<A, B>>) -> Node<A, B> {
     Node {
         inner: NodeValue::Stack(filter_empty(ungroup(elements))),
     }
@@ -93,23 +93,23 @@ pub fn stack<U>(elements: Vec<Node<U>>) -> Node<U> {
 ///  })
 ///}
 /// ```
-pub fn draw<U>(drawable: impl Fn(Area, &mut U) + 'static) -> Node<U> {
+pub fn draw<A>(drawable: impl Fn(Area, &mut A) + 'static) -> Node<A, ()> {
     Node {
         inner: NodeValue::Draw(Drawable {
             area: Area::default(),
-            draw: Rc::new(drawable),
+            draw: Rc::new(move |area, a, _| drawable(area, a)),
         }),
     }
 }
 /// Defines an empty space which is laid out the same as any other node.
-pub fn space<U>() -> Node<U> {
+pub fn space<A, B>() -> Node<A, B> {
     Node {
         inner: NodeValue::Space,
     }
 }
 /// Nothing! This will not have any impact on layout - useful for conditionally
 /// adding elements to a layout in the case where nothing should be added.
-pub fn empty<U>() -> Node<U> {
+pub fn empty<A, B>() -> Node<A, B> {
     Node {
         inner: NodeValue::Empty,
     }
@@ -118,7 +118,9 @@ pub fn empty<U>() -> Node<U> {
 ///
 /// This node comes with caveats! Constraints within an area reader **cannot** expand the area reader itself.
 /// If it could - it would create cyclical dependency which may be impossible to resolve.
-pub fn area_reader<U>(func: impl Fn(Area, &mut U) -> Node<U> + 'static) -> Node<U> {
+pub fn area_reader<A, B>(
+    func: impl Fn(Area, &mut A, &mut B) -> Node<A, B> + 'static,
+) -> Node<A, B> {
     Node {
         inner: NodeValue::AreaReader {
             read: Rc::new(func),
@@ -126,44 +128,47 @@ pub fn area_reader<U>(func: impl Fn(Area, &mut U) -> Node<U> + 'static) -> Node<
     }
 }
 /// Narrows or scopes the mutable state available to the children of this node
-pub fn scope<T, U: 'static>(
-    scope: impl Fn(&mut T) -> &mut U + 'static + Copy,
-    node: impl Fn(&mut U) -> Node<U> + 'static + Copy,
-) -> Node<T> {
+pub fn scope<T, U, A: 'static, B: 'static>(
+    scope_a: impl Fn(&mut T) -> &mut A + 'static + Copy,
+    scope_b: impl Fn(&mut U) -> &mut B + 'static + Copy,
+    node: impl Fn(&mut A, &mut B) -> Node<A, B> + 'static + Copy,
+) -> Node<T, U> {
     Node {
         inner: NodeValue::Scope {
             node: None,
-            scope: Rc::new(move |i| scope(i)),
-            scoped: Rc::new(move |i| {
-                let anynode = node(i.downcast_mut::<U>().expect("Invalid downcast"));
+            scope_a: Rc::new(move |a| scope_a(a)),
+            scope_b: Rc::new(move |b| scope_b(b)),
+            scoped: Rc::new(move |any_a, any_b| {
+                let downcast_a = any_a.downcast_mut::<&mut A>().expect("Invalid downcast");
+                let downcast_b = any_b.downcast_mut::<&mut B>().expect("Invalid downcast");
+                let anynode = node(downcast_a, downcast_b);
                 AnyNode {
                     inner: Box::new(anynode),
                     clone: move |any| {
                         Box::new(
-                            any.downcast_ref::<Node<U>>()
+                            any.downcast_ref::<Node<A, B>>()
                                 .expect("Invalid downcast")
                                 .clone(),
                         ) as Box<dyn Any>
                     },
-                    layout: Rc::new(move |any, area, state| {
-                        any.downcast_mut::<Node<U>>()
+                    layout: Rc::new(move |any, area, a, b| {
+                        any.downcast_mut::<Node<A, B>>()
                             .expect("Invalid downcast")
                             .inner
-                            .layout(area, None, None, scope(state))
+                            .layout(area, None, None, scope_a(a), scope_b(b))
                     }),
-                    draw: Rc::new(move |any, state| {
-                        any.downcast_ref::<Node<U>>()
+                    draw: Rc::new(move |any, a, b| {
+                        any.downcast_ref::<Node<A, B>>()
                             .expect("Invalid downcast")
                             .inner
-                            .draw(scope(state))
+                            .draw(scope_a(a), scope_b(b))
                     }),
-                    constraints: Rc::new(move |any, area, state| {
+                    constraints: Rc::new(move |any, area, a, b| {
                         let scoped = any
-                            .downcast_mut::<Node<U>>()
+                            .downcast_mut::<Node<A, B>>()
                             .expect("Invalid downcast")
                             .inner
-                            .constraints(area, scope(state));
-                        dbg!(scoped);
+                            .constraints(area, scope_a(a), scope_b(b));
                         SizeConstraints {
                             width: scoped.width,
                             height: scoped.height,
@@ -176,7 +181,7 @@ pub fn scope<T, U: 'static>(
     }
 }
 
-fn ungroup<U>(elements: Vec<Node<U>>) -> Vec<NodeValue<U>> {
+fn ungroup<A, B>(elements: Vec<Node<A, B>>) -> Vec<NodeValue<A, B>> {
     elements
         .into_iter()
         .flat_map(|el| {
@@ -189,7 +194,7 @@ fn ungroup<U>(elements: Vec<Node<U>>) -> Vec<NodeValue<U>> {
         .collect()
 }
 
-fn filter_empty<U>(elements: Vec<NodeValue<U>>) -> Vec<NodeValue<U>> {
+fn filter_empty<A, B>(elements: Vec<NodeValue<A, B>>) -> Vec<NodeValue<A, B>> {
     elements
         .into_iter()
         .filter(|el| {

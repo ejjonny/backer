@@ -44,96 +44,118 @@ fn my_layout_fn(state: &mut MyState) -> Node<MyState> {
 struct MyState {}
 ```
  */
-#[derive(Debug, Clone)]
-pub struct Layout<State> {
-    tree: fn(&mut State) -> Node<State>,
+pub struct Layout<A, B> {
+    tree: Box<dyn Fn(&mut A, &mut B) -> Node<A, B>>,
 }
 
-impl<State> Layout<State> {
-    /// Creates a new [`Layout<State>`].
-    pub fn new(tree: fn(&mut State) -> Node<State>) -> Self {
-        Self { tree }
+impl<A, B> Layout<A, B> {
+    /// Creates a new [`Layout<A, B>`].
+    pub fn new_with(tree: impl Fn(&mut A, &mut B) -> Node<A, B> + 'static) -> Self {
+        Self {
+            tree: Box::new(tree),
+        }
     }
 }
 
-impl<State> Layout<State> {
+impl<A> Layout<A, ()> {
+    /// Creates a new [`Layout<A, B>`].
+    pub fn new(tree: impl Fn(&mut A) -> Node<A, ()> + 'static) -> Self {
+        Self {
+            tree: Box::new(move |a, _| tree(a)),
+        }
+    }
+}
+
+impl<A> Layout<A, ()> {
     /// Calculates layout and draws all draw nodes in the tree
-    pub fn draw(&self, area: Area, state: &mut State) {
-        let mut layout = (self.tree)(state);
-        layout.inner.layout(area, None, None, state);
-        layout.inner.draw(state);
+    pub fn draw(&self, area: Area, a: &mut A) {
+        let b = &mut ();
+        let mut layout = (self.tree)(a, b);
+        layout.inner.layout(area, None, None, a, b);
+        layout.inner.draw(a, b);
     }
 }
 
-type AreaReaderFn<State> = Rc<dyn Fn(Area, &mut State) -> Node<State>>;
-type ScopeStateFn<State> = Rc<dyn Fn(&mut State) -> &mut dyn Any>;
-type ScopeNodeFn<State> = Rc<dyn Fn(&mut dyn Any) -> AnyNode<State>>;
+impl<A, B> Layout<A, B> {
+    /// Calculates layout and draws all draw nodes in the tree
+    pub fn draw_with(&self, area: Area, a: &mut A, b: &mut B) {
+        let mut layout = (self.tree)(a, b);
+        layout.inner.layout(area, None, None, a, b);
+        layout.inner.draw(a, b);
+    }
+}
 
-pub(crate) enum NodeValue<State> {
+type AreaReaderFn<A, B> = Rc<dyn Fn(Area, &mut A, &mut B) -> Node<A, B>>;
+type ScopeAStateFn<A> = Rc<dyn Fn(&mut A) -> &mut dyn Any>;
+type ScopeBStateFn<A> = Rc<dyn Fn(&mut A) -> &mut dyn Any>;
+type ScopeNodeFn<A, B> = Rc<dyn Fn(&mut dyn Any, &mut dyn Any) -> AnyNode<A, B>>;
+
+pub(crate) enum NodeValue<A, B> {
     Padding {
         amounts: Padding,
-        element: Box<NodeValue<State>>,
+        element: Box<NodeValue<A, B>>,
     },
     Column {
-        elements: Vec<NodeValue<State>>,
+        elements: Vec<NodeValue<A, B>>,
         spacing: f32,
         align: Option<YAlign>,
         off_axis_align: Option<XAlign>,
     },
     Row {
-        elements: Vec<NodeValue<State>>,
+        elements: Vec<NodeValue<A, B>>,
         spacing: f32,
         align: Option<XAlign>,
         off_axis_align: Option<YAlign>,
     },
-    Stack(Vec<NodeValue<State>>),
-    Group(Vec<NodeValue<State>>),
+    Stack(Vec<NodeValue<A, B>>),
+    Group(Vec<NodeValue<A, B>>),
     Offset {
         offset_x: f32,
         offset_y: f32,
-        element: Box<NodeValue<State>>,
+        element: Box<NodeValue<A, B>>,
     },
-    Draw(Drawable<State>),
+    Draw(Drawable<A, B>),
     Explicit {
-        options: Size<State>,
-        element: Box<NodeValue<State>>,
+        options: Size<A, B>,
+        element: Box<NodeValue<A, B>>,
     },
     Empty,
     Space,
     Scope {
-        node: Option<AnyNode<State>>,
-        scope: ScopeStateFn<State>,
-        scoped: ScopeNodeFn<State>,
+        node: Option<AnyNode<A, B>>,
+        scope_a: ScopeAStateFn<A>,
+        scope_b: ScopeBStateFn<B>,
+        scoped: ScopeNodeFn<A, B>,
     },
     AreaReader {
-        read: AreaReaderFn<State>,
+        read: AreaReaderFn<A, B>,
     },
     Coupled {
         over: bool,
-        element: Box<NodeValue<State>>,
-        coupled: Box<NodeValue<State>>,
+        element: Box<NodeValue<A, B>>,
+        coupled: Box<NodeValue<A, B>>,
     },
 }
 
-impl<State> NodeValue<State> {
-    pub(crate) fn draw(&self, state: &mut State) {
+impl<A, B> NodeValue<A, B> {
+    pub(crate) fn draw(&self, a: &mut A, b: &mut B) {
         match self {
-            NodeValue::Draw(drawable) => drawable.draw(drawable.area, state),
+            NodeValue::Draw(drawable) => drawable.draw(drawable.area, a, b),
             NodeValue::Padding { element, .. }
             | NodeValue::Explicit { element, .. }
             | NodeValue::Offset { element, .. } => {
-                element.draw(state);
+                element.draw(a, b);
             }
             NodeValue::Stack(elements) => {
-                elements.iter().for_each(|el| el.draw(state));
+                elements.iter().for_each(|el| el.draw(a, b));
             }
             NodeValue::Column { elements, .. } | NodeValue::Row { elements, .. } => {
-                elements.iter().rev().for_each(|el| el.draw(state));
+                elements.iter().rev().for_each(|el| el.draw(a, b));
             }
             NodeValue::Space => (),
             NodeValue::Scope { node, .. } => {
                 if let Some(node) = node {
-                    node.draw(state)
+                    node.draw(a, b)
                 }
             }
             NodeValue::Coupled {
@@ -142,11 +164,11 @@ impl<State> NodeValue<State> {
                 over,
             } => {
                 if *over {
-                    element.draw(state);
-                    coupled.draw(state);
+                    element.draw(a, b);
+                    coupled.draw(a, b);
                 } else {
-                    coupled.draw(state);
-                    element.draw(state);
+                    coupled.draw(a, b);
+                    element.draw(a, b);
                 }
             }
             NodeValue::Group(_) | NodeValue::Empty | NodeValue::AreaReader { .. } => {
@@ -178,7 +200,8 @@ impl<State> NodeValue<State> {
         available_area: Area,
         contextual_x_align: Option<XAlign>,
         contextual_y_align: Option<YAlign>,
-        state: &mut State,
+        a: &mut A,
+        b: &mut B,
     ) -> Vec<Area> {
         match self {
             NodeValue::Padding { amounts, .. } => vec![Area {
@@ -199,7 +222,8 @@ impl<State> NodeValue<State> {
                 Orientation::Vertical,
                 off_axis_align.unwrap_or(XAlign::Center),
                 align.unwrap_or(YAlign::Center),
-                state,
+                a,
+                b,
                 true,
             ),
             NodeValue::Row {
@@ -214,7 +238,8 @@ impl<State> NodeValue<State> {
                 Orientation::Horizontal,
                 align.unwrap_or(XAlign::Center),
                 off_axis_align.unwrap_or(YAlign::Center),
-                state,
+                a,
+                b,
                 true,
             ),
             NodeValue::Stack(children) => children.iter().map(|_| available_area).collect(),
@@ -231,7 +256,7 @@ impl<State> NodeValue<State> {
                     .or(contextual_y_align)
                     .unwrap_or(YAlign::Center);
                 let available_area = available_area.constrained(
-                    &SizeConstraints::from_size(options.clone(), available_area, state),
+                    &SizeConstraints::from_size(options.clone(), available_area, a, b),
                     x_align,
                     y_align,
                 );
@@ -261,14 +286,16 @@ impl<State> NodeValue<State> {
         available_area: Area,
         contextual_x_align: Option<XAlign>,
         contextual_y_align: Option<YAlign>,
-        state: &mut State,
+        a: &mut A,
+        b: &mut B,
     ) {
         let contextual_aligns = self.contextual_aligns();
         let allocated = self.allocate_area(
             available_area,
             contextual_aligns.0.or(contextual_x_align),
             contextual_aligns.1.or(contextual_y_align),
-            state,
+            a,
+            b,
         );
 
         match self {
@@ -287,18 +314,18 @@ impl<State> NodeValue<State> {
                 elements
                     .iter_mut()
                     .zip(allocated)
-                    .for_each(|(el, allocation)| el.layout(allocation, *x_align, *y_align, state));
+                    .for_each(|(el, allocation)| el.layout(allocation, *x_align, *y_align, a, b));
             }
             NodeValue::Stack(elements) => {
                 elements
                     .iter_mut()
                     .zip(allocated)
-                    .for_each(|(el, allocation)| el.layout(allocation, None, None, state));
+                    .for_each(|(el, allocation)| el.layout(allocation, None, None, a, b));
             }
             NodeValue::Padding { element, .. }
             | NodeValue::Explicit { element, .. }
             | NodeValue::Offset { element, .. } => {
-                element.layout(allocated[0], None, None, state);
+                element.layout(allocated[0], None, None, a, b);
             }
             NodeValue::Draw(drawable) => {
                 drawable.area = allocated[0];
@@ -308,22 +335,23 @@ impl<State> NodeValue<State> {
             NodeValue::Space => (),
             NodeValue::Scope {
                 node,
-                scope,
+                scope_a,
+                scope_b,
                 scoped,
             } => {
-                let mut laid_out = scoped(scope(state));
-                laid_out.layout(available_area, state);
+                let mut laid_out = scoped(scope_a(a), scope_b(b));
+                laid_out.layout(available_area, a, b);
                 *node = Some(laid_out);
             }
             NodeValue::AreaReader { read } => {
-                *self = read(allocated[0], state).inner;
-                self.layout(allocated[0], None, None, state);
+                *self = read(allocated[0], a, b).inner;
+                self.layout(allocated[0], None, None, a, b);
             }
             NodeValue::Coupled {
                 element, coupled, ..
             } => {
-                element.layout(allocated[0], None, None, state);
-                coupled.layout(allocated[0], None, None, state);
+                element.layout(allocated[0], None, None, a, b);
+                coupled.layout(allocated[0], None, None, a, b);
             }
             NodeValue::Group(_) | NodeValue::Empty => unreachable!(),
         }
@@ -374,19 +402,20 @@ pub(crate) enum Orientation {
 }
 
 #[allow(clippy::too_many_arguments)]
-pub(crate) fn layout_axis<State>(
-    elements: &mut [NodeValue<State>],
+pub(crate) fn layout_axis<A, B>(
+    elements: &mut [NodeValue<A, B>],
     spacing: &f32,
     available_area: Area,
     orientation: Orientation,
     x_align: XAlign,
     y_align: YAlign,
-    state: &mut State,
+    a: &mut A,
+    b: &mut B,
     check: bool,
 ) -> Vec<Area> {
     let sizes: Vec<SizeConstraints> = elements
         .iter_mut()
-        .map(|element| element.constraints(available_area, state))
+        .map(|element| element.constraints(available_area, a, b))
         .collect();
     let element_count = elements.len();
 
@@ -566,7 +595,7 @@ pub(crate) fn layout_axis<State>(
         }
 
         if !check {
-            child.layout(area, Some(x_align), Some(y_align), state);
+            child.layout(area, Some(x_align), Some(y_align), a, b);
         } else {
             areas.push(area);
         }

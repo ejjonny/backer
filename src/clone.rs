@@ -1,6 +1,6 @@
 use crate::{drawable::Drawable, layout::NodeValue};
 
-impl<State> Clone for NodeValue<State> {
+impl<A, B> Clone for NodeValue<A, B> {
     fn clone(&self) -> Self {
         match self {
             NodeValue::Padding { amounts, element } => NodeValue::Padding {
@@ -51,11 +51,13 @@ impl<State> Clone for NodeValue<State> {
             NodeValue::Space => NodeValue::Space,
             NodeValue::Scope {
                 node,
-                scope,
+                scope_a,
+                scope_b,
                 scoped,
             } => NodeValue::Scope {
                 node: node.clone(),
-                scope: scope.clone(),
+                scope_a: scope_a.clone(),
+                scope_b: scope_b.clone(),
                 scoped: scoped.clone(),
             },
             NodeValue::Empty => NodeValue::Empty,

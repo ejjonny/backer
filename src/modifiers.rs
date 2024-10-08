@@ -1,9 +1,36 @@
 use crate::{layout::NodeValue, models::*, Node};
 use std::{ops::RangeBounds, rc::Rc};
 
-impl<U> Node<U> {
+impl<A> Node<A, ()> {
+    /// Constrains the node's height as a function of available width.
+    ///
+    /// Generally you should prefer size constraints, aspect ratio constraints or area readers over dynamic height.
+    ///
+    /// **This is primarily for UI elements such as text** where node height must depend on available width & scaling is
+    /// not a simple option.
+    pub fn dynamic_height(self, f: impl Fn(f32, &mut A) -> f32 + 'static) -> Self {
+        self.wrap_or_update_explicit(Size {
+            dynamic_height: Some(Rc::new(move |h, a, _| f(h, a))),
+            ..Default::default()
+        })
+    }
+    /// Constrains the node's width as a function of available height.
+    ///
+    /// Generally you should prefer size constraints, aspect ratio constraints or area readers over dynamic height.
+    ///
+    /// **This is primarily for UI elements such as text** where node width must depend on available height & scaling is
+    /// not a simple option.
+    pub fn dynamic_width(self, f: impl Fn(f32, &mut A) -> f32 + 'static) -> Self {
+        self.wrap_or_update_explicit(Size {
+            dynamic_width: Some(Rc::new(move |h, a, _| f(h, a))),
+            ..Default::default()
+        })
+    }
+}
+
+impl<A, B> Node<A, B> {
     /// Adds padding to the node along the leading edge
-    pub fn pad_leading(self, amount: f32) -> Node<U> {
+    pub fn pad_leading(self, amount: f32) -> Node<A, B> {
         Node {
             inner: NodeValue::Padding {
                 amounts: Padding {
@@ -17,7 +44,7 @@ impl<U> Node<U> {
         }
     }
     /// Adds horizontal padding to the node (leading & trailing)
-    pub fn pad_x(self, amount: f32) -> Node<U> {
+    pub fn pad_x(self, amount: f32) -> Node<A, B> {
         Node {
             inner: NodeValue::Padding {
                 amounts: Padding {
@@ -31,7 +58,7 @@ impl<U> Node<U> {
         }
     }
     /// Adds padding to the node along the trailing edge
-    pub fn pad_trailing(self, amount: f32) -> Node<U> {
+    pub fn pad_trailing(self, amount: f32) -> Node<A, B> {
         Node {
             inner: NodeValue::Padding {
                 amounts: Padding {
@@ -45,7 +72,7 @@ impl<U> Node<U> {
         }
     }
     /// Adds padding to the node along the top edge
-    pub fn pad_top(self, amount: f32) -> Node<U> {
+    pub fn pad_top(self, amount: f32) -> Node<A, B> {
         Node {
             inner: NodeValue::Padding {
                 amounts: Padding {
@@ -60,7 +87,7 @@ impl<U> Node<U> {
     }
 
     /// Adds vertical padding to the node (top & bottom)
-    pub fn pad_y(self, amount: f32) -> Node<U> {
+    pub fn pad_y(self, amount: f32) -> Node<A, B> {
         Node {
             inner: NodeValue::Padding {
                 amounts: Padding {
@@ -74,7 +101,7 @@ impl<U> Node<U> {
         }
     }
     /// Adds padding to the node along the bottom edge
-    pub fn pad_bottom(self, amount: f32) -> Node<U> {
+    pub fn pad_bottom(self, amount: f32) -> Node<A, B> {
         Node {
             inner: NodeValue::Padding {
                 amounts: Padding {
@@ -88,7 +115,7 @@ impl<U> Node<U> {
         }
     }
     /// Adds padding to the node on all sides
-    pub fn pad(self, amount: f32) -> Node<U> {
+    pub fn pad(self, amount: f32) -> Node<A, B> {
         Node {
             inner: NodeValue::Padding {
                 amounts: Padding {
@@ -104,7 +131,7 @@ impl<U> Node<U> {
     /// Offsets the node along the x axis.
     /// This is an absolute offset that simply shifts nodes away from their calculated position
     /// This won't impact layout besides child nodes also being offset
-    pub fn offset_x(self, amount: f32) -> Node<U> {
+    pub fn offset_x(self, amount: f32) -> Node<A, B> {
         Node {
             inner: NodeValue::Offset {
                 offset_x: amount,
@@ -116,7 +143,7 @@ impl<U> Node<U> {
     /// Offsets the node along the y axis.
     /// This is an absolute offset that simply shifts nodes away from their calculated position
     /// This won't impact layout besides child nodes also being offset
-    pub fn offset_y(self, amount: f32) -> Node<U> {
+    pub fn offset_y(self, amount: f32) -> Node<A, B> {
         Node {
             inner: NodeValue::Offset {
                 offset_x: 0.,
@@ -128,7 +155,7 @@ impl<U> Node<U> {
     /// Offsets the node along the x & y axis.
     /// This is an absolute offset that simply shifts nodes away from their calculated position
     /// This won't impact layout besides child nodes also being offset
-    pub fn offset(self, offset_x: f32, offset_y: f32) -> Node<U> {
+    pub fn offset(self, offset_x: f32, offset_y: f32) -> Node<A, B> {
         Node {
             inner: NodeValue::Offset {
                 offset_x,
@@ -275,31 +302,7 @@ impl<U> Node<U> {
             },
         }
     }
-    /// Constrains the node's height as a function of available width.
-    ///
-    /// Generally you should prefer size constraints, aspect ratio constraints or area readers over dynamic height.
-    ///
-    /// **This is primarily for UI elements such as text** where node height must depend on available width & scaling is
-    /// not a simple option.
-    pub fn dynamic_height(self, f: impl Fn(f32, &mut U) -> f32 + 'static) -> Self {
-        self.wrap_or_update_explicit(Size {
-            dynamic_height: Some(Rc::new(f)),
-            ..Default::default()
-        })
-    }
-    /// Constrains the node's width as a function of available height.
-    ///
-    /// Generally you should prefer size constraints, aspect ratio constraints or area readers over dynamic height.
-    ///
-    /// **This is primarily for UI elements such as text** where node width must depend on available height & scaling is
-    /// not a simple option.
-    pub fn dynamic_width(self, f: impl Fn(f32, &mut U) -> f32 + 'static) -> Self {
-        self.wrap_or_update_explicit(Size {
-            dynamic_width: Some(Rc::new(f)),
-            ..Default::default()
-        })
-    }
-    fn wrap_or_update_explicit(mut self, size: Size<U>) -> Self {
+    fn wrap_or_update_explicit(mut self, size: Size<A, B>) -> Self {
         match self.inner {
             NodeValue::Explicit {
                 ref mut options,
@@ -355,11 +358,11 @@ mod tests {
 
     #[test]
     fn test_explicit_wrap_valid() {
-        let c = space::<()>()
+        let c = space::<(), ()>()
             .width(10.)
             .width_range(5.0..)
             .inner
-            .constraints(Area::zero(), &mut ());
+            .constraints(Area::zero(), &mut (), &mut ());
         assert!(c.width.upper.is_none());
         assert_eq!(c.width.lower.unwrap(), 5.);
     }

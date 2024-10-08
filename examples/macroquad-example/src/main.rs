@@ -33,6 +33,7 @@ async fn main() {
                 height: screen_height(),
             },
             &mut state,
+            &mut (),
         );
         next_frame().await
     }

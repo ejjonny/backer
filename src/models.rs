@@ -116,9 +116,9 @@ pub(crate) struct Padding {
     pub(crate) bottom: f32,
 }
 
-type DimensionFn<U> = Option<Rc<dyn Fn(f32, &mut U) -> f32>>;
+type DimensionFn<A, B> = Option<Rc<dyn Fn(f32, &mut A, &mut B) -> f32>>;
 
-pub(crate) struct Size<U> {
+pub(crate) struct Size<A, B> {
     pub(crate) width_min: Option<f32>,
     pub(crate) width_max: Option<f32>,
     pub(crate) height_min: Option<f32>,
@@ -126,11 +126,11 @@ pub(crate) struct Size<U> {
     pub(crate) x_align: Option<XAlign>,
     pub(crate) y_align: Option<YAlign>,
     pub(crate) aspect: Option<f32>,
-    pub(crate) dynamic_height: DimensionFn<U>,
-    pub(crate) dynamic_width: DimensionFn<U>,
+    pub(crate) dynamic_height: DimensionFn<A, B>,
+    pub(crate) dynamic_width: DimensionFn<A, B>,
 }
 
-impl<U> Clone for Size<U> {
+impl<A, B> Clone for Size<A, B> {
     fn clone(&self) -> Self {
         Self {
             width_min: self.width_min,
@@ -146,19 +146,19 @@ impl<U> Clone for Size<U> {
     }
 }
 
-impl<U> std::fmt::Debug for Size<U> {
+impl<A, B> std::fmt::Debug for Size<A, B> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "Size")
     }
 }
 
-impl<U> Default for Size<U> {
+impl<A, B> Default for Size<A, B> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<U> Size<U> {
+impl<A, B> Size<A, B> {
     /// Creates a default size object to add constraints to
     pub(crate) fn new() -> Self {
         Size {
