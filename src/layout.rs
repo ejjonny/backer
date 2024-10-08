@@ -3,7 +3,7 @@ use crate::{
     constraints::{Constraint, SizeConstraints},
     drawable::Drawable,
     models::*,
-    NodeWith,
+    Node, NodeWith,
 };
 use core::f32;
 use std::{any::Any, rc::Rc};
@@ -61,7 +61,7 @@ impl<A, B> Layout<A, B> {
 
 impl<A> Layout<A, ()> {
     /// Creates a new [`Layout<A, B>`].
-    pub fn new(tree: impl Fn(&mut A) -> NodeWith<A, ()> + 'static) -> Self {
+    pub fn new(tree: impl Fn(&mut A) -> Node<A> + 'static) -> Self {
         Self {
             tree: Box::new(move |a, _| tree(a)),
         }

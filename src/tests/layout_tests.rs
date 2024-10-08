@@ -673,30 +673,23 @@ mod tests {
         struct B {
             c: C,
         }
-        type TupleA<'a> = (&'a mut A, &'a mut B);
-        // type TupleB<'a> = (&'a mut A, &'a mut C);
 
-        fn layout<'a>(_: &mut TupleA<'_>) -> NodeWith<TupleA<'a>, ()> {
+        fn layout(_: &mut A, _: &mut B) -> NodeWith<A, B> {
             stack(vec![
-                draw(|area, _: &mut TupleA| {
+                draw_with(|area, _, _| {
                     assert_eq!(area, Area::new(0., 0., 100., 100.));
                 }),
-                // TODO: This sort of partial scoping seems to be impossible to implement with the current API
-                // I would like to find a way to make it possible! but how??
-                //
-                // The Any type is used because rust recursive polymorphism isn't really supported
-                //
-                // UI frameworks like egui offer an &mut <UIHandle> when you create your UI elements
-                // & you often have some of your own app state to pass through the layout tree
-                //
-                // You can easily scope when your state is just &mut B, but you can't scope B in &mut (&mut A, &mut B)
-                // because the closure can't return a reference to a temporary tuple
-                //
-                //
-                // scope(|t: &mut TupleA| &mut (&mut *t.0, &mut *t.1), |_| space()),
+                scope_with(
+                    |t: &mut A| &mut *t,
+                    |t: &mut B| &mut t.c,
+                    |_a, _b| {
+                        draw_with(|area, _a: &mut A, _c: &mut C| {
+                            assert_eq!(area, Area::new(0., 0., 100., 100.));
+                        })
+                    },
+                ),
             ])
         }
-        let mut tuple: TupleA = (&mut A, &mut B { c: C });
-        Layout::new(layout).draw(Area::new(0., 0., 100., 100.), &mut tuple);
+        Layout::new_with(layout).draw_with(Area::new(0., 0., 100., 100.), &mut A, &mut B { c: C });
     }
 }

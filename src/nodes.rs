@@ -93,11 +93,20 @@ pub fn stack<A, B>(elements: Vec<NodeWith<A, B>>) -> NodeWith<A, B> {
 ///  })
 ///}
 /// ```
-pub fn draw<A>(drawable: impl Fn(Area, &mut A) + 'static) -> NodeWith<A, ()> {
+pub fn draw<A>(drawable: impl Fn(Area, &mut A) + 'static) -> Node<A> {
     NodeWith {
         inner: NodeValue::Draw(Drawable {
             area: Area::default(),
             draw: Rc::new(move |area, a, _| drawable(area, a)),
+        }),
+    }
+}
+/// Defines a node that can be drawn
+pub fn draw_with<A, B>(drawable: impl Fn(Area, &mut A, &mut B) + 'static) -> NodeWith<A, B> {
+    NodeWith {
+        inner: NodeValue::Draw(Drawable {
+            area: Area::default(),
+            draw: Rc::new(move |area, a, b| drawable(area, a, b)),
         }),
     }
 }
