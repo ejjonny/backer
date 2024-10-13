@@ -1,6 +1,12 @@
-use crate::{drawable::Drawable, layout::NodeValue};
+use crate::{
+    drawable::Drawable,
+    layout::{NodeValue, Scopable},
+};
 
-impl<State> Clone for NodeValue<State> {
+impl<State> Clone for NodeValue<State>
+where
+    State: Scopable,
+{
     fn clone(&self) -> Self {
         match self {
             NodeValue::Padding { amounts, element } => NodeValue::Padding {

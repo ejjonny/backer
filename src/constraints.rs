@@ -1,5 +1,5 @@
 use crate::{
-    layout::NodeValue,
+    layout::{NodeValue, Scopable},
     models::{Area, Size},
 };
 
@@ -27,7 +27,7 @@ impl Constraint {
     }
 }
 
-impl<State> NodeValue<State> {
+impl<State: Scopable> NodeValue<State> {
     pub(crate) fn constraints(
         &mut self,
         available_area: Area,
@@ -153,7 +153,11 @@ impl<State> NodeValue<State> {
                     state,
                 )),
             NodeValue::Offset { element, .. } => element.constraints(allocations[0], state),
-            NodeValue::Scope { scoped, .. } => scoped.constraints(allocations[0], state),
+            NodeValue::Scope {
+                scoped: subtree, ..
+            } => state.with_scoped(subtree, move |subtree, scoped_state| {
+                subtree.inner.constraints(allocations[0], scoped_state)
+            }),
             NodeValue::Draw(_) | NodeValue::Space | NodeValue::AreaReader { .. } => {
                 SizeConstraints {
                     width: Constraint::none(),

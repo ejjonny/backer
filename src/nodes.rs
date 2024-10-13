@@ -1,11 +1,14 @@
 use crate::{
-    anynode::AnyNode, constraints::SizeConstraints, drawable::Drawable, layout::NodeValue,
-    models::*, Node,
+    drawable::Drawable,
+    layout::{NodeValue, Scopable},
+    models::*,
+    subtree::Subtree,
+    Node,
 };
-use std::{any::Any, rc::Rc};
+use std::{mem::ManuallyDrop, rc::Rc};
 
 /// Defines a vertical sequence of elements
-pub fn column<U>(elements: Vec<Node<U>>) -> Node<U> {
+pub fn column<U: Scopable>(elements: Vec<Node<U>>) -> Node<U> {
     Node {
         inner: NodeValue::Column {
             elements: filter_empty(ungroup(elements)),
@@ -33,13 +36,13 @@ pub fn column<U>(elements: Vec<Node<U>>) -> Node<U> {
 ///     ),
 /// ]);
 /// ```
-pub fn group<U>(elements: Vec<Node<U>>) -> Node<U> {
+pub fn group<U: Scopable>(elements: Vec<Node<U>>) -> Node<U> {
     Node {
         inner: NodeValue::Group(filter_empty(ungroup(elements))),
     }
 }
 /// Defines a vertical sequence of elements with the specified spacing between each element.
-pub fn column_spaced<U>(spacing: f32, elements: Vec<Node<U>>) -> Node<U> {
+pub fn column_spaced<U: Scopable>(spacing: f32, elements: Vec<Node<U>>) -> Node<U> {
     Node {
         inner: NodeValue::Column {
             elements: filter_empty(ungroup(elements)),
@@ -50,7 +53,7 @@ pub fn column_spaced<U>(spacing: f32, elements: Vec<Node<U>>) -> Node<U> {
     }
 }
 /// Defines a horizontal sequence of elements
-pub fn row<U>(elements: Vec<Node<U>>) -> Node<U> {
+pub fn row<U: Scopable>(elements: Vec<Node<U>>) -> Node<U> {
     Node {
         inner: NodeValue::Row {
             elements: filter_empty(ungroup(elements)),
@@ -61,7 +64,7 @@ pub fn row<U>(elements: Vec<Node<U>>) -> Node<U> {
     }
 }
 /// Defines a horizontal sequence of elements with the specified spacing between each element.
-pub fn row_spaced<U>(spacing: f32, elements: Vec<Node<U>>) -> Node<U> {
+pub fn row_spaced<U: Scopable>(spacing: f32, elements: Vec<Node<U>>) -> Node<U> {
     Node {
         inner: NodeValue::Row {
             elements: filter_empty(ungroup(elements)),
@@ -72,7 +75,7 @@ pub fn row_spaced<U>(spacing: f32, elements: Vec<Node<U>>) -> Node<U> {
     }
 }
 /// Defines a sequence of elements to be laid out on top of each other.
-pub fn stack<U>(elements: Vec<Node<U>>) -> Node<U> {
+pub fn stack<U: Scopable>(elements: Vec<Node<U>>) -> Node<U> {
     Node {
         inner: NodeValue::Stack(filter_empty(ungroup(elements))),
     }
@@ -93,7 +96,7 @@ pub fn stack<U>(elements: Vec<Node<U>>) -> Node<U> {
 ///  })
 ///}
 /// ```
-pub fn draw<U>(drawable: impl Fn(Area, &mut U) + 'static) -> Node<U> {
+pub fn draw<U: Scopable>(drawable: impl Fn(Area, &mut U) + 'static) -> Node<U> {
     Node {
         inner: NodeValue::Draw(Drawable {
             area: Area::default(),
@@ -102,14 +105,14 @@ pub fn draw<U>(drawable: impl Fn(Area, &mut U) + 'static) -> Node<U> {
     }
 }
 /// Defines an empty space which is laid out the same as any other node.
-pub fn space<U>() -> Node<U> {
+pub fn space<U: Scopable>() -> Node<U> {
     Node {
         inner: NodeValue::Space,
     }
 }
 /// Nothing! This will not have any impact on layout - useful for conditionally
 /// adding elements to a layout in the case where nothing should be added.
-pub fn empty<U>() -> Node<U> {
+pub fn empty<U: Scopable>() -> Node<U> {
     Node {
         inner: NodeValue::Empty,
     }
@@ -118,7 +121,7 @@ pub fn empty<U>() -> Node<U> {
 ///
 /// This node comes with caveats! Constraints within an area reader **cannot** expand the area reader itself.
 /// If it could - it would create cyclical dependency which may be impossible to resolve.
-pub fn area_reader<U>(func: impl Fn(Area, &mut U) -> Node<U> + 'static) -> Node<U> {
+pub fn area_reader<U: Scopable>(func: impl Fn(Area, &mut U) -> Node<U> + 'static) -> Node<U> {
     Node {
         inner: NodeValue::AreaReader {
             read: Rc::new(func),
@@ -126,51 +129,17 @@ pub fn area_reader<U>(func: impl Fn(Area, &mut U) -> Node<U> + 'static) -> Node<
     }
 }
 /// Narrows or scopes the mutable state available to the children of this node
-pub fn scope<U: 'static, V: 'static>(scope: fn(&mut U) -> &mut V, node: Node<V>) -> Node<U> {
+pub fn scope<U: Scopable>(scoped: Node<U::Scoped>) -> Node<U> {
     Node {
-        inner: match node.inner {
-            NodeValue::Empty => empty().inner,
-            _ => NodeValue::<U>::Scope {
-                scoped: AnyNode {
-                    inner: Box::new(node),
-                    clone: |any| {
-                        Box::new(
-                            any.downcast_ref::<Node<V>>()
-                                .expect("Invalid downcast")
-                                .clone(),
-                        ) as Box<dyn Any>
-                    },
-                    layout: Rc::new(move |any, area, state| {
-                        any.downcast_mut::<Node<V>>()
-                            .expect("Invalid downcast")
-                            .inner
-                            .layout(area, None, None, scope(state))
-                    }),
-                    draw: Rc::new(move |any, state| {
-                        any.downcast_ref::<Node<V>>()
-                            .expect("Invalid downcast")
-                            .inner
-                            .draw(scope(state))
-                    }),
-                    constraints: Rc::new(move |any, area, state| {
-                        let scoped = any
-                            .downcast_mut::<Node<V>>()
-                            .expect("Invalid downcast")
-                            .inner
-                            .constraints(area, scope(state));
-                        SizeConstraints {
-                            width: scoped.width,
-                            height: scoped.height,
-                            aspect: scoped.aspect,
-                        }
-                    }),
-                },
+        inner: NodeValue::Scope {
+            scoped: Subtree {
+                inner: ManuallyDrop::new(Box::new(scoped.inner)),
             },
         },
     }
 }
 
-fn ungroup<U>(elements: Vec<Node<U>>) -> Vec<NodeValue<U>> {
+fn ungroup<U: Scopable>(elements: Vec<Node<U>>) -> Vec<NodeValue<U>> {
     elements
         .into_iter()
         .flat_map(|el| {
@@ -183,7 +152,7 @@ fn ungroup<U>(elements: Vec<Node<U>>) -> Vec<NodeValue<U>> {
         .collect()
 }
 
-fn filter_empty<U>(elements: Vec<NodeValue<U>>) -> Vec<NodeValue<U>> {
+fn filter_empty<U: Scopable>(elements: Vec<NodeValue<U>>) -> Vec<NodeValue<U>> {
     elements
         .into_iter()
         .filter(|el| {

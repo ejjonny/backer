@@ -1,8 +1,8 @@
 use crate::{
-    anynode::AnyNode,
     constraints::{Constraint, SizeConstraints},
     drawable::Drawable,
     models::*,
+    subtree::Subtree,
     Node,
 };
 use core::f32;
@@ -45,18 +45,21 @@ struct MyState {}
 ```
  */
 #[derive(Debug, Clone)]
-pub struct Layout<State> {
+pub struct Layout<State: Scopable> {
     tree: fn(&mut State) -> Node<State>,
 }
 
-impl<State> Layout<State> {
+impl<State: Scopable> Layout<State> {
     /// Creates a new [`Layout<State>`].
     pub fn new(tree: fn(&mut State) -> Node<State>) -> Self {
         Self { tree }
     }
 }
 
-impl<State> Layout<State> {
+impl<State> Layout<State>
+where
+    State: Scopable,
+{
     /// Calculates layout and draws all draw nodes in the tree
     pub fn draw(&self, area: Area, state: &mut State) {
         let mut layout = (self.tree)(state);
@@ -65,9 +68,44 @@ impl<State> Layout<State> {
     }
 }
 
+pub trait Scopable: Sized {
+    type Scoped: Scopable;
+    fn with_scoped<T>(
+        &mut self,
+        subtree: &mut Subtree<Self>,
+        f: impl Fn(&mut Subtree<Self>, &mut Self::Scoped) -> T,
+    ) -> T;
+}
+
+pub struct Unscopable<T>(T);
+
+impl<U> Scopable for Unscopable<U> {
+    type Scoped = ();
+    fn with_scoped<T>(
+        &mut self,
+        subtree: &mut Subtree<Self>,
+        f: impl Fn(&mut Subtree<Self>, &mut Self::Scoped) -> T,
+    ) -> T {
+        f(subtree, &mut ())
+    }
+}
+
+impl Scopable for () {
+    type Scoped = ();
+    fn with_scoped<T>(
+        &mut self,
+        subtree: &mut Subtree<Self>,
+        f: impl Fn(&mut Subtree<Self>, &mut Self::Scoped) -> T,
+    ) -> T {
+        f(subtree, &mut ())
+    }
+}
+
+impl<T: Scopable<Scoped = ()>> NodeValue<T> {}
+
 type AreaReaderFn<State> = Rc<dyn Fn(Area, &mut State) -> Node<State>>;
 
-pub(crate) enum NodeValue<State> {
+pub enum NodeValue<State: Scopable> {
     Padding {
         amounts: Padding,
         element: Box<NodeValue<State>>,
@@ -99,7 +137,7 @@ pub(crate) enum NodeValue<State> {
     Empty,
     Space,
     Scope {
-        scoped: AnyNode<State>,
+        scoped: Subtree<State>,
     },
     AreaReader {
         read: AreaReaderFn<State>,
@@ -111,8 +149,8 @@ pub(crate) enum NodeValue<State> {
     },
 }
 
-impl<State> NodeValue<State> {
-    pub(crate) fn draw(&self, state: &mut State) {
+impl<State: Scopable> NodeValue<State> {
+    pub(crate) fn draw(&mut self, state: &mut State) {
         match self {
             NodeValue::Draw(drawable) => drawable.draw(drawable.area, state),
             NodeValue::Padding { element, .. }
@@ -121,13 +159,17 @@ impl<State> NodeValue<State> {
                 element.draw(state);
             }
             NodeValue::Stack(elements) => {
-                elements.iter().for_each(|el| el.draw(state));
+                elements.iter_mut().for_each(|el| el.draw(state));
             }
             NodeValue::Column { elements, .. } | NodeValue::Row { elements, .. } => {
-                elements.iter().rev().for_each(|el| el.draw(state));
+                elements.iter_mut().rev().for_each(|el| el.draw(state));
             }
             NodeValue::Space => (),
-            NodeValue::Scope { scoped } => scoped.draw(state),
+            NodeValue::Scope {
+                scoped: ref mut subtree,
+            } => state.with_scoped(subtree, move |subtree, scoped_state| {
+                subtree.inner.draw(scoped_state)
+            }),
             NodeValue::Coupled {
                 element,
                 coupled,
@@ -298,7 +340,11 @@ impl<State> NodeValue<State> {
                 drawable.area.height = drawable.area.height.max(0.);
             }
             NodeValue::Space => (),
-            NodeValue::Scope { scoped } => scoped.layout(available_area, state),
+            NodeValue::Scope { scoped: subtree } => {
+                state.with_scoped(subtree, move |subtree, scoped_state| {
+                    subtree.layout(available_area, None, None, scoped_state)
+                })
+            }
             NodeValue::AreaReader { read } => {
                 *self = read(allocated[0], state).inner;
                 self.layout(allocated[0], None, None, state);
@@ -313,6 +359,29 @@ impl<State> NodeValue<State> {
         }
     }
 }
+
+// pub(crate) fn scope_wrapper<State: Scopable, T>(
+//     scoped: &mut Option<Subtree<State>>,
+//     state: &mut State,
+//     f: impl Fn(&mut State::Scoped, &mut Node<State::Scoped>) -> T,
+// ) -> T {
+// let scoped_taken = scoped.take().unwrap();
+// let mut wrapped = Node {
+//     inner: NodeValue::Scope {
+//         scoped: Some(scoped_taken),
+//     },
+// };
+// let result = state.with_scoped(&mut wrapped, f);
+// if let NodeValue::Scope {
+//     scoped: Some(scoped_unwrapped),
+// } = wrapped.inner
+// {
+//     *scoped = Some(scoped_unwrapped);
+// } else {
+//     assert!(false);
+// }
+//     return result;
+// }
 
 impl Area {
     fn constrained(self, constraints: &SizeConstraints, x_align: XAlign, y_align: YAlign) -> Self {
@@ -358,7 +427,7 @@ pub(crate) enum Orientation {
 }
 
 #[allow(clippy::too_many_arguments)]
-pub(crate) fn layout_axis<State>(
+pub(crate) fn layout_axis<State: Scopable>(
     elements: &mut [NodeValue<State>],
     spacing: &f32,
     available_area: Area,
