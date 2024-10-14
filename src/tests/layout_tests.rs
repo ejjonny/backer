@@ -3,6 +3,7 @@ mod tests {
     use crate::layout::*;
     use crate::models::*;
     use crate::nodes::*;
+    use crate::traits::Scopable;
     use crate::Node;
     #[test]
     fn test_seq_align_on_axis() {
@@ -603,14 +604,8 @@ mod tests {
             b: B { test: true },
         };
 
-        // trait WithSubState<State> {
-        //     fn with_substate<F, R>(&mut self, f: F) -> R
-        //     where
-        //         F: FnOnce(&mut State) -> R;
-        // }
-
         impl Scopable<B> for A {
-            fn with_substate<F, R>(&mut self, f: F) -> R
+            fn scope<F, R>(&mut self, f: F) -> R
             where
                 F: FnOnce(&mut B) -> R,
             {
@@ -644,41 +639,6 @@ mod tests {
                         })
                     }
                 }),
-                // scope(
-                //     S {
-                //     s: Box::new(|state: &mut B| {
-                //         dbg!(&state);
-                //         if state.test {
-                //             draw(|area, b: &mut B| {
-                //                 assert_eq!(area, Area::new(0., 0., 100., 100.));
-                //                 b.test = false;
-                //             })
-                //         } else {
-                //             draw(|area, b: &mut B| {
-                //                 assert_eq!(area, Area::new(0., 0., 100., 100.));
-                //                 b.test = true;
-                //             })
-                //         }
-                //     }),
-                //     st: None,
-                // }),
-
-                // scope(
-                //     |a: &mut A| &mut a.b,
-                //     |b| {
-                //         if b.test {
-                //             draw(|area, b: &mut B| {
-                //                 assert_eq!(area, Area::new(0., 0., 100., 100.));
-                //                 b.test = false;
-                //             })
-                //         } else {
-                //             draw(|area, b: &mut B| {
-                //                 assert_eq!(area, Area::new(0., 0., 100., 100.));
-                //                 b.test = true;
-                //             })
-                //         }
-                //     },
-                // ),
             ])
         }
         Layout::new(layout).draw(Area::new(0., 0., 100., 100.), &mut a);

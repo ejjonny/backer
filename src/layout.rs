@@ -2,7 +2,7 @@ use crate::{
     constraints::{Constraint, SizeConstraints},
     drawable::Drawable,
     models::*,
-    nodes::NodeTrait,
+    traits::NodeTrait,
     Node,
 };
 use core::f32;

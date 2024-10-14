@@ -1,4 +1,6 @@
-use crate::{constraints::SizeConstraints, drawable::Drawable, layout::NodeValue, models::*, Node};
+use crate::{
+    drawable::Drawable, layout::NodeValue, models::*, subtree::Subtree, traits::Scopable, Node,
+};
 use std::{marker::PhantomData, rc::Rc};
 
 /// Defines a vertical sequence of elements
@@ -123,79 +125,7 @@ pub fn area_reader<U>(func: impl Fn(Area, &mut U) -> Node<U> + 'static) -> Node<
     }
 }
 
-pub trait NodeTrait<State> {
-    fn draw(&mut self, state: &mut State);
-    fn layout(&mut self, available_area: Area, state: &mut State);
-    fn constraints(&mut self, area: Area, state: &mut State) -> SizeConstraints;
-}
-
-// pub(crate) trait Scoper<State>: Debug {
-//     fn t<T>(&self, state: &mut State, func: impl Fn(&mut State) -> T) -> T {
-//         func(state)
-//     }
-// }
-
-// impl<State> NodeTrait<State> for dyn Scoper<State> {
-//     fn draw(&self, state: &mut State) {
-//         todo!()
-//     }
-//     fn layout(&mut self, available_area: Area, state: &mut State) {
-//         todo!()
-//     }
-//     fn constraints(&mut self, area: Area, state: &mut State) -> SizeConstraints {
-//         todo!()
-//     }
-// }
-
-// pub(crate) struct Scoper<State> {
-//     t: Box<dyn Fn(&mut State, impl Fn(&mut State) -> T)>,
-// }
-
-// pub(crate) trait GenericFn<T> {
-//     fn call(&self) -> T;
-// }
-
-pub trait Scopable<State> {
-    fn with_substate<F, R>(&mut self, f: F) -> R
-    where
-        F: FnOnce(&mut State) -> R;
-}
-
-struct S<SubState, State: Scopable<SubState>> {
-    s: Box<dyn Fn(&mut SubState) -> Node<SubState>>,
-    st: Option<Node<SubState>>,
-    p: PhantomData<State>,
-}
-
-impl<SubState, State: Scopable<SubState>> NodeTrait<State> for S<SubState, State> {
-    fn draw(&mut self, state: &mut State) {
-        state.with_substate(|s| {
-            let mut subtree = (self.s)(s);
-            subtree.inner.draw(s);
-            self.st = Some(subtree);
-        })
-    }
-    fn layout(&mut self, available_area: Area, state: &mut State) {
-        state.with_substate(|s| {
-            let mut subtree = (self.s)(s);
-            subtree.inner.layout(available_area, None, None, s);
-            self.st = Some(subtree);
-        })
-    }
-    fn constraints(
-        &mut self,
-        area: Area,
-        state: &mut State,
-    ) -> crate::constraints::SizeConstraints {
-        state.with_substate(|s| {
-            let mut subtree = (self.s)(s);
-            let result = subtree.inner.constraints(area, s);
-            self.st = Some(subtree);
-            return result;
-        })
-    }
-}
-
+/// Narrows or scopes the mutable state available to the children of this node
 pub fn scope<U, V>(node: impl Fn(&mut V) -> Node<V> + 'static) -> Node<U>
 where
     V: 'static,
@@ -203,59 +133,14 @@ where
 {
     Node {
         inner: NodeValue::Scope {
-            scoped: Box::new(S {
-                s: Box::new(node),
-                st: None,
-                p: PhantomData,
+            scoped: Box::new(Subtree {
+                subtree_fn: Box::new(node),
+                stored_tree: None,
+                _p: PhantomData,
             }),
         },
     }
 }
-
-/// Narrows or scopes the mutable state available to the children of this node
-// pub fn scope<U: 'static, V: 'static>(scope: fn(&mut U) -> &mut V, node: Node<V>) -> Node<U> {
-// Node {
-//     inner: match node.inner {
-//         NodeValue::Empty => empty().inner,
-//         _ => NodeValue::<U>::Scope {
-//             scoped: AnyNode {
-//                 inner: Box::new(node),
-//                 clone: |any| {
-//                     Box::new(
-//                         any.downcast_ref::<Node<V>>()
-//                             .expect("Invalid downcast")
-//                             .clone(),
-//                     ) as Box<dyn Any>
-//                 },
-//                 layout: Rc::new(move |any, area, state| {
-//                     any.downcast_mut::<Node<V>>()
-//                         .expect("Invalid downcast")
-//                         .inner
-//                         .layout(area, None, None, scope(state))
-//                 }),
-//                 draw: Rc::new(move |any, state| {
-//                     any.downcast_ref::<Node<V>>()
-//                         .expect("Invalid downcast")
-//                         .inner
-//                         .draw(scope(state))
-//                 }),
-//                 constraints: Rc::new(move |any, area, state| {
-//                     let scoped = any
-//                         .downcast_mut::<Node<V>>()
-//                         .expect("Invalid downcast")
-//                         .inner
-//                         .constraints(area, scope(state));
-//                     SizeConstraints {
-//                         width: scoped.width,
-//                         height: scoped.height,
-//                         aspect: scoped.aspect,
-//                     }
-//                 }),
-//             },
-//         },
-//     },
-// }
-// }
 
 fn ungroup<U>(elements: Vec<Node<U>>) -> Vec<NodeValue<U>> {
     elements
