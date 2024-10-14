@@ -1,7 +1,7 @@
 use crate::{layout::NodeValue, models::*, Node};
 use std::{ops::RangeBounds, rc::Rc};
 
-impl<U> Node<U> {
+impl<U: Copy> Node<U> {
     /// Adds padding to the node along the leading edge
     pub fn pad_leading(self, amount: f32) -> Node<U> {
         Node {
@@ -281,7 +281,7 @@ impl<U> Node<U> {
     ///
     /// **This is primarily for UI elements such as text** where node height must depend on available width & scaling is
     /// not a simple option.
-    pub fn dynamic_height(self, f: impl Fn(f32, &mut U) -> f32 + 'static) -> Self {
+    pub fn dynamic_height(self, f: impl Fn(f32, U) -> f32 + 'static) -> Self {
         self.wrap_or_update_explicit(Size {
             dynamic_height: Some(Rc::new(f)),
             ..Default::default()
@@ -293,7 +293,7 @@ impl<U> Node<U> {
     ///
     /// **This is primarily for UI elements such as text** where node width must depend on available height & scaling is
     /// not a simple option.
-    pub fn dynamic_width(self, f: impl Fn(f32, &mut U) -> f32 + 'static) -> Self {
+    pub fn dynamic_width(self, f: impl Fn(f32, U) -> f32 + 'static) -> Self {
         self.wrap_or_update_explicit(Size {
             dynamic_width: Some(Rc::new(f)),
             ..Default::default()
@@ -359,7 +359,7 @@ mod tests {
             .width(10.)
             .width_range(5.0..)
             .inner
-            .constraints(Area::zero(), &mut ());
+            .constraints(Area::zero(), ());
         assert!(c.width.upper.is_none());
         assert_eq!(c.width.lower.unwrap(), 5.);
     }

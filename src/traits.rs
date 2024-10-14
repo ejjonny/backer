@@ -26,13 +26,13 @@ pub trait Scopable<State> {
     ///     }
     /// }
     /// ```
-    fn scope<F, Result>(&mut self, f: F) -> Result
+    fn scope<F, Result>(state: Self, f: F) -> Result
     where
-        F: FnOnce(&mut State) -> Result;
+        F: FnOnce(State) -> Result;
 }
 
-pub(crate) trait NodeTrait<State> {
-    fn draw(&mut self, state: &mut State);
-    fn layout(&mut self, available_area: Area, state: &mut State);
-    fn constraints(&mut self, area: Area, state: &mut State) -> SizeConstraints;
+pub(crate) trait NodeTrait<State: Copy> {
+    fn draw(&mut self, state: State);
+    fn layout(&mut self, available_area: Area, state: State);
+    fn constraints(&mut self, area: Area, state: State) -> SizeConstraints;
 }

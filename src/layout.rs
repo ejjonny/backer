@@ -45,29 +45,29 @@ struct MyState {}
 ```
  */
 #[derive(Debug, Clone)]
-pub struct Layout<State> {
-    tree: fn(&mut State) -> Node<State>,
+pub struct Layout<State: Copy> {
+    tree: fn(State) -> Node<State>,
 }
 
-impl<State> Layout<State> {
+impl<State: Copy> Layout<State> {
     /// Creates a new [`Layout<State>`].
-    pub fn new(tree: fn(&mut State) -> Node<State>) -> Self {
+    pub fn new(tree: fn(State) -> Node<State>) -> Self {
         Self { tree }
     }
 }
 
-impl<State> Layout<State> {
+impl<State: Copy> Layout<State> {
     /// Calculates layout and draws all draw nodes in the tree
-    pub fn draw(&self, area: Area, state: &mut State) {
+    pub fn draw(&self, area: Area, state: State) {
         let mut layout = (self.tree)(state);
         layout.inner.layout(area, None, None, state);
         layout.inner.draw(state);
     }
 }
 
-type AreaReaderFn<State> = Rc<dyn Fn(Area, &mut State) -> Node<State>>;
+type AreaReaderFn<State> = Rc<dyn Fn(Area, State) -> Node<State>>;
 
-pub(crate) enum NodeValue<State> {
+pub(crate) enum NodeValue<State: Copy> {
     Padding {
         amounts: Padding,
         element: Box<NodeValue<State>>,
@@ -111,8 +111,8 @@ pub(crate) enum NodeValue<State> {
     },
 }
 
-impl<State> NodeValue<State> {
-    pub(crate) fn draw(&mut self, state: &mut State) {
+impl<State: Copy> NodeValue<State> {
+    pub(crate) fn draw(&mut self, state: State) {
         match self {
             NodeValue::Draw(drawable) => drawable.draw(drawable.area, state),
             NodeValue::Padding { element, .. }
@@ -170,7 +170,7 @@ impl<State> NodeValue<State> {
         available_area: Area,
         contextual_x_align: Option<XAlign>,
         contextual_y_align: Option<YAlign>,
-        state: &mut State,
+        state: State,
     ) -> Vec<Area> {
         match self {
             NodeValue::Padding { amounts, .. } => vec![Area {
@@ -253,7 +253,7 @@ impl<State> NodeValue<State> {
         available_area: Area,
         contextual_x_align: Option<XAlign>,
         contextual_y_align: Option<YAlign>,
-        state: &mut State,
+        state: State,
     ) {
         let contextual_aligns = self.contextual_aligns();
         let allocated = self.allocate_area(
@@ -358,14 +358,14 @@ pub(crate) enum Orientation {
 }
 
 #[allow(clippy::too_many_arguments)]
-pub(crate) fn layout_axis<State>(
+pub(crate) fn layout_axis<State: Copy>(
     elements: &mut [NodeValue<State>],
     spacing: &f32,
     available_area: Area,
     orientation: Orientation,
     x_align: XAlign,
     y_align: YAlign,
-    state: &mut State,
+    state: State,
     check: bool,
 ) -> Vec<Area> {
     let sizes: Vec<SizeConstraints> = elements

@@ -27,12 +27,8 @@ impl Constraint {
     }
 }
 
-impl<State> NodeValue<State> {
-    pub(crate) fn constraints(
-        &mut self,
-        available_area: Area,
-        state: &mut State,
-    ) -> SizeConstraints {
+impl<State: Copy> NodeValue<State> {
+    pub(crate) fn constraints(&mut self, available_area: Area, state: State) -> SizeConstraints {
         let contextual_aligns = self.contextual_aligns();
         let allocations = self.allocate_area(
             available_area,
@@ -249,7 +245,7 @@ impl Constraint {
 }
 
 impl SizeConstraints {
-    pub(crate) fn from_size<U>(value: Size<U>, area: Area, state: &mut U) -> Self {
+    pub(crate) fn from_size<U: Copy>(value: Size<U>, area: Area, state: U) -> Self {
         let mut initial = SizeConstraints {
             width: if value.width_min.is_some() || value.width_max.is_some() {
                 Constraint {

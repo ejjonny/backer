@@ -20,7 +20,7 @@ mod tests {
             ])
             .align(Align::Leading)
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
         Layout::new(|()| {
             row(vec![
                 draw(|a, _| {
@@ -34,7 +34,7 @@ mod tests {
             ])
             .align(Align::CenterX)
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
         Layout::new(|()| {
             row(vec![
                 draw(|a, _| {
@@ -48,7 +48,7 @@ mod tests {
             ])
             .align(Align::Trailing)
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
         Layout::new(|()| {
             column(vec![
                 draw(|a, _| {
@@ -62,7 +62,7 @@ mod tests {
             ])
             .align(Align::Top)
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
         Layout::new(|()| {
             column(vec![
                 draw(|a, _| {
@@ -76,7 +76,7 @@ mod tests {
             ])
             .align(Align::CenterY)
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
         Layout::new(|()| {
             column(vec![
                 draw(|a, _| {
@@ -90,7 +90,7 @@ mod tests {
             ])
             .align(Align::Bottom)
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
     }
     #[test]
     fn test_seq_align_off_axis() {
@@ -107,7 +107,7 @@ mod tests {
             ])
             .align(Align::Leading)
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
         Layout::new(|()| {
             column(vec![
                 draw(|a, _| {
@@ -121,7 +121,7 @@ mod tests {
             ])
             .align(Align::CenterX)
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
         Layout::new(|()| {
             column(vec![
                 draw(|a, _| {
@@ -135,7 +135,7 @@ mod tests {
             ])
             .align(Align::Trailing)
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
         Layout::new(|()| {
             row(vec![
                 draw(|a, _| {
@@ -149,7 +149,7 @@ mod tests {
             ])
             .align(Align::Top)
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
         Layout::new(|()| {
             row(vec![
                 draw(|a, _| {
@@ -163,7 +163,7 @@ mod tests {
             ])
             .align(Align::CenterY)
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
         Layout::new(|()| {
             row(vec![
                 draw(|a, _| {
@@ -177,7 +177,7 @@ mod tests {
             ])
             .align(Align::Bottom)
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
     }
     #[test]
     fn test_seq_align_on_axis_nested_seq() {
@@ -194,7 +194,7 @@ mod tests {
             ])
             .align(Align::Leading)
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
         Layout::new(|()| {
             row(vec![
                 row(vec![draw(|a, _| {
@@ -208,7 +208,7 @@ mod tests {
             ])
             .align(Align::CenterX)
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
         Layout::new(|()| {
             row(vec![
                 row(vec![draw(|a, _| {
@@ -222,7 +222,7 @@ mod tests {
             ])
             .align(Align::Trailing)
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
         Layout::new(|()| {
             column(vec![
                 row(vec![draw(|a, _| {
@@ -236,7 +236,7 @@ mod tests {
             ])
             .align(Align::Top)
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
         Layout::new(|()| {
             column(vec![
                 row(vec![draw(|a, _| {
@@ -250,7 +250,7 @@ mod tests {
             ])
             .align(Align::CenterY)
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
         Layout::new(|()| {
             column(vec![
                 row(vec![draw(|a, _| {
@@ -264,7 +264,7 @@ mod tests {
             ])
             .align(Align::Bottom)
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
     }
     #[test]
     fn test_seq_align_off_axis_nested_seq() {
@@ -281,7 +281,7 @@ mod tests {
             ])
             .align(Align::Leading)
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
         Layout::new(|()| {
             column(vec![
                 row(vec![draw(|a, _| {
@@ -295,7 +295,7 @@ mod tests {
             ])
             .align(Align::CenterX)
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
         Layout::new(|()| {
             column(vec![
                 row(vec![draw(|a, _| {
@@ -309,7 +309,7 @@ mod tests {
             ])
             .align(Align::Trailing)
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
         Layout::new(|()| {
             row(vec![
                 row(vec![draw(|a, _| {
@@ -323,7 +323,7 @@ mod tests {
             ])
             .align(Align::Top)
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
         Layout::new(|()| {
             row(vec![
                 row(vec![draw(|a, _| {
@@ -337,7 +337,7 @@ mod tests {
             ])
             .align(Align::CenterY)
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
         Layout::new(|()| {
             row(vec![
                 row(vec![draw(|a, _| {
@@ -351,7 +351,7 @@ mod tests {
             ])
             .align(Align::Bottom)
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
     }
     #[test]
     fn test_aspect_ratio() {
@@ -361,14 +361,14 @@ mod tests {
             })
             .aspect(1.)
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
         Layout::new(|()| {
             draw(|a, _| {
                 assert_eq!(a, Area::new(25., 0., 50., 100.));
             })
             .aspect(0.5)
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
         Layout::new(|()| {
             draw(|a, _| {
                 assert_eq!(a, Area::new(0., 0., 50., 100.));
@@ -376,7 +376,7 @@ mod tests {
             .aspect(0.5)
             .align(Align::Leading)
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
         Layout::new(|()| {
             draw(|a, _| {
                 assert_eq!(a, Area::new(50., 0., 50., 100.));
@@ -384,7 +384,7 @@ mod tests {
             .aspect(0.5)
             .align(Align::Trailing)
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
 
         Layout::new(|()| {
             draw(|a, _| {
@@ -392,7 +392,7 @@ mod tests {
             })
             .aspect(2.)
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
         Layout::new(|()| {
             draw(|a, _| {
                 assert_eq!(a, Area::new(0., 0., 100., 50.));
@@ -400,7 +400,7 @@ mod tests {
             .aspect(2.)
             .align(Align::Top)
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
         Layout::new(|()| {
             draw(|a, _| {
                 assert_eq!(a, Area::new(0., 50., 100., 50.));
@@ -408,7 +408,7 @@ mod tests {
             .aspect(2.)
             .align(Align::Bottom)
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
     }
     #[test]
     fn test_aspect_ratio_in_seq() {
@@ -418,14 +418,14 @@ mod tests {
             })
             .aspect(1.)])
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
         Layout::new(|()| {
             stack(vec![draw(|a, _| {
                 assert_eq!(a, Area::new(25., 0., 50., 100.));
             })
             .aspect(0.5)])
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
         Layout::new(|()| {
             column(vec![draw(|a, _| {
                 assert_eq!(a, Area::new(0., -50., 100., 200.));
@@ -433,7 +433,7 @@ mod tests {
             .aspect(0.5)
             .align(Align::Leading)])
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
         Layout::new(|()| {
             stack(vec![draw(|a, _| {
                 assert_eq!(a, Area::new(50., 0., 50., 100.));
@@ -441,7 +441,7 @@ mod tests {
             .aspect(0.5)
             .align(Align::Trailing)])
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
     }
     #[test]
     fn test_pad() {
@@ -451,49 +451,49 @@ mod tests {
             })
             .pad(10.)
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
         Layout::new(|()| {
             draw(|a, _| {
                 assert_eq!(a, Area::new(10., 0., 80., 100.));
             })
             .pad_x(10.)
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
         Layout::new(|()| {
             draw(|a, _| {
                 assert_eq!(a, Area::new(0., 10., 100., 80.));
             })
             .pad_y(10.)
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
         Layout::new(|()| {
             draw(|a, _| {
                 assert_eq!(a, Area::new(10., 0., 90., 100.));
             })
             .pad_leading(10.)
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
         Layout::new(|()| {
             draw(|a, _| {
                 assert_eq!(a, Area::new(0., 0., 90., 100.));
             })
             .pad_trailing(10.)
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
         Layout::new(|()| {
             draw(|a, _| {
                 assert_eq!(a, Area::new(0., 10., 100., 90.));
             })
             .pad_top(10.)
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
         Layout::new(|()| {
             draw(|a, _| {
                 assert_eq!(a, Area::new(0., 0., 100., 90.));
             })
             .pad_bottom(10.)
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
     }
     #[test]
     fn test_aspect_ratio_in_pad() {
@@ -503,7 +503,7 @@ mod tests {
             })
             .aspect(0.5)
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
         Layout::new(|()| {
             stack(vec![draw(|a, _| {
                 // 0.5 aspect ratio
@@ -517,7 +517,7 @@ mod tests {
             .aspect(0.5)
             .pad(10.)])
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
         Layout::new(|()| {
             stack(vec![draw(|a, _| {
                 // 0.5 aspect ratio
@@ -530,7 +530,7 @@ mod tests {
             .pad(10.)
             .aspect(0.5)])
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
     }
     #[test]
     fn test_space_expansion() {
@@ -552,7 +552,7 @@ mod tests {
                 .width(1.),
             ])
         })
-        .draw(Area::new(0., 0., 1000., 100.), &mut ());
+        .draw(Area::new(0., 0., 1000., 100.), ());
     }
     #[test]
     fn test_explicit_aspect() {
@@ -571,7 +571,7 @@ mod tests {
                 ],
             )
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
     }
     #[test]
     fn test_explicit_with_padding() {
@@ -587,65 +587,158 @@ mod tests {
                 }),
             ])
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
     }
-    #[test]
-    fn test_scope() {
-        struct A {
-            test: bool,
-            b: B,
-        }
-        #[derive(Debug)]
+    // #[test]
+    // fn test_scope() {
+    //     struct A {
+    //         test: bool,
+    //         b: B,
+    //     }
+    //     #[derive(Debug)]
+    //     struct B {
+    //         test: bool,
+    //     }
+    //     let mut a = A {
+    //         test: true,
+    //         b: B { test: true },
+    //     };
+
+    //     impl Scopable<B> for A {
+    //         fn scope<F, R>(&mut self, f: F) -> R
+    //         where
+    //             F: FnOnce(&mut B) -> R,
+    //         {
+    //             f(&mut self.b)
+    //         }
+    //     }
+
+    //     fn layout(a: &mut A) -> Node<A> {
+    //         stack(vec![
+    //             if a.test {
+    //                 draw(|area, a: &mut A| {
+    //                     assert_eq!(area, Area::new(0., 0., 100., 100.));
+    //                     a.test = false;
+    //                 })
+    //             } else {
+    //                 draw(|area, a: &mut A| {
+    //                     assert_eq!(area, Area::new(0., 0., 100., 100.));
+    //                     a.test = true;
+    //                 })
+    //             },
+    //             scope(|state: &mut B| {
+    //                 if state.test {
+    //                     draw(|area, b: &mut B| {
+    //                         assert_eq!(area, Area::new(0., 0., 100., 100.));
+    //                         b.test = false;
+    //                     })
+    //                 } else {
+    //                     draw(|area, b: &mut B| {
+    //                         assert_eq!(area, Area::new(0., 0., 100., 100.));
+    //                         b.test = true;
+    //                     })
+    //                 }
+    //             }),
+    //         ])
+    //     }
+    //     Layout::new(layout).draw(Area::new(0., 0., 100., 100.), &mut a);
+    //     assert!(!a.test);
+    //     assert!(!a.b.test);
+    //     Layout::new(layout).draw(Area::new(0., 0., 100., 100.), &mut a);
+    //     assert!(a.test);
+    //     assert!(a.b.test);
+    // }
+
+    fn test_partial_scope_variadic() {
+        struct A;
+        struct C;
+        #[allow(dead_code)]
         struct B {
-            test: bool,
+            c: C,
         }
-        let mut a = A {
-            test: true,
-            b: B { test: true },
-        };
-
-        impl Scopable<B> for A {
-            fn scope<F, R>(&mut self, f: F) -> R
-            where
-                F: FnOnce(&mut B) -> R,
-            {
-                f(&mut self.b)
-            }
+        struct D<'a> {
+            ui: &'a mut Ui,
+            state: B,
         }
+        struct DS<'a> {
+            ui: &'a mut Ui,
+            state: C,
+        }
+        struct Ui;
+        type TupleA<'a> = (&'a mut B, &'a mut B);
+        type TupleB<'a> = (&'a mut C, &'a mut C);
 
-        fn layout(a: &mut A) -> Node<A> {
+        // impl<'a> Scopable<TupleB<'a>> for TupleA<'a> {
+        //     fn scope<F, Result>(state: &Self, f: F) -> Result
+        //     where
+        //         F: FnOnce(&TupleB<'a>) -> Result,
+        //     {
+        //         f(&(&mut state.0.c, &mut state.1.c))
+        //     }
+        // }
+
+        // impl<'a> Scopable<DS<'a>> for D<'a> {
+        //     fn scope<F, Result>(&self, f: F) -> Result
+        //     where
+        //         F: FnOnce(&DS<'a>) -> Result,
+        //     {
+        // let s = &mut DS {
+        //     ui: &mut self.ui,
+        //     state: C,
+        // };
+        // f(s)
+        // todo!()
+        // let y = &mut self.0;
+        // f(y)
+        //     }
+        // }
+
+        // impl<'f, 'a, 'b> Scopable<(&'a mut C, &'b mut C)> for TupleA<'f> {
+        //     fn scope<'x, F, Result>(&'x mut self, f: F) -> Result
+        //     where
+        //         F: for<'x> FnOnce(&'x mut (&'a mut C, &'b mut C)) -> Result,
+        //         'b: 'a,
+        //         'f: 'a,
+        //         'x: 'a,
+        //     {
+        //         let z = &mut self.0.c;
+        //         let y = &mut self.1.c;
+        //         f(&mut (z, y))
+        //     }
+        // }
+
+        // impl<'a> Scopable<A> for TupleA<'a> {
+        //     fn scope<F, Result>(&mut self, f: F) -> Result
+        //     where
+        //         F: FnOnce(&mut A) -> Result,
+        //     {
+        //         let y = &mut self.0;
+        //         f(y)
+        //     }
+        // }
+
+        // impl<'a, 'b> Scopable<TupleB<'b>> for TupleA<'a>
+        // where
+        //     'a: 'b,
+        // {
+        //     fn scope<F, Result>(&mut self, f: F) -> Result
+        //     where
+        //         F: for<'x> FnOnce(&mut TupleB<'b>) -> Result,
+        //     {
+        //         let y = &mut self.1.c;
+        //         f(&mut (self.0, y))
+        //     }
+        // }
+
+        fn layout<'a>(_: &mut TupleA<'_>) -> Node<&'a TupleA<'a>> {
             stack(vec![
-                if a.test {
-                    draw(|area, a: &mut A| {
-                        assert_eq!(area, Area::new(0., 0., 100., 100.));
-                        a.test = false;
-                    })
-                } else {
-                    draw(|area, a: &mut A| {
-                        assert_eq!(area, Area::new(0., 0., 100., 100.));
-                        a.test = true;
-                    })
-                },
-                scope(|state: &mut B| {
-                    if state.test {
-                        draw(|area, b: &mut B| {
-                            assert_eq!(area, Area::new(0., 0., 100., 100.));
-                            b.test = false;
-                        })
-                    } else {
-                        draw(|area, b: &mut B| {
-                            assert_eq!(area, Area::new(0., 0., 100., 100.));
-                            b.test = true;
-                        })
-                    }
+                draw(|area, _: &TupleA| {
+                    assert_eq!(area, Area::new(0., 0., 100., 100.));
                 }),
+                // scope(|t: &mut TupleA| &mut (&mut *t.0, &mut *t.1), |_| space()),
             ])
         }
-        Layout::new(layout).draw(Area::new(0., 0., 100., 100.), &mut a);
-        assert!(!a.test);
-        assert!(!a.b.test);
-        Layout::new(layout).draw(Area::new(0., 0., 100., 100.), &mut a);
-        assert!(a.test);
-        assert!(a.b.test);
+        // let mut tuple: TupleA = (&mut A, &mut B { c: C });
+        // Layout::new(layout).draw(Area::new(0., 0., 100., 100.), &mut tuple);
     }
 }

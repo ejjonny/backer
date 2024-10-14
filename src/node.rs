@@ -2,7 +2,7 @@ use crate::layout::NodeValue;
 
 /// A layout tree node. Use methods in [`crate::nodes`] to create nodes.
 #[derive(Debug)]
-pub struct Node<State> {
+pub struct Node<State: Copy> {
     pub(crate) inner: NodeValue<State>,
 }
 

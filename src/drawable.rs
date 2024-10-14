@@ -1,7 +1,7 @@
 use crate::models::Area;
 use std::{fmt, rc::Rc};
 
-type DrawFn<State> = Rc<dyn Fn(Area, &'_ mut State)>;
+type DrawFn<State> = Rc<dyn Fn(Area, State)>;
 
 #[derive(Clone)]
 pub(crate) struct Drawable<State> {
@@ -9,8 +9,8 @@ pub(crate) struct Drawable<State> {
     pub(crate) draw: DrawFn<State>,
 }
 
-impl<State> Drawable<State> {
-    pub(crate) fn draw(&self, area: Area, state: &mut State) {
+impl<State: Copy> Drawable<State> {
+    pub(crate) fn draw(&self, area: Area, state: State) {
         if area.width > 0. && area.height > 0. {
             (self.draw)(area, state);
         }

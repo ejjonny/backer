@@ -16,7 +16,7 @@ mod tests {
                 }),
             ])
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
     }
     #[test]
     fn test_nested() {
@@ -32,7 +32,7 @@ mod tests {
                 .height(10.),
             ])
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
         Layout::new(|()| {
             column(vec![
                 row(vec![draw(|a, _| {
@@ -45,6 +45,6 @@ mod tests {
                 .height(60.),
             ])
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
     }
 }

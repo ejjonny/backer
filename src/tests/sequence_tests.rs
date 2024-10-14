@@ -17,7 +17,7 @@ mod tests {
                 }),
             ])
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
     }
     #[test]
     fn test_column_constrained_1() {
@@ -32,7 +32,7 @@ mod tests {
                 }),
             ])
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
         Layout::new(|()| {
             column(vec![
                 draw(|a, _| {
@@ -44,7 +44,7 @@ mod tests {
                 }),
             ])
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
     }
     #[test]
     fn test_column_constrained_2() {
@@ -59,7 +59,7 @@ mod tests {
                 .height(10.),
             ])
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
         Layout::new(|()| {
             column(vec![
                 draw(|a, _| {
@@ -71,7 +71,7 @@ mod tests {
                 .height(10.),
             ])
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
     }
     #[test]
     fn test_row_basic() {
@@ -85,7 +85,7 @@ mod tests {
                 }),
             ])
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
     }
     #[test]
     fn test_row_constrained_1() {
@@ -101,7 +101,7 @@ mod tests {
                 }),
             ])
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
         Layout::new(|()| {
             row(vec![
                 draw(|a, _| {
@@ -126,7 +126,7 @@ mod tests {
                 }),
             ])
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
     }
     #[test]
     fn test_row_constrained_2() {
@@ -154,7 +154,7 @@ mod tests {
                 .align(Align::Bottom),
             ])
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
         Layout::new(|()| {
             row(vec![
                 draw(|a, _| {
@@ -179,7 +179,7 @@ mod tests {
                 .align(Align::Bottom),
             ])
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
     }
     #[test]
     fn test_stack_basic() {
@@ -193,7 +193,7 @@ mod tests {
                 }),
             ])
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
     }
 
     #[test]
@@ -256,7 +256,7 @@ mod tests {
                 .align(Align::CenterCenter),
             ])
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
     }
     #[test]
     fn test_sequence_spacing() {
@@ -283,7 +283,7 @@ mod tests {
                 ],
             )
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
         Layout::new(|()| {
             column_spaced(
                 10.,
@@ -307,7 +307,7 @@ mod tests {
                 ],
             )
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
     }
     #[test]
     fn test_row_with_constrained_item() {
@@ -322,7 +322,7 @@ mod tests {
                 }),
             ])
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
     }
 
     #[test]
@@ -344,7 +344,7 @@ mod tests {
                 }),
             ])
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
     }
 
     #[test]
@@ -361,7 +361,7 @@ mod tests {
                 .height(50.),
             ])
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
     }
 
     #[test]
@@ -385,7 +385,7 @@ mod tests {
                 }),
             ])
         })
-        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        .draw(Area::new(0., 0., 100., 100.), ());
     }
 
     #[test]
@@ -393,7 +393,7 @@ mod tests {
         assert_eq!(
             row::<()>(vec![space(), space().height(30.)])
                 .inner
-                .constraints(Area::zero(), &mut ()),
+                .constraints(Area::zero(), ()),
             SizeConstraints {
                 width: Constraint::none(),
                 height: Constraint {
@@ -406,7 +406,7 @@ mod tests {
         assert_eq!(
             row::<()>(vec![space().height(40.), space().height(30.)])
                 .inner
-                .constraints(Area::zero(), &mut ()),
+                .constraints(Area::zero(), ()),
             SizeConstraints {
                 width: Constraint::none(),
                 height: Constraint {
@@ -419,7 +419,7 @@ mod tests {
         assert_eq!(
             column::<()>(vec![space(), space().width(10.)])
                 .inner
-                .constraints(Area::zero(), &mut ()),
+                .constraints(Area::zero(), ()),
             SizeConstraints {
                 width: Constraint {
                     lower: Some(10.),
@@ -432,7 +432,7 @@ mod tests {
         assert_eq!(
             column::<()>(vec![space().width(20.), space().width(10.)])
                 .inner
-                .constraints(Area::zero(), &mut ()),
+                .constraints(Area::zero(), ()),
             SizeConstraints {
                 width: Constraint {
                     lower: Some(20.),
@@ -445,7 +445,7 @@ mod tests {
         assert_eq!(
             stack::<()>(vec![space(), space().height(10.)])
                 .inner
-                .constraints(Area::zero(), &mut ()),
+                .constraints(Area::zero(), ()),
             SizeConstraints {
                 width: Constraint::none(),
                 height: Constraint {
@@ -458,7 +458,7 @@ mod tests {
         assert_eq!(
             stack::<()>(vec![space().height(20.), space().width(10.)])
                 .inner
-                .constraints(Area::zero(), &mut ()),
+                .constraints(Area::zero(), ()),
             SizeConstraints {
                 width: Constraint {
                     lower: Some(10.),
@@ -474,7 +474,7 @@ mod tests {
         assert_eq!(
             stack::<()>(vec![space().height(20.), space().height(10.)])
                 .inner
-                .constraints(Area::zero(), &mut ()),
+                .constraints(Area::zero(), ()),
             SizeConstraints {
                 width: Constraint {
                     lower: None,
@@ -490,7 +490,7 @@ mod tests {
         assert_eq!(
             stack::<()>(vec![space().width(20.), space().width(10.)])
                 .inner
-                .constraints(Area::zero(), &mut ()),
+                .constraints(Area::zero(), ()),
             SizeConstraints {
                 width: Constraint {
                     lower: Some(20.),
