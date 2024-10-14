@@ -1,3 +1,5 @@
+use std::borrow::Borrow;
+
 use crate::{constraints::SizeConstraints, models::Area};
 
 /// Implement `Scopable` to enable usage with [`Node::scope`]

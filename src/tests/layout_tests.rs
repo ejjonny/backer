@@ -1,5 +1,7 @@
 #[cfg(test)]
 mod tests {
+    use std::borrow::Borrow;
+
     use crate::layout::*;
     use crate::models::*;
     use crate::nodes::*;
@@ -667,88 +669,38 @@ mod tests {
         }
         struct Ui;
         type TupleA<'a> = (&'a mut B, &'a mut B);
-        type TupleB<'a> = (&'a mut C, &'a mut C);
+        type TupleB<'a> = (&'a mut B, &'a mut C);
 
-        impl<'a> Scopable<&'a TupleB<'a>> for TupleA<'a> {
+        impl<'alt, 'blt> Scopable<TupleB<'alt>> for &'alt mut TupleA<'alt>
+        where
+            'alt: 'blt,
+        {
             fn scope<F, Result>(state: Self, f: F) -> Result
             where
-                F: FnOnce(&'a TupleB<'a>) -> Result,
+                F: FnOnce(TupleB<'alt>) -> Result,
             {
-                let a = (&mut state.0.c, &mut state.1.c);
-                f(&a)
+                let n = &mut state.0;
+                let b = &mut state.1.c;
+                f((n, b))
             }
         }
 
-        // impl<'a> Scopable<TupleB<'a>> for TupleA<'a> {
-        //     fn scope<F, Result>(state: &Self, f: F) -> Result
-        //     where
-        //         F: FnOnce(&TupleB<'a>) -> Result,
-        //     {
-        //         f(&(&mut state.0.c, &mut state.1.c))
-        //     }
-        // }
-
-        // impl<'a> Scopable<DS<'a>> for D<'a> {
-        //     fn scope<F, Result>(&self, f: F) -> Result
-        //     where
-        //         F: FnOnce(&DS<'a>) -> Result,
-        //     {
-        // let s = &mut DS {
-        //     ui: &mut self.ui,
-        //     state: C,
-        // };
-        // f(s)
-        // todo!()
-        // let y = &mut self.0;
-        // f(y)
-        //     }
-        // }
-
-        // impl<'f, 'a, 'b> Scopable<(&'a mut C, &'b mut C)> for TupleA<'f> {
-        //     fn scope<'x, F, Result>(&'x mut self, f: F) -> Result
-        //     where
-        //         F: for<'x> FnOnce(&'x mut (&'a mut C, &'b mut C)) -> Result,
-        //         'b: 'a,
-        //         'f: 'a,
-        //         'x: 'a,
-        //     {
-        //         let z = &mut self.0.c;
-        //         let y = &mut self.1.c;
-        //         f(&mut (z, y))
-        //     }
-        // }
-
-        // impl<'a> Scopable<A> for TupleA<'a> {
-        //     fn scope<F, Result>(&mut self, f: F) -> Result
-        //     where
-        //         F: FnOnce(&mut A) -> Result,
-        //     {
-        //         let y = &mut self.0;
-        //         f(y)
-        //     }
-        // }
-
-        // impl<'a, 'b> Scopable<TupleB<'b>> for TupleA<'a>
-        // where
-        //     'a: 'b,
-        // {
-        //     fn scope<F, Result>(&mut self, f: F) -> Result
-        //     where
-        //         F: for<'x> FnOnce(&mut TupleB<'b>) -> Result,
-        //     {
-        //         let y = &mut self.1.c;
-        //         f(&mut (self.0, y))
-        //     }
-        // }
-
-        fn layout<'a>(_: &mut TupleA<'_>) -> Node<&'a TupleA<'a>> {
-            stack(vec![
-                draw(|area, _: &TupleA| {
-                    assert_eq!(area, Area::new(0., 0., 100., 100.));
-                }),
-                // scope(|t: &mut TupleA| &mut (&mut *t.0, &mut *t.1), |_| space()),
-            ])
+        test(&mut A);
+        fn test<T: Borrow<T>>(t: T) {
+            test_b(t.borrow());
+            test_b(t.borrow());
         }
+        fn test_b<T>(t: T) {}
+
+        // fn layout<'a>(_: &mut TupleA<'_>) -> Node<&mut 'a TupleA<'a>> {
+        //     stack(vec![
+        //         draw(|area, _: &mut TupleA| {
+        //             assert_eq!(area, Area::new(0., 0., 100., 100.));
+        //         }),
+        //         scope(|b| space()),
+        // scope(|t: &mut TupleA| &mut (&mut *t.0, &mut *t.1), |_| space()),
+        //     ])
+        // }
         // let mut tuple: TupleA = (&mut A, &mut B { c: C });
         // Layout::new(layout).draw(Area::new(0., 0., 100., 100.), &mut tuple);
     }
