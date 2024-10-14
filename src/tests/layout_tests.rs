@@ -3,6 +3,7 @@ mod tests {
     use crate::layout::*;
     use crate::models::*;
     use crate::nodes::*;
+    use crate::Node;
     #[test]
     fn test_seq_align_on_axis() {
         Layout::new(|()| {
@@ -586,5 +587,105 @@ mod tests {
             ])
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
+    }
+    #[test]
+    fn test_scope() {
+        struct A {
+            test: bool,
+            b: B,
+        }
+        #[derive(Debug)]
+        struct B {
+            test: bool,
+        }
+        let mut a = A {
+            test: true,
+            b: B { test: true },
+        };
+
+        // trait WithSubState<State> {
+        //     fn with_substate<F, R>(&mut self, f: F) -> R
+        //     where
+        //         F: FnOnce(&mut State) -> R;
+        // }
+
+        impl Scopable<B> for A {
+            fn with_substate<F, R>(&mut self, f: F) -> R
+            where
+                F: FnOnce(&mut B) -> R,
+            {
+                f(&mut self.b)
+            }
+        }
+
+        fn layout(a: &mut A) -> Node<A> {
+            stack(vec![
+                if a.test {
+                    draw(|area, a: &mut A| {
+                        assert_eq!(area, Area::new(0., 0., 100., 100.));
+                        a.test = false;
+                    })
+                } else {
+                    draw(|area, a: &mut A| {
+                        assert_eq!(area, Area::new(0., 0., 100., 100.));
+                        a.test = true;
+                    })
+                },
+                scope(|state: &mut B| {
+                    if state.test {
+                        draw(|area, b: &mut B| {
+                            assert_eq!(area, Area::new(0., 0., 100., 100.));
+                            b.test = false;
+                        })
+                    } else {
+                        draw(|area, b: &mut B| {
+                            assert_eq!(area, Area::new(0., 0., 100., 100.));
+                            b.test = true;
+                        })
+                    }
+                }),
+                // scope(
+                //     S {
+                //     s: Box::new(|state: &mut B| {
+                //         dbg!(&state);
+                //         if state.test {
+                //             draw(|area, b: &mut B| {
+                //                 assert_eq!(area, Area::new(0., 0., 100., 100.));
+                //                 b.test = false;
+                //             })
+                //         } else {
+                //             draw(|area, b: &mut B| {
+                //                 assert_eq!(area, Area::new(0., 0., 100., 100.));
+                //                 b.test = true;
+                //             })
+                //         }
+                //     }),
+                //     st: None,
+                // }),
+
+                // scope(
+                //     |a: &mut A| &mut a.b,
+                //     |b| {
+                //         if b.test {
+                //             draw(|area, b: &mut B| {
+                //                 assert_eq!(area, Area::new(0., 0., 100., 100.));
+                //                 b.test = false;
+                //             })
+                //         } else {
+                //             draw(|area, b: &mut B| {
+                //                 assert_eq!(area, Area::new(0., 0., 100., 100.));
+                //                 b.test = true;
+                //             })
+                //         }
+                //     },
+                // ),
+            ])
+        }
+        Layout::new(layout).draw(Area::new(0., 0., 100., 100.), &mut a);
+        assert!(!a.test);
+        assert!(!a.b.test);
+        Layout::new(layout).draw(Area::new(0., 0., 100., 100.), &mut a);
+        assert!(a.test);
+        assert!(a.b.test);
     }
 }

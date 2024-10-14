@@ -1,8 +1,8 @@
 use crate::{
-    anynode::AnyNode,
     constraints::{Constraint, SizeConstraints},
     drawable::Drawable,
     models::*,
+    nodes::NodeTrait,
     Node,
 };
 use core::f32;
@@ -99,7 +99,7 @@ pub(crate) enum NodeValue<State> {
     Empty,
     Space,
     Scope {
-        scoped: AnyNode<State>,
+        scoped: Box<dyn NodeTrait<State>>,
     },
     AreaReader {
         read: AreaReaderFn<State>,
@@ -112,7 +112,7 @@ pub(crate) enum NodeValue<State> {
 }
 
 impl<State> NodeValue<State> {
-    pub(crate) fn draw(&self, state: &mut State) {
+    pub(crate) fn draw(&mut self, state: &mut State) {
         match self {
             NodeValue::Draw(drawable) => drawable.draw(drawable.area, state),
             NodeValue::Padding { element, .. }
@@ -121,10 +121,10 @@ impl<State> NodeValue<State> {
                 element.draw(state);
             }
             NodeValue::Stack(elements) => {
-                elements.iter().for_each(|el| el.draw(state));
+                elements.iter_mut().for_each(|el| el.draw(state));
             }
             NodeValue::Column { elements, .. } | NodeValue::Row { elements, .. } => {
-                elements.iter().rev().for_each(|el| el.draw(state));
+                elements.iter_mut().rev().for_each(|el| el.draw(state));
             }
             NodeValue::Space => (),
             NodeValue::Scope { scoped } => scoped.draw(state),

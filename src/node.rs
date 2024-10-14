@@ -6,10 +6,10 @@ pub struct Node<State> {
     pub(crate) inner: NodeValue<State>,
 }
 
-impl<State> Clone for Node<State> {
-    fn clone(&self) -> Self {
-        Node {
-            inner: self.inner.clone(),
-        }
-    }
-}
+// impl<State> Clone for Node<State> {
+//     fn clone(&self) -> Self {
+//         Node {
+//             inner: self.inner.clone(),
+//         }
+//     }
+// }
