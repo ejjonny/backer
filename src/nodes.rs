@@ -126,10 +126,10 @@ pub fn area_reader<U: Copy>(func: impl Fn(Area, U) -> Node<U> + 'static) -> Node
 }
 
 /// Narrows or scopes the mutable state available to the children of this node
-pub fn scope<U: Copy, V: Copy>(node: impl Fn(V) -> Node<V> + 'static) -> Node<U>
+pub fn scope<U, V>(node: impl Fn(V) -> Node<V> + 'static) -> Node<U>
 where
-    V: 'static,
-    U: Scopable<V> + 'static,
+    V: Copy + 'static,
+    U: Copy + Scopable<V> + 'static,
 {
     Node {
         inner: NodeValue::Scope {

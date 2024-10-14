@@ -649,6 +649,7 @@ mod tests {
     //     assert!(a.b.test);
     // }
 
+    #[test]
     fn test_partial_scope_variadic() {
         struct A;
         struct C;
@@ -667,6 +668,16 @@ mod tests {
         struct Ui;
         type TupleA<'a> = (&'a mut B, &'a mut B);
         type TupleB<'a> = (&'a mut C, &'a mut C);
+
+        impl<'a> Scopable<&'a TupleB<'a>> for TupleA<'a> {
+            fn scope<F, Result>(state: Self, f: F) -> Result
+            where
+                F: FnOnce(&'a TupleB<'a>) -> Result,
+            {
+                let a = (&mut state.0.c, &mut state.1.c);
+                f(&a)
+            }
+        }
 
         // impl<'a> Scopable<TupleB<'a>> for TupleA<'a> {
         //     fn scope<F, Result>(state: &Self, f: F) -> Result
