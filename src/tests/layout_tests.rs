@@ -648,116 +648,47 @@ mod tests {
         assert!(a.test);
         assert!(a.b.test);
     }
-    // #[test]
-    // fn test_scope_variadic() {
-    //     struct A;
-    //     struct B;
-    //     let b = &mut B;
-    //     type Tuple<'a> = (&'a mut A, (&'a mut B, ()));
-    //     fn layout<'a>(_: &mut Tuple<'_>) -> NodeWith<Tuple<'a>, ()> {
-    //         stack(vec![
-    //             draw(|area, _: &mut Tuple| {
-    //                 assert_eq!(area, Area::new(0., 0., 100., 100.));
-    //             }),
-    //             scope(
-    //                 |t: &mut Tuple| t.1 .0,
-    //                 |_| {
-    //                     draw(|area, _: &mut B| {
-    //                         assert_eq!(area, Area::new(0., 0., 100., 100.));
-    //                     })
-    //                 },
-    //             ),
-    //         ])
-    //     }
-    //     let mut tuple: Tuple = (&mut A, (b, ()));
-    //     for _ in 0..10 {
-    //         Layout::new(layout).draw(Area::new(0., 0., 100., 100.), &mut tuple);
-    //     }
-    // }
-    // #[test]
-    // fn test_partial_scope_variadic() {
-    //     struct A;
-    //     struct C;
-    //     #[allow(dead_code)]
-    //     struct B {
-    //         c: C,
-    //     }
+    #[test]
+    fn test_partial_scope_variadic() {
+        struct A;
+        struct C;
+        #[allow(dead_code)]
+        struct B {
+            c: C,
+        }
 
-    //     fn layout(_: &mut A, _: &mut B) -> NodeWith<A, B> {
-    //         stack(vec![
-    //             draw_with(|area, _, _| {
-    //                 assert_eq!(area, Area::new(0., 0., 100., 100.));
-    //             }),
-    //             scope_with(
-    //                 |t: &mut A| &mut *t,
-    //                 |t: &mut B| &mut t.c,
-    //                 |_a, _b| {
-    //                     draw_with(|area, _a: &mut A, _c: &mut C| {
-    //                         assert_eq!(area, Area::new(0., 0., 100., 100.));
-    //                     })
-    //                 },
-    //             ),
-    //         ])
-    //     }
-    //     Layout::new_with(layout).draw_with(Area::new(0., 0., 100., 100.), &mut A, &mut B { c: C });
-    // }
-    // #[test]
-    // fn test_scope() {
-    //     struct A {
-    //         test: bool,
-    //         b: B,
-    //     }
-    //     #[derive(Debug)]
-    //     struct B {
-    //         test: bool,
-    //     }
-    //     let mut a = A {
-    //         test: true,
-    //         b: B { test: true },
-    //     };
+        impl Scopable for A {
+            type Scoped = Self;
+            fn scope<F, Result>(&mut self, f: F) -> Result
+            where
+                F: FnOnce(&mut Self::Scoped) -> Result,
+            {
+                f(self)
+            }
+        }
 
-    //     impl Scopable<B> for A {
-    //         fn scope<F, R>(&mut self, f: F) -> R
-    //         where
-    //             F: FnOnce(&mut B) -> R,
-    //         {
-    //             f(&mut self.b)
-    //         }
-    //     }
+        impl Scopable for B {
+            type Scoped = C;
+            fn scope<F, Result>(&mut self, f: F) -> Result
+            where
+                F: FnOnce(&mut Self::Scoped) -> Result,
+            {
+                f(&mut self.c)
+            }
+        }
 
-    //     fn layout(a: &mut A) -> Node<A> {
-    //         stack(vec![
-    //             if a.test {
-    //                 draw(|area, a: &mut A| {
-    //                     assert_eq!(area, Area::new(0., 0., 100., 100.));
-    //                     a.test = false;
-    //                 })
-    //             } else {
-    //                 draw(|area, a: &mut A| {
-    //                     assert_eq!(area, Area::new(0., 0., 100., 100.));
-    //                     a.test = true;
-    //                 })
-    //             },
-    //             scope(|state: &mut B| {
-    //                 if state.test {
-    //                     draw(|area, b: &mut B| {
-    //                         assert_eq!(area, Area::new(0., 0., 100., 100.));
-    //                         b.test = false;
-    //                     })
-    //                 } else {
-    //                     draw(|area, b: &mut B| {
-    //                         assert_eq!(area, Area::new(0., 0., 100., 100.));
-    //                         b.test = true;
-    //                     })
-    //                 }
-    //             }),
-    //         ])
-    //     }
-    //     Layout::new(layout).draw(Area::new(0., 0., 100., 100.), &mut a);
-    //     assert!(!a.test);
-    //     assert!(!a.b.test);
-    //     Layout::new(layout).draw(Area::new(0., 0., 100., 100.), &mut a);
-    //     assert!(a.test);
-    //     assert!(a.b.test);
-    // }
+        fn layout(_: &mut A, _: &mut B) -> NodeWith<A, B> {
+            stack(vec![
+                draw_with(|area, _, _| {
+                    assert_eq!(area, Area::new(0., 0., 100., 100.));
+                }),
+                scope_with(|_, _| {
+                    draw_with(|area, _a: &mut A, _c: &mut C| {
+                        assert_eq!(area, Area::new(0., 0., 100., 100.));
+                    })
+                }),
+            ])
+        }
+        Layout::new_with(layout).draw_with(Area::new(0., 0., 100., 100.), &mut A, &mut B { c: C });
+    }
 }
