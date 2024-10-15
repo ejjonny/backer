@@ -696,7 +696,6 @@ mod tests {
             b: B,
             c: C,
         }
-
         fn layout(a: &mut A) -> Node<A> {
             stack(vec![path_b(a), path_c(a)])
         }
