@@ -33,6 +33,7 @@ async fn main() {
                 height: screen_height(),
             },
             &mut state,
+            &mut (),
         );
         next_frame().await
     }
@@ -46,7 +47,7 @@ fn layout_for_highlight(ctx: &mut State) -> Node<State> {
         vec![
             scope(
                 |state: &mut State| &mut state.highlight,
-                rel_abs_seq(ctx.highlight),
+                |highlight| rel_abs_seq(*highlight),
             ),
             if highlight == HighlightedCase::AlignmentOffset || highlight == HighlightedCase::None {
                 column_spaced(

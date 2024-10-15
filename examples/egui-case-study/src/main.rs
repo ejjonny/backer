@@ -266,7 +266,7 @@ impl eframe::App for MyApp {
   }
 }
 
-fn draw_label<'a>(ui: &'_ mut Ui, text: RichText) -> Node<State<'a>> {
+fn draw_label<'a>(ui: &'_ mut Ui, text: RichText) -> Node<State<'a>, ()> {
   let label = egui::Label::new(text.clone());
   let galley = label.layout_in_ui(ui).1.rect;
   let text_area = area_from(galley);

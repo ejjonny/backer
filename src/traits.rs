@@ -29,11 +29,21 @@ pub trait Scopable {
     /// ```
     fn scope<F, Result>(&mut self, f: F) -> Result
     where
-        F: for<'a> FnOnce(&'a mut Self::Scoped) -> Result;
+        F: FnOnce(&mut Self::Scoped) -> Result;
 }
 
-pub(crate) trait NodeTrait<State> {
-    fn draw(&mut self, state: &mut State);
-    fn layout(&mut self, available_area: Area, state: &mut State);
-    fn constraints(&mut self, area: Area, state: &mut State) -> SizeConstraints;
+impl Scopable for () {
+    type Scoped = ();
+    fn scope<F, Result>(&mut self, f: F) -> Result
+    where
+        F: FnOnce(&mut Self::Scoped) -> Result,
+    {
+        f(self)
+    }
+}
+
+pub(crate) trait NodeTrait<State, Ctx> {
+    fn draw(&mut self, state: &mut State, ctx: &mut Ctx);
+    fn layout(&mut self, available_area: Area, state: &mut State, ctx: &mut Ctx);
+    fn constraints(&mut self, area: Area, state: &mut State, ctx: &mut Ctx) -> SizeConstraints;
 }

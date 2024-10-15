@@ -1,6 +1,4 @@
-
-
-// impl<State> Clone for NodeValue<State> {
+// impl<A, B> Clone for NodeValue<A, B> {
 //     fn clone(&self) -> Self {
 //         match self {
 //             NodeValue::Padding { amounts, element } => NodeValue::Padding {
