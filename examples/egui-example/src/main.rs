@@ -21,7 +21,7 @@ fn main() -> eframe::Result {
     })
 }
 
-fn my_layout_fn(ui: &mut Ui) -> Node<Ui, ()> {
+fn my_layout_fn(ui: &mut Ui) -> Node<Ui> {
     column_spaced(
         10.,
         vec![
