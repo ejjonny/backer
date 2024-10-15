@@ -11,9 +11,9 @@ authors = ["ejjonny"]
 [lib]
 crate-type = ["lib"]
 
-# [[example]]
-# name = "macroquad-example"
-# path = "examples/macroquad-example/src/main.rs"
+[[example]]
+name = "macroquad-example"
+path = "examples/macroquad-example/src/main.rs"
 
 # [[example]]
 # name = "egui-example"
