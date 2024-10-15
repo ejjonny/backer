@@ -19,9 +19,9 @@ path = "examples/macroquad-example/src/main.rs"
 name = "egui-example"
 path = "examples/egui-example/src/main.rs"
 
-# [[example]]
-# name = "egui-case-study"
-# path = "examples/egui-case-study/src/main.rs"
+[[example]]
+name = "egui-case-study"
+path = "examples/egui-case-study/src/main.rs"
 
 [dev-dependencies]
 macroquad = "0.4.13"
