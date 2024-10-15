@@ -1,23 +1,23 @@
 use crate::models::Area;
 use std::{fmt, rc::Rc};
 
-type DrawFn<A, B> = Rc<dyn Fn(Area, &'_ mut A, &'_ mut B)>;
+type DrawFn<State, Ctx> = Rc<dyn Fn(Area, &'_ mut State, &'_ mut Ctx)>;
 
 #[derive(Clone)]
-pub(crate) struct Drawable<A, B> {
+pub(crate) struct Drawable<State, Ctx> {
     pub(crate) area: Area,
-    pub(crate) draw: DrawFn<A, B>,
+    pub(crate) draw: DrawFn<State, Ctx>,
 }
 
-impl<A, B> Drawable<A, B> {
-    pub(crate) fn draw(&self, area: Area, a: &mut A, b: &mut B) {
+impl<State, Ctx> Drawable<State, Ctx> {
+    pub(crate) fn draw(&self, area: Area, a: &mut State, b: &mut Ctx) {
         if area.width > 0. && area.height > 0. {
             (self.draw)(area, a, b);
         }
     }
 }
 
-impl<A, B> fmt::Debug for Drawable<A, B> {
+impl<State, Ctx> fmt::Debug for Drawable<State, Ctx> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Drawable")
             .field("area", &self.area)
