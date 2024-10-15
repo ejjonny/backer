@@ -13,19 +13,14 @@ use crate::{
 type SubtreeFn<SubState, SubCtx> =
     Box<dyn Fn(&mut SubState, &mut SubCtx) -> NodeWith<SubState, SubCtx>>;
 
-pub(crate) struct Subtree<
-    SubState,
-    SubCtx,
-    State: Scopable<Scoped = SubState>,
-    Ctx: Scopable<Scoped = SubCtx>,
-> {
+pub(crate) struct Subtree<SubState, SubCtx, State: Scopable<SubState>, Ctx: Scopable<SubCtx>> {
     pub(crate) subtree_fn: SubtreeFn<SubState, SubCtx>,
     pub(crate) stored_tree: Option<NodeWith<SubState, SubCtx>>,
     pub(crate) _p: PhantomData<State>,
     pub(crate) _c: PhantomData<Ctx>,
 }
 
-impl<SubState, SubCtx, State: Scopable<Scoped = SubState>, Ctx: Scopable<Scoped = SubCtx>> Debug
+impl<SubState, SubCtx, State: Scopable<SubState>, Ctx: Scopable<SubCtx>> Debug
     for Subtree<SubState, SubCtx, State, Ctx>
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
@@ -36,8 +31,8 @@ impl<SubState, SubCtx, State: Scopable<Scoped = SubState>, Ctx: Scopable<Scoped 
     }
 }
 
-impl<SubCtx, SubState, State: Scopable<Scoped = SubState>, Ctx: Scopable<Scoped = SubCtx>>
-    NodeTrait<State, Ctx> for Subtree<SubState, SubCtx, State, Ctx>
+impl<SubCtx, SubState, State: Scopable<SubState>, Ctx: Scopable<SubCtx>> NodeTrait<State, Ctx>
+    for Subtree<SubState, SubCtx, State, Ctx>
 {
     fn draw(&mut self, state: &mut State, ctx: &mut Ctx) {
         state.scope(|state| {

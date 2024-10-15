@@ -165,7 +165,7 @@ pub fn scope<State, ScopedState>(
 ) -> Node<State>
 where
     ScopedState: 'static,
-    State: Scopable<Scoped = ScopedState> + 'static,
+    State: Scopable<ScopedState> + 'static,
 {
     NodeWith {
         inner: NodeValue::Scope {
@@ -184,9 +184,9 @@ pub fn scope_with<State, ScopedState, Ctx, ScopedCtx>(
 ) -> NodeWith<State, Ctx>
 where
     ScopedState: 'static,
-    State: Scopable<Scoped = ScopedState> + 'static,
+    State: Scopable<ScopedState> + 'static,
     ScopedCtx: 'static,
-    Ctx: Scopable<Scoped = ScopedCtx> + 'static,
+    Ctx: Scopable<ScopedCtx> + 'static,
 {
     NodeWith {
         inner: NodeValue::Scope {

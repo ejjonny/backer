@@ -41,11 +41,10 @@ async fn main() {
 
 const BTN_SIZE: f32 = 50.;
 fn layout_for_highlight(ctx: &mut State) -> Node<State> {
-    impl Scopable for State {
-        type Scoped = HighlightedCase;
+    impl Scopable<HighlightedCase> for State {
         fn scope<F, R>(&mut self, f: F) -> R
         where
-            F: FnOnce(&mut Self::Scoped) -> R,
+            F: FnOnce(&mut HighlightedCase) -> R,
         {
             f(&mut self.highlight)
         }

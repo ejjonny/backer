@@ -5,6 +5,7 @@ mod tests {
     use crate::models::*;
     use crate::nodes::*;
     use crate::traits::Scopable;
+    use crate::Node;
     use crate::NodeWith;
     #[test]
     fn test_seq_align_on_axis() {
@@ -603,11 +604,10 @@ mod tests {
             test: true,
             b: B { test: true },
         };
-        impl Scopable for A {
-            type Scoped = B;
+        impl Scopable<B> for A {
             fn scope<F, Result>(&mut self, f: F) -> Result
             where
-                F: FnOnce(&mut Self::Scoped) -> Result,
+                F: FnOnce(&mut B) -> Result,
             {
                 f(&mut self.b)
             }
@@ -651,26 +651,23 @@ mod tests {
     fn test_partial_scope_variadic() {
         struct A;
         struct C;
-        #[allow(dead_code)]
         struct B {
             c: C,
         }
 
-        impl Scopable for A {
-            type Scoped = Self;
+        impl Scopable<A> for A {
             fn scope<F, Result>(&mut self, f: F) -> Result
             where
-                F: FnOnce(&mut Self::Scoped) -> Result,
+                F: FnOnce(&mut A) -> Result,
             {
                 f(self)
             }
         }
 
-        impl Scopable for B {
-            type Scoped = C;
+        impl Scopable<C> for B {
             fn scope<F, Result>(&mut self, f: F) -> Result
             where
-                F: FnOnce(&mut Self::Scoped) -> Result,
+                F: FnOnce(&mut C) -> Result,
             {
                 f(&mut self.c)
             }
@@ -689,5 +686,42 @@ mod tests {
             ])
         }
         Layout::new_with(layout).draw_with(Area::new(0., 0., 100., 100.), &mut A, &mut B { c: C });
+    }
+
+    #[test]
+    fn test_multiple_scope_paths() {
+        struct C;
+        struct B;
+        struct A {
+            b: B,
+            c: C,
+        }
+
+        fn layout(a: &mut A) -> Node<A> {
+            stack(vec![path_b(a), path_c(a)])
+        }
+        fn path_b(_: &mut A) -> Node<A> {
+            impl Scopable<B> for A {
+                fn scope<F, Result>(&mut self, f: F) -> Result
+                where
+                    F: FnOnce(&mut B) -> Result,
+                {
+                    f(&mut self.b)
+                }
+            }
+            stack(vec![scope(|_b: &mut B| space())])
+        }
+        fn path_c(_: &mut A) -> Node<A> {
+            impl Scopable<C> for A {
+                fn scope<F, Result>(&mut self, f: F) -> Result
+                where
+                    F: FnOnce(&mut C) -> Result,
+                {
+                    f(&mut self.c)
+                }
+            }
+            stack(vec![scope(|_c: &mut C| space())])
+        }
+        Layout::new(layout).draw(Area::new(0., 0., 100., 100.), &mut A { b: B, c: C });
     }
 }

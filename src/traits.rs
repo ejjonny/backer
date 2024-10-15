@@ -3,9 +3,7 @@ use std::fmt::Debug;
 use crate::{constraints::SizeConstraints, models::Area};
 
 /// Implement `Scopable` to enable usage with [`Node::scope`]
-pub trait Scopable {
-    /// The subset of Self to be scoped to.
-    type Scoped;
+pub trait Scopable<Scoped> {
     /// Provide a scoped mutable reference to a subset of your state.
     ///
     /// This method is called by backer for various purposes,
@@ -34,14 +32,13 @@ pub trait Scopable {
     /// ```
     fn scope<F, Result>(&mut self, f: F) -> Result
     where
-        F: FnOnce(&mut Self::Scoped) -> Result;
+        F: FnOnce(&mut Scoped) -> Result;
 }
 
-impl Scopable for () {
-    type Scoped = ();
+impl Scopable<()> for () {
     fn scope<F, Result>(&mut self, f: F) -> Result
     where
-        F: FnOnce(&mut Self::Scoped) -> Result,
+        F: FnOnce(&mut ()) -> Result,
     {
         f(self)
     }
