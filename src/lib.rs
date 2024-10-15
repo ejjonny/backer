@@ -22,11 +22,12 @@ mod modifiers;
 mod node;
 mod subtree;
 mod tests;
-mod traits;
 
 pub use layout::Layout;
 pub use node::Node;
 pub use node::NodeWith;
+
+pub mod traits;
 
 /// Structs involved in layout definitions
 pub mod models;

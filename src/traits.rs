@@ -9,7 +9,8 @@ pub trait Scopable {
     /// passing different closures for `f` & using the result returned by `Scopable::scope`.
     ///
     /// ```rust
-    /// use backer::nodes::Scopable;
+    ///
+    /// use backer::traits::Scopable;
     ///
     /// struct A {
     ///     b: B,
@@ -17,7 +18,8 @@ pub trait Scopable {
     ///
     /// struct B;
     ///
-    /// impl Scopable<B> for A {
+    /// impl Scopable for A {
+    ///     type Scoped = B;
     ///     fn scope<F, R>(&mut self, f: F) -> R
     ///     where
     ///         F: FnOnce(&mut B) -> R,

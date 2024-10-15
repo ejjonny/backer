@@ -591,57 +591,63 @@ mod tests {
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
     }
-    // #[test]
-    // fn test_scope() {
-    //     struct A {
-    //         test: bool,
-    //         b: B,
-    //     }
-    //     struct B {
-    //         test: bool,
-    //     }
-    //     let mut a = A {
-    //         test: true,
-    //         b: B { test: true },
-    //     };
-    //     fn layout(a: &mut A) -> NodeWith<A, ()> {
-    //         stack(vec![
-    //             if a.test {
-    //                 draw(|area, a: &mut A| {
-    //                     assert_eq!(area, Area::new(0., 0., 100., 100.));
-    //                     a.test = false;
-    //                 })
-    //             } else {
-    //                 draw(|area, a: &mut A| {
-    //                     assert_eq!(area, Area::new(0., 0., 100., 100.));
-    //                     a.test = true;
-    //                 })
-    //             },
-    //             scope(
-    //                 |a: &mut A| &mut a.b,
-    //                 |state| {
-    //                     if state.test {
-    //                         draw(|area, b: &mut B| {
-    //                             assert_eq!(area, Area::new(0., 0., 100., 100.));
-    //                             b.test = false;
-    //                         })
-    //                     } else {
-    //                         draw(|area, b: &mut B| {
-    //                             assert_eq!(area, Area::new(0., 0., 100., 100.));
-    //                             b.test = true;
-    //                         })
-    //                     }
-    //                 },
-    //             ),
-    //         ])
-    //     }
-    //     Layout::new(layout).draw(Area::new(0., 0., 100., 100.), &mut a);
-    //     assert!(!a.test);
-    //     assert!(!a.b.test);
-    //     Layout::new(layout).draw(Area::new(0., 0., 100., 100.), &mut a);
-    //     assert!(a.test);
-    //     assert!(a.b.test);
-    // }
+    #[test]
+    fn test_scope() {
+        struct A {
+            test: bool,
+            b: B,
+        }
+        struct B {
+            test: bool,
+        }
+        let mut a = A {
+            test: true,
+            b: B { test: true },
+        };
+        impl Scopable for A {
+            type Scoped = B;
+            fn scope<F, Result>(&mut self, f: F) -> Result
+            where
+                F: FnOnce(&mut Self::Scoped) -> Result,
+            {
+                f(&mut self.b)
+            }
+        }
+        fn layout(a: &mut A) -> NodeWith<A, ()> {
+            stack(vec![
+                if a.test {
+                    draw(|area, a: &mut A| {
+                        assert_eq!(area, Area::new(0., 0., 100., 100.));
+                        a.test = false;
+                    })
+                } else {
+                    draw(|area, a: &mut A| {
+                        assert_eq!(area, Area::new(0., 0., 100., 100.));
+                        a.test = true;
+                    })
+                },
+                scope(|b: &mut B| {
+                    if b.test {
+                        draw(|area, b: &mut B| {
+                            assert_eq!(area, Area::new(0., 0., 100., 100.));
+                            b.test = false;
+                        })
+                    } else {
+                        draw(|area, b: &mut B| {
+                            assert_eq!(area, Area::new(0., 0., 100., 100.));
+                            b.test = true;
+                        })
+                    }
+                }),
+            ])
+        }
+        Layout::new(layout).draw(Area::new(0., 0., 100., 100.), &mut a);
+        assert!(!a.test);
+        assert!(!a.b.test);
+        Layout::new(layout).draw(Area::new(0., 0., 100., 100.), &mut a);
+        assert!(a.test);
+        assert!(a.b.test);
+    }
     // #[test]
     // fn test_scope_variadic() {
     //     struct A;

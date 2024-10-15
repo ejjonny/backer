@@ -22,6 +22,7 @@ pub fn column<State, Ctx>(elements: Vec<NodeWith<State, Ctx>>) -> NodeWith<State
 /// use backer::*;
 /// use backer::models::*;
 /// use backer::nodes::*;
+/// use backer::traits::Scopable;
 ///
 /// column::<(), ()>(vec![
 ///     empty(),
@@ -89,6 +90,7 @@ pub fn stack<State, Ctx>(elements: Vec<NodeWith<State, Ctx>>) -> NodeWith<State,
 /// use backer::*;
 /// use backer::models::*;
 /// use backer::nodes::*;
+/// use backer::traits::Scopable;
 ///
 /// struct MyState {}
 /// fn my_drawable(state: &mut MyState) -> Node<MyState> {
