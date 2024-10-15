@@ -2,6 +2,7 @@ use crate::{constraints::SizeConstraints, models::Area};
 
 /// Implement `Scopable` to enable usage with [`Node::scope`]
 pub trait Scopable {
+    /// The subset of Self to be scoped to.
     type Scoped;
     /// Provide a scoped mutable reference to a subset of your state.
     ///

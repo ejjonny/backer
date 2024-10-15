@@ -5,7 +5,6 @@ mod tests {
     use crate::models::*;
     use crate::nodes::*;
     use crate::traits::Scopable;
-    use crate::Node;
     use crate::NodeWith;
     #[test]
     fn test_seq_align_on_axis() {
