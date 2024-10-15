@@ -1,4 +1,8 @@
-use std::marker::PhantomData;
+use core::fmt;
+use std::{
+    fmt::{Debug, Formatter},
+    marker::PhantomData,
+};
 
 use crate::{
     models::Area,
@@ -19,6 +23,17 @@ pub(crate) struct Subtree<
     pub(crate) stored_tree: Option<NodeWith<SubState, SubCtx>>,
     pub(crate) _p: PhantomData<State>,
     pub(crate) _c: PhantomData<Ctx>,
+}
+
+impl<SubState, SubCtx, State: Scopable<Scoped = SubState>, Ctx: Scopable<Scoped = SubCtx>> Debug
+    for Subtree<SubState, SubCtx, State, Ctx>
+{
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Subtree")
+            .field("subtree_fn", &"<function>")
+            .field("stored_tree", &self.stored_tree)
+            .finish()
+    }
 }
 
 impl<SubCtx, SubState, State: Scopable<Scoped = SubState>, Ctx: Scopable<Scoped = SubCtx>>

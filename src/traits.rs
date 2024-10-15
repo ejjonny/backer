@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 use crate::{constraints::SizeConstraints, models::Area};
 
 /// Implement `Scopable` to enable usage with [`Node::scope`]
@@ -45,7 +47,7 @@ impl Scopable for () {
     }
 }
 
-pub(crate) trait NodeTrait<State, Ctx> {
+pub(crate) trait NodeTrait<State, Ctx>: Debug {
     fn draw(&mut self, state: &mut State, ctx: &mut Ctx);
     fn layout(&mut self, available_area: Area, state: &mut State, ctx: &mut Ctx);
     fn constraints(&mut self, area: Area, state: &mut State, ctx: &mut Ctx) -> SizeConstraints;

@@ -1,7 +1,7 @@
 use crate::layout::NodeValue;
 use std::fmt;
 
-impl<A, B> fmt::Debug for NodeValue<A, B> {
+impl<State, Ctx> fmt::Debug for NodeValue<State, Ctx> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             NodeValue::Padding { amounts, element } => f
@@ -54,11 +54,9 @@ impl<A, B> fmt::Debug for NodeValue<A, B> {
             NodeValue::Space => write!(f, "Space"),
             NodeValue::Empty => write!(f, "Empty"),
             NodeValue::AreaReader { .. } => write!(f, "WidthReader"),
-            NodeValue::Scope { .. } => f
-                .debug_struct("Scope")
-                .field("scope", &"<function>")
-                .field("scoped", &"<function>")
-                .finish(),
+            NodeValue::Scope { scoped } => {
+                f.debug_struct("Scope").field("scoped", &scoped).finish()
+            }
             NodeValue::Coupled {
                 element,
                 coupled,
