@@ -4,13 +4,13 @@ use crate::{models::Area, traits::NodeTrait, traits::Scopable, Node};
 
 type SubtreeFn<SubState> = Box<dyn Fn(&mut SubState) -> Node<SubState>>;
 
-pub(crate) struct Subtree<SubState, State: Scopable<SubState>> {
+pub(crate) struct Subtree<SubState, State: Scopable<State = SubState>> {
     pub(crate) subtree_fn: SubtreeFn<SubState>,
     pub(crate) stored_tree: Option<Node<SubState>>,
     pub(crate) _p: PhantomData<State>,
 }
 
-impl<SubState, State: Scopable<SubState>> NodeTrait<State> for Subtree<SubState, State> {
+impl<SubState, State: Scopable<State = SubState>> NodeTrait<State> for Subtree<SubState, State> {
     fn draw(&mut self, state: &mut State) {
         State::scope(state, |s| {
             let mut subtree = self.stored_tree.take().unwrap_or((self.subtree_fn)(s));

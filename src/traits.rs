@@ -3,7 +3,8 @@ use std::borrow::Borrow;
 use crate::{constraints::SizeConstraints, models::Area};
 
 /// Implement `Scopable` to enable usage with [`Node::scope`]
-pub trait Scopable<State> {
+pub trait Scopable {
+    type State;
     /// Provide a scoped mutable reference to a subset of your state.
     ///
     /// This method is called by backer for various purposes,
@@ -30,7 +31,7 @@ pub trait Scopable<State> {
     /// ```
     fn scope<F, Result>(state: &mut Self, f: F) -> Result
     where
-        F: FnOnce(&mut State) -> Result;
+        F: for<'a> FnOnce(&'a mut Self::State) -> Result;
 }
 
 pub(crate) trait NodeTrait<State> {

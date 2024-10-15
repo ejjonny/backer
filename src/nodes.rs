@@ -129,7 +129,7 @@ pub fn area_reader<U>(func: impl Fn(Area, &mut U) -> Node<U> + 'static) -> Node<
 pub fn scope<U, V>(node: impl Fn(&mut V) -> Node<V> + 'static) -> Node<U>
 where
     V: 'static,
-    U: Scopable<V> + 'static,
+    U: Scopable<State = V> + 'static,
 {
     Node {
         inner: NodeValue::Scope {

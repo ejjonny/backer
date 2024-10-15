@@ -672,21 +672,47 @@ mod tests {
         type TupleA<'a> = (&'a mut B, &'a mut B);
         type TupleB<'a> = (&'a mut B, &'a mut B);
 
-        // impl<'alt, 'blt> Scopable<&'alt TupleB<'alt>> for &'alt TupleA<'alt>
+        // impl<'alt, 'blt> TupleA<'alt>
         // where
         //     'alt: 'blt,
         // {
-        //     fn scope<F, Result>(state: Self, f: F) -> Result
+        //     fn scoper<F, Result>(state: &'blt mut Self, f: F) -> Result
         //     where
-        //         F: FnOnce(&'alt mut TupleB<'alt>) -> Result,
+        //         F: FnOnce(&'blt mut TupleB<'alt>) -> Result,
         //     {
-        // let n = (*state).0;
-        // let b = &mut state.1.c;
-        // let q = (n, b);
-        // f(&((*state).0, (*state).1))
-        //         todo!()
+        //         f(&mut ((*state).0, (*state).1))
         //     }
         // }
+
+        impl<'alt> Scopable for TupleA<'alt> {
+            type State = TupleB<'alt>;
+
+            fn scope<F, Result>(state: &mut Self, f: F) -> Result
+            where
+                F: for<'a> FnOnce(&'a mut TupleB<'alt>) -> Result,
+            {
+                let mut n = (&mut *state.0, &mut *state.1);
+                f(&mut n)
+            }
+
+            // fn scope<F, Result, State>(state: &mut Self, f: F) -> Result
+            // where
+            //     F: for<'a> FnOnce(&a mut State) -> Result,
+            // {
+            //     let mut n = (&mut *state.0, &mut *state.1);
+            //     f(&mut n)
+            // }
+
+            // fn scope<F, Result>(state: &mut Self, f: F) -> Result
+            // where
+            //     F: FnOnce(&'alt mut TupleB<'alt>) -> Result,
+            // {
+            //     let n = (*state).0;
+            //     let b = &mut state.1.c;
+            //     let q = (n, b);
+            //     f(&((*state).0, (*state).1))
+            // }
+        }
 
         // fn layout<'a>(_: &mut TupleA<'_>) -> Node<&mut 'a TupleA<'a>> {
         //     stack(vec![
