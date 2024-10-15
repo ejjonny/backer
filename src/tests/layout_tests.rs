@@ -1,7 +1,5 @@
 #[cfg(test)]
 mod tests {
-    use std::borrow::Borrow;
-    use std::ops::Deref;
 
     use crate::layout::*;
     use crate::models::*;
@@ -651,79 +649,4 @@ mod tests {
     //     assert!(a.test);
     //     assert!(a.b.test);
     // }
-
-    #[test]
-    fn test_partial_scope_variadic() {
-        struct A;
-        struct C;
-        #[allow(dead_code)]
-        struct B {
-            c: C,
-        }
-        struct D<'a> {
-            ui: &'a mut Ui,
-            state: B,
-        }
-        struct DS<'a> {
-            ui: &'a mut Ui,
-            state: C,
-        }
-        struct Ui;
-        type TupleA<'a> = (&'a mut B, &'a mut B);
-        type TupleB<'a> = (&'a mut B, &'a mut B);
-
-        // impl<'alt, 'blt> TupleA<'alt>
-        // where
-        //     'alt: 'blt,
-        // {
-        //     fn scoper<F, Result>(state: &'blt mut Self, f: F) -> Result
-        //     where
-        //         F: FnOnce(&'blt mut TupleB<'alt>) -> Result,
-        //     {
-        //         f(&mut ((*state).0, (*state).1))
-        //     }
-        // }
-
-        impl<'alt> Scopable for TupleA<'alt> {
-            type State = TupleB<'alt>;
-
-            fn scope<F, Result>(state: &mut Self, f: F) -> Result
-            where
-                F: for<'a> FnOnce(&'a mut TupleB<'alt>) -> Result,
-            {
-                let mut n = (&mut *state.0, &mut *state.1);
-                f(&mut n)
-            }
-
-            // fn scope<F, Result, State>(state: &mut Self, f: F) -> Result
-            // where
-            //     F: for<'a> FnOnce(&a mut State) -> Result,
-            // {
-            //     let mut n = (&mut *state.0, &mut *state.1);
-            //     f(&mut n)
-            // }
-
-            // fn scope<F, Result>(state: &mut Self, f: F) -> Result
-            // where
-            //     F: FnOnce(&'alt mut TupleB<'alt>) -> Result,
-            // {
-            //     let n = (*state).0;
-            //     let b = &mut state.1.c;
-            //     let q = (n, b);
-            //     f(&((*state).0, (*state).1))
-            // }
-        }
-
-        // fn layout<'a>(_: &mut TupleA<'_>) -> Node<&mut 'a TupleA<'a>> {
-        //     stack(vec![
-        //         draw(|area, _: &mut TupleA| {
-        //             assert_eq!(area, Area::new(0., 0., 100., 100.));
-        //         }),
-        //         scope(|b| space()),
-        // scope(|t: &mut TupleA| &mut (&mut *t.0, &mut *t.1), |_| space()),
-        //     ])
-        // }
-        // let mut tuple: TupleA = (&mut A, &mut B { c: C });
-        // Layout::new(layout).draw(Area::new(0., 0., 100., 100.), &mut tuple);
-    }
 }
