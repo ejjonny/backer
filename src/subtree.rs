@@ -1,9 +1,9 @@
-use std::{f32::consts::PI, marker::PhantomData};
+use std::marker::PhantomData;
 
 use crate::{
     models::Area,
     traits::{NodeTrait, Scopable},
-    Node, NodeWith,
+    NodeWith,
 };
 
 type SubtreeFn<SubState, SubCtx> =

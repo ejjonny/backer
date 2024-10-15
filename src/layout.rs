@@ -44,92 +44,92 @@ fn my_layout_fn(state: &mut MyState) -> Node<MyState> {
 struct MyState {}
 ```
  */
-pub struct Layout<A, B> {
-    tree: LayoutFn<A, B>,
+pub struct Layout<State, Ctx> {
+    tree: LayoutFn<State, Ctx>,
 }
 
-pub type LayoutFn<A, B> = Box<dyn Fn(&mut A, &mut B) -> NodeWith<A, B>>;
+pub type LayoutFn<State, Ctx> = Box<dyn Fn(&mut State, &mut Ctx) -> NodeWith<State, Ctx>>;
 
-impl<A, B> Layout<A, B> {
-    /// Creates a new [`Layout<A, B>`].
-    pub fn new_with(tree: impl Fn(&mut A, &mut B) -> NodeWith<A, B> + 'static) -> Self {
+impl<State, Ctx> Layout<State, Ctx> {
+    /// Creates a new [`Layout<State, Ctx>`].
+    pub fn new_with(tree: impl Fn(&mut State, &mut Ctx) -> NodeWith<State, Ctx> + 'static) -> Self {
         Self {
             tree: Box::new(tree),
         }
     }
 }
 
-impl<A> Layout<A, ()> {
-    /// Creates a new [`Layout<A, B>`].
-    pub fn new(tree: impl Fn(&mut A) -> Node<A> + 'static) -> Self {
+impl<State> Layout<State, ()> {
+    /// Creates a new [`Layout<State, Ctx>`].
+    pub fn new(tree: impl Fn(&mut State) -> Node<State> + 'static) -> Self {
         Self {
-            tree: Box::new(move |a, _| tree(a)),
+            tree: Box::new(move |state, _| tree(state)),
         }
     }
 }
 
-impl<A> Layout<A, ()> {
+impl<State> Layout<State, ()> {
     /// Calculates layout and draws all draw nodes in the tree
-    pub fn draw(&self, area: Area, a: &mut A) {
-        let b = &mut ();
-        let mut layout = (self.tree)(a, b);
-        layout.inner.layout(area, None, None, a, b);
-        layout.inner.draw(a, b);
+    pub fn draw(&self, area: Area, state: &mut State) {
+        let ctx = &mut ();
+        let mut layout = (self.tree)(state, ctx);
+        layout.inner.layout(area, None, None, state, ctx);
+        layout.inner.draw(state, ctx);
     }
 }
 
-impl<A, B> Layout<A, B> {
+impl<State, Ctx> Layout<State, Ctx> {
     /// Calculates layout and draws all draw nodes in the tree
-    pub fn draw_with(&self, area: Area, a: &mut A, b: &mut B) {
-        let mut layout = (self.tree)(a, b);
-        layout.inner.layout(area, None, None, a, b);
-        layout.inner.draw(a, b);
+    pub fn draw_with(&self, area: Area, state: &mut State, ctx: &mut Ctx) {
+        let mut layout = (self.tree)(state, ctx);
+        layout.inner.layout(area, None, None, state, ctx);
+        layout.inner.draw(state, ctx);
     }
 }
 
-type AreaReaderFn<A, B> = Rc<dyn Fn(Area, &mut A, &mut B) -> NodeWith<A, B>>;
+type AreaReaderFn<State, Ctx> = Rc<dyn Fn(Area, &mut State, &mut Ctx) -> NodeWith<State, Ctx>>;
 
-pub(crate) enum NodeValue<A, B> {
+pub(crate) enum NodeValue<State, Ctx> {
     Padding {
         amounts: Padding,
-        element: Box<NodeValue<A, B>>,
+        element: Box<NodeValue<State, Ctx>>,
     },
     Column {
-        elements: Vec<NodeValue<A, B>>,
+        elements: Vec<NodeValue<State, Ctx>>,
         spacing: f32,
         align: Option<YAlign>,
         off_axis_align: Option<XAlign>,
     },
     Row {
-        elements: Vec<NodeValue<A, B>>,
+        elements: Vec<NodeValue<State, Ctx>>,
         spacing: f32,
         align: Option<XAlign>,
         off_axis_align: Option<YAlign>,
     },
-    Stack(Vec<NodeValue<A, B>>),
-    Group(Vec<NodeValue<A, B>>),
+    Stack(Vec<NodeValue<State, Ctx>>),
+    Group(Vec<NodeValue<State, Ctx>>),
     Offset {
         offset_x: f32,
         offset_y: f32,
-        element: Box<NodeValue<A, B>>,
+        element: Box<NodeValue<State, Ctx>>,
     },
-    Draw(Drawable<A, B>),
+    Draw(Drawable<State, Ctx>),
     Explicit {
-        options: Size<A, B>,
-        element: Box<NodeValue<A, B>>,
+        options: Size<State, Ctx>,
+        element: Box<NodeValue<State, Ctx>>,
     },
     Empty,
     Space,
     Scope {
-        scoped: Box<dyn NodeTrait<A, B>>,
+        scoped: Box<dyn NodeTrait<State, Ctx>>,
     },
     AreaReader {
-        read: AreaReaderFn<A, B>,
+        read: AreaReaderFn<State, Ctx>,
     },
     Coupled {
         over: bool,
-        element: Box<NodeValue<A, B>>,
-        coupled: Box<NodeValue<A, B>>,
+        element: Box<NodeValue<State, Ctx>>,
+        coupled: Box<NodeValue<State, Ctx>>,
     },
 }
 
@@ -387,20 +387,20 @@ pub(crate) enum Orientation {
 }
 
 #[allow(clippy::too_many_arguments)]
-pub(crate) fn layout_axis<A, B>(
-    elements: &mut [NodeValue<A, B>],
+pub(crate) fn layout_axis<State, Ctx>(
+    elements: &mut [NodeValue<State, Ctx>],
     spacing: &f32,
     available_area: Area,
     orientation: Orientation,
     x_align: XAlign,
     y_align: YAlign,
-    a: &mut A,
-    b: &mut B,
+    state: &mut State,
+    ctx: &mut Ctx,
     check: bool,
 ) -> Vec<Area> {
     let sizes: Vec<SizeConstraints> = elements
         .iter_mut()
-        .map(|element| element.constraints(available_area, a, b))
+        .map(|element| element.constraints(available_area, state, ctx))
         .collect();
     let element_count = elements.len();
 
@@ -580,7 +580,7 @@ pub(crate) fn layout_axis<A, B>(
         }
 
         if !check {
-            child.layout(area, Some(x_align), Some(y_align), a, b);
+            child.layout(area, Some(x_align), Some(y_align), state, ctx);
         } else {
             areas.push(area);
         }

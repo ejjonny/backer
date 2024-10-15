@@ -1,6 +1,6 @@
 use crate::{
-    drawable::Drawable, layout::NodeValue, models::*, models::*, subtree::Subtree,
-    traits::Scopable, Node, NodeWith,
+    drawable::Drawable, layout::NodeValue, models::*, subtree::Subtree, traits::Scopable, Node,
+    NodeWith,
 };
 use std::{marker::PhantomData, rc::Rc};
 
