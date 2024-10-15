@@ -30,15 +30,15 @@ pub trait Scopable<Scoped> {
     ///     }
     /// }
     /// ```
-    fn scope<F, Result>(&mut self, f: F) -> Result
+    fn scope<F, Result>(&mut self, f: F) -> impl Into<Option<Result>>
     where
-        F: FnOnce(&mut Scoped) -> Result;
+        F: FnOnce(&mut Scoped) -> Option<Result>;
 }
 
 impl Scopable<()> for () {
-    fn scope<F, Result>(&mut self, f: F) -> Result
+    fn scope<F, Result>(&mut self, f: F) -> Option<Result>
     where
-        F: FnOnce(&mut ()) -> Result,
+        F: FnOnce(&mut ()) -> Option<Result>,
     {
         f(self)
     }

@@ -687,7 +687,6 @@ mod tests {
         }
         Layout::new_with(layout).draw_with(Area::new(0., 0., 100., 100.), &mut A, &mut B { c: C });
     }
-
     #[test]
     fn test_multiple_scope_paths() {
         struct C;
@@ -720,6 +719,27 @@ mod tests {
                 }
             }
             stack(vec![scope(|_c: &mut C| space())])
+        }
+        Layout::new(layout).draw(Area::new(0., 0., 100., 100.), &mut A { b: B, c: C });
+    }
+    #[test]
+    fn test_scope_unwrap() {
+        struct B;
+        struct A {
+            b: Option<B>,
+        }
+        impl Scopable<B> for A {
+            fn scope<F, Result>(&mut self, f: F) -> Result
+            where
+                F: FnOnce(&mut B) -> Result,
+            {
+                if let b = self.b.as_mut() {
+                    f(b)
+                }
+            }
+        }
+        fn layout(_a: &mut A) -> Node<A> {
+            stack(vec![scope(|_b: &mut B| space())])
         }
         Layout::new(layout).draw(Area::new(0., 0., 100., 100.), &mut A { b: B, c: C });
     }

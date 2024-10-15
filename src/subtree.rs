@@ -5,6 +5,7 @@ use std::{
 };
 
 use crate::{
+    constraints::{Constraint, SizeConstraints},
     models::Area,
     traits::{NodeTrait, Scopable},
     NodeWith,
@@ -56,7 +57,7 @@ impl<SubCtx, SubState, State: Scopable<SubState>, Ctx: Scopable<SubCtx>> NodeTra
                 subtree.inner.layout(available_area, None, None, state, ctx);
                 self.stored_tree = Some(subtree);
             })
-        })
+        });
     }
     fn constraints(
         &mut self,
@@ -64,16 +65,22 @@ impl<SubCtx, SubState, State: Scopable<SubState>, Ctx: Scopable<SubCtx>> NodeTra
         state: &mut State,
         ctx: &mut Ctx,
     ) -> crate::constraints::SizeConstraints {
-        state.scope(|state| {
-            ctx.scope(|ctx| {
-                let mut subtree = self
-                    .stored_tree
-                    .take()
-                    .unwrap_or((self.subtree_fn)(state, ctx));
-                let result = subtree.inner.constraints(area, state, ctx);
-                self.stored_tree = Some(subtree);
-                result
+        state
+            .scope(|state| {
+                ctx.scope(|ctx| {
+                    let mut subtree = self
+                        .stored_tree
+                        .take()
+                        .unwrap_or((self.subtree_fn)(state, ctx));
+                    let result = subtree.inner.constraints(area, state, ctx);
+                    self.stored_tree = Some(subtree);
+                    result
+                })
             })
-        })
+            .unwrap_or(SizeConstraints {
+                width: Constraint::none(),
+                height: Constraint::none(),
+                aspect: None,
+            })
     }
 }
