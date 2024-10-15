@@ -4,7 +4,7 @@ use crate::{
 use std::{marker::PhantomData, rc::Rc};
 
 /// Defines a vertical sequence of elements
-pub fn column<U: Copy>(elements: Vec<Node<U>>) -> Node<U> {
+pub fn column<U>(elements: Vec<Node<U>>) -> Node<U> {
     Node {
         inner: NodeValue::Column {
             elements: filter_empty(ungroup(elements)),
@@ -32,13 +32,13 @@ pub fn column<U: Copy>(elements: Vec<Node<U>>) -> Node<U> {
 ///     ),
 /// ]);
 /// ```
-pub fn group<U: Copy>(elements: Vec<Node<U>>) -> Node<U> {
+pub fn group<U>(elements: Vec<Node<U>>) -> Node<U> {
     Node {
         inner: NodeValue::Group(filter_empty(ungroup(elements))),
     }
 }
 /// Defines a vertical sequence of elements with the specified spacing between each element.
-pub fn column_spaced<U: Copy>(spacing: f32, elements: Vec<Node<U>>) -> Node<U> {
+pub fn column_spaced<U>(spacing: f32, elements: Vec<Node<U>>) -> Node<U> {
     Node {
         inner: NodeValue::Column {
             elements: filter_empty(ungroup(elements)),
@@ -49,7 +49,7 @@ pub fn column_spaced<U: Copy>(spacing: f32, elements: Vec<Node<U>>) -> Node<U> {
     }
 }
 /// Defines a horizontal sequence of elements
-pub fn row<U: Copy>(elements: Vec<Node<U>>) -> Node<U> {
+pub fn row<U>(elements: Vec<Node<U>>) -> Node<U> {
     Node {
         inner: NodeValue::Row {
             elements: filter_empty(ungroup(elements)),
@@ -60,7 +60,7 @@ pub fn row<U: Copy>(elements: Vec<Node<U>>) -> Node<U> {
     }
 }
 /// Defines a horizontal sequence of elements with the specified spacing between each element.
-pub fn row_spaced<U: Copy>(spacing: f32, elements: Vec<Node<U>>) -> Node<U> {
+pub fn row_spaced<U>(spacing: f32, elements: Vec<Node<U>>) -> Node<U> {
     Node {
         inner: NodeValue::Row {
             elements: filter_empty(ungroup(elements)),
@@ -71,7 +71,7 @@ pub fn row_spaced<U: Copy>(spacing: f32, elements: Vec<Node<U>>) -> Node<U> {
     }
 }
 /// Defines a sequence of elements to be laid out on top of each other.
-pub fn stack<U: Copy>(elements: Vec<Node<U>>) -> Node<U> {
+pub fn stack<U>(elements: Vec<Node<U>>) -> Node<U> {
     Node {
         inner: NodeValue::Stack(filter_empty(ungroup(elements))),
     }
@@ -92,7 +92,7 @@ pub fn stack<U: Copy>(elements: Vec<Node<U>>) -> Node<U> {
 ///  })
 ///}
 /// ```
-pub fn draw<U: Copy>(drawable: impl Fn(Area, U) + 'static) -> Node<U> {
+pub fn draw<U>(drawable: impl Fn(Area, &mut U) + 'static) -> Node<U> {
     Node {
         inner: NodeValue::Draw(Drawable {
             area: Area::default(),
@@ -101,14 +101,14 @@ pub fn draw<U: Copy>(drawable: impl Fn(Area, U) + 'static) -> Node<U> {
     }
 }
 /// Defines an empty space which is laid out the same as any other node.
-pub fn space<U: Copy>() -> Node<U> {
+pub fn space<U>() -> Node<U> {
     Node {
         inner: NodeValue::Space,
     }
 }
 /// Nothing! This will not have any impact on layout - useful for conditionally
 /// adding elements to a layout in the case where nothing should be added.
-pub fn empty<U: Copy>() -> Node<U> {
+pub fn empty<U>() -> Node<U> {
     Node {
         inner: NodeValue::Empty,
     }
@@ -117,7 +117,7 @@ pub fn empty<U: Copy>() -> Node<U> {
 ///
 /// This node comes with caveats! Constraints within an area reader **cannot** expand the area reader itself.
 /// If it could - it would create cyclical dependency which may be impossible to resolve.
-pub fn area_reader<U: Copy>(func: impl Fn(Area, U) -> Node<U> + 'static) -> Node<U> {
+pub fn area_reader<U>(func: impl Fn(Area, &mut U) -> Node<U> + 'static) -> Node<U> {
     Node {
         inner: NodeValue::AreaReader {
             read: Rc::new(func),
@@ -126,10 +126,10 @@ pub fn area_reader<U: Copy>(func: impl Fn(Area, U) -> Node<U> + 'static) -> Node
 }
 
 /// Narrows or scopes the mutable state available to the children of this node
-pub fn scope<U, V>(node: impl Fn(V) -> Node<V> + 'static) -> Node<U>
+pub fn scope<U, V>(node: impl Fn(&mut V) -> Node<V> + 'static) -> Node<U>
 where
-    V: Copy + 'static,
-    U: Copy + Scopable<V> + 'static,
+    V: 'static,
+    U: Scopable<V> + 'static,
 {
     Node {
         inner: NodeValue::Scope {
@@ -142,7 +142,7 @@ where
     }
 }
 
-fn ungroup<U: Copy>(elements: Vec<Node<U>>) -> Vec<NodeValue<U>> {
+fn ungroup<U>(elements: Vec<Node<U>>) -> Vec<NodeValue<U>> {
     elements
         .into_iter()
         .flat_map(|el| {
@@ -155,7 +155,7 @@ fn ungroup<U: Copy>(elements: Vec<Node<U>>) -> Vec<NodeValue<U>> {
         .collect()
 }
 
-fn filter_empty<U: Copy>(elements: Vec<NodeValue<U>>) -> Vec<NodeValue<U>> {
+fn filter_empty<U>(elements: Vec<NodeValue<U>>) -> Vec<NodeValue<U>> {
     elements
         .into_iter()
         .filter(|el| {
