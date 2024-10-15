@@ -1,6 +1,6 @@
 use crate::{
-    drawable::Drawable, layout::NodeValue, models::*, subtree::Subtree, traits::Scopable, Node,
-    NodeWith,
+    drawable::Drawable, layout::NodeValue, models::*, subtree::Subtree, traits::ScopableOption,
+    Node, NodeWith,
 };
 use std::{marker::PhantomData, rc::Rc};
 
@@ -160,12 +160,14 @@ pub fn area_reader_with<State, Ctx>(
     }
 }
 /// Narrows or scopes the mutable state available to the children of this node
+/// `State` must implement [`Scopable`] or [`ScopableOption`].
+/// The children of this node will only have access to the scoped state and context.
 pub fn scope<State, ScopedState>(
     node: impl Fn(&mut ScopedState) -> Node<ScopedState> + 'static,
 ) -> Node<State>
 where
     ScopedState: 'static,
-    State: Scopable<ScopedState> + 'static,
+    State: ScopableOption<ScopedState> + 'static,
 {
     NodeWith {
         inner: NodeValue::Scope {
@@ -179,14 +181,16 @@ where
     }
 }
 /// Narrows or scopes the mutable state available to the children of this node
+/// `State` & `Ctx` must both implement [`Scopable`] or [`ScopableOption`].
+/// The children of this node will only have access to the scoped state and context.
 pub fn scope_with<State, ScopedState, Ctx, ScopedCtx>(
     node: impl Fn(&mut ScopedState, &mut ScopedCtx) -> NodeWith<ScopedState, ScopedCtx> + 'static,
 ) -> NodeWith<State, Ctx>
 where
     ScopedState: 'static,
-    State: Scopable<ScopedState> + 'static,
+    State: ScopableOption<ScopedState> + 'static,
     ScopedCtx: 'static,
-    Ctx: Scopable<ScopedCtx> + 'static,
+    Ctx: ScopableOption<ScopedCtx> + 'static,
 {
     NodeWith {
         inner: NodeValue::Scope {

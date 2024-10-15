@@ -5,6 +5,7 @@ mod tests {
     use crate::models::*;
     use crate::nodes::*;
     use crate::traits::Scopable;
+    use crate::traits::ScopableOption;
     use crate::Node;
     use crate::NodeWith;
     #[test]
@@ -728,19 +729,48 @@ mod tests {
         struct A {
             b: Option<B>,
         }
-        impl Scopable<B> for A {
-            fn scope<F, Result>(&mut self, f: F) -> Result
+        impl ScopableOption<B> for A {
+            fn scope_option<F, Result>(&mut self, f: F) -> Result
             where
-                F: FnOnce(&mut B) -> Result,
+                F: FnOnce(Option<&mut B>) -> Result,
             {
-                if let b = self.b.as_mut() {
-                    f(b)
-                }
+                f(self.b.as_mut())
             }
         }
         fn layout(_a: &mut A) -> Node<A> {
             stack(vec![scope(|_b: &mut B| space())])
         }
-        Layout::new(layout).draw(Area::new(0., 0., 100., 100.), &mut A { b: B, c: C });
+        Layout::new(layout).draw(Area::new(0., 0., 100., 100.), &mut A { b: Some(B) });
+    }
+    #[test]
+    fn test_scope_unwrap_ctx() {
+        struct B;
+        struct A {
+            b: Option<B>,
+        }
+        impl ScopableOption<B> for A {
+            fn scope_option<F, Result>(&mut self, f: F) -> Result
+            where
+                F: FnOnce(Option<&mut B>) -> Result,
+            {
+                f(self.b.as_mut())
+            }
+        }
+        impl Scopable<B> for B {
+            fn scope<F, Result>(&mut self, f: F) -> Result
+            where
+                F: FnOnce(&mut B) -> Result,
+            {
+                f(self)
+            }
+        }
+        fn layout(_b: &mut B, _a: &mut A) -> NodeWith<B, A> {
+            stack(vec![scope_with(|_b: &mut B, _b_1: &mut B| space())])
+        }
+        Layout::new_with(layout).draw_with(
+            Area::new(0., 0., 100., 100.),
+            &mut B,
+            &mut A { b: Some(B) },
+        );
     }
 }
