@@ -41,19 +41,20 @@ async fn main() {
 
 const BTN_SIZE: f32 = 50.;
 fn layout_for_highlight(ctx: &mut State) -> Node<State> {
-    impl Scopable<HighlightedCase> for State {
-        fn scope<F, R>(&mut self, f: F) -> R
-        where
-            F: FnOnce(&mut HighlightedCase) -> R,
-        {
-            f(&mut self.highlight)
+    struct HighlightScoper;
+    impl Scopable<State, HighlightedCase> for HighlightScoper {
+        fn scope<Result>(
+            scoping: &mut State,
+            f: impl FnOnce(&mut HighlightedCase) -> Result,
+        ) -> Result {
+            f(&mut scoping.highlight)
         }
     }
     let highlight = ctx.highlight;
     row_spaced(
         20.,
         vec![
-            scope(|highlight| rel_abs_seq(*highlight)),
+            scope::<_, _, HighlightScoper>(|highlight| rel_abs_seq(*highlight)),
             if highlight == HighlightedCase::AlignmentOffset || highlight == HighlightedCase::None {
                 column_spaced(
                     10.,
