@@ -164,7 +164,11 @@ pub fn area_reader_with<State, Ctx>(
     }
 }
 /// Narrows or scopes the mutable state available to the children of this node
-/// `State` must implement [`Scopable`] or [`ScopableOption`].
+/// The `StateScoper` generic must implement [`Scopable`] or [`ScopableOption`].
+///
+/// This function usually needs explicit generic arguments `scope::<_, _, Scoper>(my_scoped_layout)`
+/// See [`Scopable`] for more documentation.
+///
 /// The children of this node will only have access to the scoped state and context.
 pub fn scope<State, ScopedState, StateScoper>(
     node: impl Fn(&mut ScopedState) -> Node<ScopedState> + 'static,
@@ -188,7 +192,11 @@ where
     }
 }
 /// Narrows or scopes the mutable state available to the children of this node
-/// `State` & `Ctx` must both implement [`Scopable`] or [`ScopableOption`].
+/// The `StateScoper` & CtxScoper generics both must implement [`Scopable`] or [`ScopableOption`].
+///
+/// This function usually needs explicit generic arguments `scope::<_, _, _, _, MyStateScoper, MyCtxScoper>(my_scoped_layout)`
+/// See [`Scopable`] for more documentation.
+///
 /// The children of this node will only have access to the scoped state and context.
 pub fn scope_with<State, ScopedState, Ctx, ScopedCtx, StateScoper, CtxScoper>(
     node: impl Fn(&mut ScopedState, &mut ScopedCtx) -> NodeWith<ScopedState, ScopedCtx> + 'static,
