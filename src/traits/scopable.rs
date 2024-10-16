@@ -27,31 +27,25 @@ pub trait Scopable<Scoping, Scoped> {
     ///     }
     /// }
     /// ```
-    fn scope<F, Result>(scoping: &mut Scoping, f: F) -> Result
-    where
-        F: FnOnce(&mut Scoped) -> Result;
+    fn scope<Result>(scoping: &mut Scoping, f: impl FnOnce(&mut Scoped) -> Result) -> Result;
 }
 
 pub(crate) struct VoidScoper;
 
 impl Scopable<(), ()> for VoidScoper {
-    fn scope<F, Result>(scoping: &mut (), f: F) -> Result
-    where
-        F: FnOnce(&mut ()) -> Result,
-    {
+    fn scope<Result>(scoping: &mut (), f: impl FnOnce(&mut ()) -> Result) -> Result {
         f(scoping)
     }
 }
 
+/// Used to implement scoping which has no effect.
+/// Useful for scoping one of State / Ctx without scoping the other.
 pub struct NoOpScoper<Scoping> {
     _s: PhantomData<Scoping>,
 }
 
 impl<Scoping> Scopable<Scoping, Scoping> for NoOpScoper<Scoping> {
-    fn scope<F, Result>(scoping: &mut Scoping, f: F) -> Result
-    where
-        F: FnOnce(&mut Scoping) -> Result,
-    {
+    fn scope<Result>(scoping: &mut Scoping, f: impl FnOnce(&mut Scoping) -> Result) -> Result {
         f(scoping)
     }
 }

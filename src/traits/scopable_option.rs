@@ -23,19 +23,20 @@ pub trait ScopableOption<Scoping, Scoped> {
     ///     }
     /// }
     /// ```
-    fn scope_option<F, Result>(scoping: &mut Scoping, f: F) -> Result
-    where
-        F: FnOnce(Option<&mut Scoped>) -> Result;
+    fn scope_option<Result>(
+        scoping: &mut Scoping,
+        f: impl FnOnce(Option<&mut Scoped>) -> Result,
+    ) -> Result;
 }
 
 impl<T, Scoping, Scoped> ScopableOption<Scoping, Scoped> for T
 where
     T: Scopable<Scoping, Scoped>,
 {
-    fn scope_option<F, Result>(scoping: &mut Scoping, f: F) -> Result
-    where
-        F: FnOnce(Option<&mut Scoped>) -> Result,
-    {
+    fn scope_option<Result>(
+        scoping: &mut Scoping,
+        f: impl FnOnce(Option<&mut Scoped>) -> Result,
+    ) -> Result {
         Self::scope(scoping, |s| f(Some(s)))
     }
 }

@@ -23,10 +23,7 @@ mod tests {
         };
         struct AToBScoper;
         impl Scopable<A, B> for AToBScoper {
-            fn scope<F, Result>(scoping: &mut A, f: F) -> Result
-            where
-                F: FnOnce(&mut B) -> Result,
-            {
+            fn scope<Result>(scoping: &mut A, f: impl FnOnce(&mut B) -> Result) -> Result {
                 f(&mut scoping.b)
             }
         }
@@ -74,10 +71,7 @@ mod tests {
         }
         struct BToCScoper;
         impl Scopable<B, C> for BToCScoper {
-            fn scope<F, Result>(scoping: &mut B, f: F) -> Result
-            where
-                F: FnOnce(&mut C) -> Result,
-            {
+            fn scope<Result>(scoping: &mut B, f: impl FnOnce(&mut C) -> Result) -> Result {
                 f(&mut scoping.c)
             }
         }
@@ -109,19 +103,13 @@ mod tests {
         }
         struct AToBScoper;
         impl Scopable<A, B> for AToBScoper {
-            fn scope<F, Result>(scoping: &mut A, f: F) -> Result
-            where
-                F: FnOnce(&mut B) -> Result,
-            {
+            fn scope<Result>(scoping: &mut A, f: impl FnOnce(&mut B) -> Result) -> Result {
                 f(&mut scoping.b)
             }
         }
         struct AToCScoper;
         impl Scopable<A, C> for AToCScoper {
-            fn scope<F, Result>(scoping: &mut A, f: F) -> Result
-            where
-                F: FnOnce(&mut C) -> Result,
-            {
+            fn scope<Result>(scoping: &mut A, f: impl FnOnce(&mut C) -> Result) -> Result {
                 f(&mut scoping.c)
             }
         }
@@ -141,10 +129,10 @@ mod tests {
         }
         struct AScoper;
         impl ScopableOption<A, B> for AScoper {
-            fn scope_option<F, Result>(scoping: &mut A, f: F) -> Result
-            where
-                F: FnOnce(Option<&mut B>) -> Result,
-            {
+            fn scope_option<Result>(
+                scoping: &mut A,
+                f: impl FnOnce(Option<&mut B>) -> Result,
+            ) -> Result {
                 f(scoping.b.as_mut())
             }
         }
@@ -161,19 +149,16 @@ mod tests {
         }
         struct AScoper;
         impl ScopableOption<A, B> for AScoper {
-            fn scope_option<F, Result>(scoping: &mut A, f: F) -> Result
-            where
-                F: FnOnce(Option<&mut B>) -> Result,
-            {
+            fn scope_option<Result>(
+                scoping: &mut A,
+                f: impl FnOnce(Option<&mut B>) -> Result,
+            ) -> Result {
                 f(scoping.b.as_mut())
             }
         }
         struct BScoper;
         impl Scopable<B, B> for BScoper {
-            fn scope<F, Result>(scoping: &mut B, f: F) -> Result
-            where
-                F: FnOnce(&mut B) -> Result,
-            {
+            fn scope<Result>(scoping: &mut B, f: impl FnOnce(&mut B) -> Result) -> Result {
                 f(scoping)
             }
         }
