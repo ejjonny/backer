@@ -1,15 +1,20 @@
+use core::fmt;
+use std::fmt::{Debug, Formatter};
+
 use crate::layout::NodeValue;
 
 /// A layout tree node. Use methods in [`crate::nodes`] to create nodes.
-#[derive(Debug)]
-pub struct Node<State> {
-    pub(crate) inner: NodeValue<State>,
+pub type Node<State> = NodeWith<State, ()>;
+
+/// A layout tree node. Use methods in [`crate::nodes`] to create nodes.
+pub struct NodeWith<State, Ctx> {
+    pub(crate) inner: NodeValue<State, Ctx>,
 }
 
-impl<State> Clone for Node<State> {
-    fn clone(&self) -> Self {
-        Node {
-            inner: self.inner.clone(),
-        }
+impl<State, Ctx> Debug for NodeWith<State, Ctx> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.debug_struct("NodeWith")
+            .field("inner", &self.inner)
+            .finish()
     }
 }

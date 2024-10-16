@@ -1,12 +1,16 @@
 use crate::{
-    anynode::AnyNode, constraints::SizeConstraints, drawable::Drawable, layout::NodeValue,
-    models::*, Node,
+    drawable::Drawable,
+    layout::NodeValue,
+    models::*,
+    subtree::Subtree,
+    traits::{ScopableOption, VoidScoper},
+    Node, NodeWith,
 };
-use std::{any::Any, rc::Rc};
+use std::{marker::PhantomData, rc::Rc};
 
 /// Defines a vertical sequence of elements
-pub fn column<U>(elements: Vec<Node<U>>) -> Node<U> {
-    Node {
+pub fn column<State, Ctx>(elements: Vec<NodeWith<State, Ctx>>) -> NodeWith<State, Ctx> {
+    NodeWith {
         inner: NodeValue::Column {
             elements: filter_empty(ungroup(elements)),
             spacing: 0.,
@@ -22,8 +26,9 @@ pub fn column<U>(elements: Vec<Node<U>>) -> Node<U> {
 /// use backer::*;
 /// use backer::models::*;
 /// use backer::nodes::*;
+/// use backer::traits::Scopable;
 ///
-/// column::<()>(vec![
+/// column::<(), ()>(vec![
 ///     empty(),
 ///     group(
 ///         (0..5)
@@ -33,14 +38,17 @@ pub fn column<U>(elements: Vec<Node<U>>) -> Node<U> {
 ///     ),
 /// ]);
 /// ```
-pub fn group<U>(elements: Vec<Node<U>>) -> Node<U> {
-    Node {
+pub fn group<State, Ctx>(elements: Vec<NodeWith<State, Ctx>>) -> NodeWith<State, Ctx> {
+    NodeWith {
         inner: NodeValue::Group(filter_empty(ungroup(elements))),
     }
 }
 /// Defines a vertical sequence of elements with the specified spacing between each element.
-pub fn column_spaced<U>(spacing: f32, elements: Vec<Node<U>>) -> Node<U> {
-    Node {
+pub fn column_spaced<State, Ctx>(
+    spacing: f32,
+    elements: Vec<NodeWith<State, Ctx>>,
+) -> NodeWith<State, Ctx> {
+    NodeWith {
         inner: NodeValue::Column {
             elements: filter_empty(ungroup(elements)),
             spacing,
@@ -50,8 +58,8 @@ pub fn column_spaced<U>(spacing: f32, elements: Vec<Node<U>>) -> Node<U> {
     }
 }
 /// Defines a horizontal sequence of elements
-pub fn row<U>(elements: Vec<Node<U>>) -> Node<U> {
-    Node {
+pub fn row<State, Ctx>(elements: Vec<NodeWith<State, Ctx>>) -> NodeWith<State, Ctx> {
+    NodeWith {
         inner: NodeValue::Row {
             elements: filter_empty(ungroup(elements)),
             spacing: 0.,
@@ -61,8 +69,11 @@ pub fn row<U>(elements: Vec<Node<U>>) -> Node<U> {
     }
 }
 /// Defines a horizontal sequence of elements with the specified spacing between each element.
-pub fn row_spaced<U>(spacing: f32, elements: Vec<Node<U>>) -> Node<U> {
-    Node {
+pub fn row_spaced<State, Ctx>(
+    spacing: f32,
+    elements: Vec<NodeWith<State, Ctx>>,
+) -> NodeWith<State, Ctx> {
+    NodeWith {
         inner: NodeValue::Row {
             elements: filter_empty(ungroup(elements)),
             spacing,
@@ -72,8 +83,8 @@ pub fn row_spaced<U>(spacing: f32, elements: Vec<Node<U>>) -> Node<U> {
     }
 }
 /// Defines a sequence of elements to be laid out on top of each other.
-pub fn stack<U>(elements: Vec<Node<U>>) -> Node<U> {
-    Node {
+pub fn stack<State, Ctx>(elements: Vec<NodeWith<State, Ctx>>) -> NodeWith<State, Ctx> {
+    NodeWith {
         inner: NodeValue::Stack(filter_empty(ungroup(elements))),
     }
 }
@@ -83,6 +94,7 @@ pub fn stack<U>(elements: Vec<Node<U>>) -> Node<U> {
 /// use backer::*;
 /// use backer::models::*;
 /// use backer::nodes::*;
+/// use backer::traits::Scopable;
 ///
 /// struct MyState {}
 /// fn my_drawable(state: &mut MyState) -> Node<MyState> {
@@ -93,24 +105,35 @@ pub fn stack<U>(elements: Vec<Node<U>>) -> Node<U> {
 ///  })
 ///}
 /// ```
-pub fn draw<U>(drawable: impl Fn(Area, &mut U) + 'static) -> Node<U> {
-    Node {
+pub fn draw<State>(drawable: impl Fn(Area, &mut State) + 'static) -> Node<State> {
+    NodeWith {
         inner: NodeValue::Draw(Drawable {
             area: Area::default(),
-            draw: Rc::new(drawable),
+            draw: Rc::new(move |area, a, _| drawable(area, a)),
+        }),
+    }
+}
+/// Defines a node that can be drawn
+pub fn draw_with<State, Ctx>(
+    drawable: impl Fn(Area, &mut State, &mut Ctx) + 'static,
+) -> NodeWith<State, Ctx> {
+    NodeWith {
+        inner: NodeValue::Draw(Drawable {
+            area: Area::default(),
+            draw: Rc::new(move |area, a, b| drawable(area, a, b)),
         }),
     }
 }
 /// Defines an empty space which is laid out the same as any other node.
-pub fn space<U>() -> Node<U> {
-    Node {
+pub fn space<State, Ctx>() -> NodeWith<State, Ctx> {
+    NodeWith {
         inner: NodeValue::Space,
     }
 }
 /// Nothing! This will not have any impact on layout - useful for conditionally
 /// adding elements to a layout in the case where nothing should be added.
-pub fn empty<U>() -> Node<U> {
-    Node {
+pub fn empty<State, Ctx>() -> NodeWith<State, Ctx> {
+    NodeWith {
         inner: NodeValue::Empty,
     }
 }
@@ -118,59 +141,89 @@ pub fn empty<U>() -> Node<U> {
 ///
 /// This node comes with caveats! Constraints within an area reader **cannot** expand the area reader itself.
 /// If it could - it would create cyclical dependency which may be impossible to resolve.
-pub fn area_reader<U>(func: impl Fn(Area, &mut U) -> Node<U> + 'static) -> Node<U> {
-    Node {
+pub fn area_reader<State>(
+    func: impl Fn(Area, &mut State, &mut ()) -> Node<State> + 'static,
+) -> Node<State> {
+    NodeWith {
+        inner: NodeValue::AreaReader {
+            read: Rc::new(func),
+        },
+    }
+}
+/// Return nodes based on available area
+///
+/// This node comes with caveats! Constraints within an area reader **cannot** expand the area reader itself.
+/// If it could - it would create cyclical dependency which may be impossible to resolve.
+pub fn area_reader_with<State, Ctx>(
+    func: impl Fn(Area, &mut State, &mut Ctx) -> NodeWith<State, Ctx> + 'static,
+) -> NodeWith<State, Ctx> {
+    NodeWith {
         inner: NodeValue::AreaReader {
             read: Rc::new(func),
         },
     }
 }
 /// Narrows or scopes the mutable state available to the children of this node
-pub fn scope<U: 'static, V: 'static>(scope: fn(&mut U) -> &mut V, node: Node<V>) -> Node<U> {
-    Node {
-        inner: match node.inner {
-            NodeValue::Empty => empty().inner,
-            _ => NodeValue::<U>::Scope {
-                scoped: AnyNode {
-                    inner: Box::new(node),
-                    clone: |any| {
-                        Box::new(
-                            any.downcast_ref::<Node<V>>()
-                                .expect("Invalid downcast")
-                                .clone(),
-                        ) as Box<dyn Any>
-                    },
-                    layout: Rc::new(move |any, area, state| {
-                        any.downcast_mut::<Node<V>>()
-                            .expect("Invalid downcast")
-                            .inner
-                            .layout(area, None, None, scope(state))
-                    }),
-                    draw: Rc::new(move |any, state| {
-                        any.downcast_ref::<Node<V>>()
-                            .expect("Invalid downcast")
-                            .inner
-                            .draw(scope(state))
-                    }),
-                    constraints: Rc::new(move |any, area, state| {
-                        let scoped = any
-                            .downcast_mut::<Node<V>>()
-                            .expect("Invalid downcast")
-                            .inner
-                            .constraints(area, scope(state));
-                        SizeConstraints {
-                            width: scoped.width,
-                            height: scoped.height,
-                            aspect: scoped.aspect,
-                        }
-                    }),
-                },
-            },
+/// The `StateScoper` generic must implement [`Scopable`] or [`ScopableOption`].
+///
+/// This function usually needs explicit generic arguments `scope::<_, _, Scoper>(my_scoped_layout)`
+/// See [`Scopable`] for more documentation.
+///
+/// The children of this node will only have access to the scoped state and context.
+pub fn scope<State, ScopedState, StateScoper>(
+    node: impl Fn(&mut ScopedState) -> Node<ScopedState> + 'static,
+) -> Node<State>
+where
+    ScopedState: 'static,
+    State: 'static,
+    StateScoper: ScopableOption<State, ScopedState> + 'static,
+{
+    NodeWith {
+        inner: NodeValue::Scope {
+            scoped: Box::new(Subtree {
+                subtree_fn: Box::new(move |state, _| node(state)),
+                stored_tree: None,
+                _p: PhantomData,
+                _c: PhantomData,
+                _cs: PhantomData::<VoidScoper>,
+                _ss: PhantomData::<StateScoper>,
+            }),
+        },
+    }
+}
+/// Narrows or scopes the mutable state available to the children of this node
+/// The `StateScoper` & CtxScoper generics both must implement [`Scopable`] or [`ScopableOption`].
+///
+/// This function usually needs explicit generic arguments `scope::<_, _, _, _, MyStateScoper, MyCtxScoper>(my_scoped_layout)`
+/// See [`Scopable`] for more documentation.
+///
+/// The children of this node will only have access to the scoped state and context.
+pub fn scope_with<State, ScopedState, Ctx, ScopedCtx, StateScoper, CtxScoper>(
+    node: impl Fn(&mut ScopedState, &mut ScopedCtx) -> NodeWith<ScopedState, ScopedCtx> + 'static,
+) -> NodeWith<State, Ctx>
+where
+    ScopedState: 'static,
+    State: 'static,
+    ScopedCtx: 'static,
+    Ctx: 'static,
+    StateScoper: ScopableOption<State, ScopedState> + 'static,
+    CtxScoper: ScopableOption<Ctx, ScopedCtx> + 'static,
+{
+    NodeWith {
+        inner: NodeValue::Scope {
+            scoped: Box::new(Subtree {
+                subtree_fn: Box::new(node),
+                stored_tree: None,
+                _p: PhantomData,
+                _c: PhantomData,
+                _cs: PhantomData::<CtxScoper>,
+                _ss: PhantomData::<StateScoper>,
+            }),
         },
     }
 }
 
-fn ungroup<U>(elements: Vec<Node<U>>) -> Vec<NodeValue<U>> {
+fn ungroup<State, Ctx>(elements: Vec<NodeWith<State, Ctx>>) -> Vec<NodeValue<State, Ctx>> {
     elements
         .into_iter()
         .flat_map(|el| {
@@ -183,7 +236,7 @@ fn ungroup<U>(elements: Vec<Node<U>>) -> Vec<NodeValue<U>> {
         .collect()
 }
 
-fn filter_empty<U>(elements: Vec<NodeValue<U>>) -> Vec<NodeValue<U>> {
+fn filter_empty<State, Ctx>(elements: Vec<NodeValue<State, Ctx>>) -> Vec<NodeValue<State, Ctx>> {
     elements
         .into_iter()
         .filter(|el| {

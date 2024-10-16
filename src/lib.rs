@@ -13,18 +13,21 @@ See [`Layout`] for setup.
 See [`Node`] for layout customization.
 */
 
-mod anynode;
-mod clone;
 mod constraints;
 mod debug;
 mod drawable;
 mod layout;
 mod modifiers;
 mod node;
+mod subtree;
 mod tests;
 
 pub use layout::Layout;
 pub use node::Node;
+pub use node::NodeWith;
+
+/// Traits for layout definitions
+pub mod traits;
 
 /// Structs involved in layout definitions
 pub mod models;
