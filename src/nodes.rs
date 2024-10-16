@@ -1,5 +1,9 @@
 use crate::{
-    drawable::Drawable, layout::NodeValue, models::*, subtree::Subtree, traits::ScopableOption,
+    drawable::Drawable,
+    layout::NodeValue,
+    models::*,
+    subtree::Subtree,
+    traits::{ScopableOption, VoidScoper},
     Node, NodeWith,
 };
 use std::{marker::PhantomData, rc::Rc};
@@ -162,12 +166,13 @@ pub fn area_reader_with<State, Ctx>(
 /// Narrows or scopes the mutable state available to the children of this node
 /// `State` must implement [`Scopable`] or [`ScopableOption`].
 /// The children of this node will only have access to the scoped state and context.
-pub fn scope<State, ScopedState>(
+pub fn scope<State, ScopedState, StateScoper>(
     node: impl Fn(&mut ScopedState) -> Node<ScopedState> + 'static,
 ) -> Node<State>
 where
     ScopedState: 'static,
-    State: ScopableOption<ScopedState> + 'static,
+    State: 'static,
+    StateScoper: ScopableOption<State, ScopedState> + 'static,
 {
     NodeWith {
         inner: NodeValue::Scope {
@@ -176,6 +181,8 @@ where
                 stored_tree: None,
                 _p: PhantomData,
                 _c: PhantomData,
+                _cs: PhantomData::<VoidScoper>,
+                _ss: PhantomData::<StateScoper>,
             }),
         },
     }
@@ -183,14 +190,16 @@ where
 /// Narrows or scopes the mutable state available to the children of this node
 /// `State` & `Ctx` must both implement [`Scopable`] or [`ScopableOption`].
 /// The children of this node will only have access to the scoped state and context.
-pub fn scope_with<State, ScopedState, Ctx, ScopedCtx>(
+pub fn scope_with<State, ScopedState, Ctx, ScopedCtx, StateScoper, CtxScoper>(
     node: impl Fn(&mut ScopedState, &mut ScopedCtx) -> NodeWith<ScopedState, ScopedCtx> + 'static,
 ) -> NodeWith<State, Ctx>
 where
     ScopedState: 'static,
-    State: ScopableOption<ScopedState> + 'static,
+    State: 'static,
     ScopedCtx: 'static,
-    Ctx: ScopableOption<ScopedCtx> + 'static,
+    Ctx: 'static,
+    StateScoper: ScopableOption<State, ScopedState> + 'static,
+    CtxScoper: ScopableOption<Ctx, ScopedCtx> + 'static,
 {
     NodeWith {
         inner: NodeValue::Scope {
@@ -199,6 +208,8 @@ where
                 stored_tree: None,
                 _p: PhantomData,
                 _c: PhantomData,
+                _cs: PhantomData::<CtxScoper>,
+                _ss: PhantomData::<StateScoper>,
             }),
         },
     }

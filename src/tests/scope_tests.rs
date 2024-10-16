@@ -3,6 +3,7 @@ mod tests {
     use crate::layout::*;
     use crate::models::*;
     use crate::nodes::*;
+    use crate::traits::NoOpScoper;
     use crate::traits::Scopable;
     use crate::traits::ScopableOption;
     use crate::Node;
@@ -20,12 +21,13 @@ mod tests {
             test: true,
             b: B { test: true },
         };
-        impl Scopable<B> for A {
-            fn scope<F, Result>(&mut self, f: F) -> Result
+        struct AToBScoper;
+        impl Scopable<A, B> for AToBScoper {
+            fn scope<F, Result>(scoping: &mut A, f: F) -> Result
             where
                 F: FnOnce(&mut B) -> Result,
             {
-                f(&mut self.b)
+                f(&mut scoping.b)
             }
         }
         fn layout(a: &mut A) -> NodeWith<A, ()> {
@@ -41,7 +43,7 @@ mod tests {
                         a.test = true;
                     })
                 },
-                scope(|b: &mut B| {
+                scope::<_, _, AToBScoper>(|b: &mut B| {
                     if b.test {
                         draw(|area, b: &mut B| {
                             assert_eq!(area, Area::new(0., 0., 100., 100.));
@@ -70,22 +72,13 @@ mod tests {
         struct B {
             c: C,
         }
-
-        impl Scopable<A> for A {
-            fn scope<F, Result>(&mut self, f: F) -> Result
-            where
-                F: FnOnce(&mut A) -> Result,
-            {
-                f(self)
-            }
-        }
-
-        impl Scopable<C> for B {
-            fn scope<F, Result>(&mut self, f: F) -> Result
+        struct BToCScoper;
+        impl Scopable<B, C> for BToCScoper {
+            fn scope<F, Result>(scoping: &mut B, f: F) -> Result
             where
                 F: FnOnce(&mut C) -> Result,
             {
-                f(&mut self.c)
+                f(&mut scoping.c)
             }
         }
 
@@ -94,7 +87,7 @@ mod tests {
                 draw_with(|area, _, _| {
                     assert_eq!(area, Area::new(0., 0., 100., 100.));
                 }),
-                scope_with(|_, _| {
+                scope_with::<_, _, _, _, NoOpScoper<A>, BToCScoper>(|_, _| {
                     draw_with(|area, _a: &mut A, _c: &mut C| {
                         assert_eq!(area, Area::new(0., 0., 100., 100.));
                     })
@@ -114,27 +107,29 @@ mod tests {
         fn layout(a: &mut A) -> Node<A> {
             stack(vec![path_b(a), path_c(a)])
         }
-        fn path_b(_: &mut A) -> Node<A> {
-            impl Scopable<B> for A {
-                fn scope<F, Result>(&mut self, f: F) -> Result
-                where
-                    F: FnOnce(&mut B) -> Result,
-                {
-                    f(&mut self.b)
-                }
+        struct AToBScoper;
+        impl Scopable<A, B> for AToBScoper {
+            fn scope<F, Result>(scoping: &mut A, f: F) -> Result
+            where
+                F: FnOnce(&mut B) -> Result,
+            {
+                f(&mut scoping.b)
             }
-            stack(vec![scope(|_b: &mut B| space())])
+        }
+        struct AToCScoper;
+        impl Scopable<A, C> for AToCScoper {
+            fn scope<F, Result>(scoping: &mut A, f: F) -> Result
+            where
+                F: FnOnce(&mut C) -> Result,
+            {
+                f(&mut scoping.c)
+            }
+        }
+        fn path_b(_: &mut A) -> Node<A> {
+            stack(vec![scope::<_, _, AToBScoper>(|_b: &mut B| space())])
         }
         fn path_c(_: &mut A) -> Node<A> {
-            impl Scopable<C> for A {
-                fn scope<F, Result>(&mut self, f: F) -> Result
-                where
-                    F: FnOnce(&mut C) -> Result,
-                {
-                    f(&mut self.c)
-                }
-            }
-            stack(vec![scope(|_c: &mut C| space())])
+            stack(vec![scope::<_, _, AToCScoper>(|_c: &mut C| space())])
         }
         Layout::new(layout).draw(Area::new(0., 0., 100., 100.), &mut A { b: B, c: C });
     }
@@ -144,16 +139,17 @@ mod tests {
         struct A {
             b: Option<B>,
         }
-        impl ScopableOption<B> for A {
-            fn scope_option<F, Result>(&mut self, f: F) -> Result
+        struct AScoper;
+        impl ScopableOption<A, B> for AScoper {
+            fn scope_option<F, Result>(scoping: &mut A, f: F) -> Result
             where
                 F: FnOnce(Option<&mut B>) -> Result,
             {
-                f(self.b.as_mut())
+                f(scoping.b.as_mut())
             }
         }
         fn layout(_a: &mut A) -> Node<A> {
-            stack(vec![scope(|_b: &mut B| space())])
+            stack(vec![scope::<_, _, AScoper>(|_b: &mut B| space())])
         }
         Layout::new(layout).draw(Area::new(0., 0., 100., 100.), &mut A { b: Some(B) });
     }
@@ -163,24 +159,28 @@ mod tests {
         struct A {
             b: Option<B>,
         }
-        impl ScopableOption<B> for A {
-            fn scope_option<F, Result>(&mut self, f: F) -> Result
+        struct AScoper;
+        impl ScopableOption<A, B> for AScoper {
+            fn scope_option<F, Result>(scoping: &mut A, f: F) -> Result
             where
                 F: FnOnce(Option<&mut B>) -> Result,
             {
-                f(self.b.as_mut())
+                f(scoping.b.as_mut())
             }
         }
-        impl Scopable<B> for B {
-            fn scope<F, Result>(&mut self, f: F) -> Result
+        struct BScoper;
+        impl Scopable<B, B> for BScoper {
+            fn scope<F, Result>(scoping: &mut B, f: F) -> Result
             where
                 F: FnOnce(&mut B) -> Result,
             {
-                f(self)
+                f(scoping)
             }
         }
         fn layout(_b: &mut B, _a: &mut A) -> NodeWith<B, A> {
-            stack(vec![scope_with(|_b: &mut B, _b_1: &mut B| space())])
+            stack(vec![scope_with::<_, _, _, _, BScoper, AScoper>(
+                |_b: &mut B, _b_1: &mut B| space(),
+            )])
         }
         Layout::new_with(layout).draw_with(
             Area::new(0., 0., 100., 100.),

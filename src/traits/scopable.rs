@@ -1,5 +1,7 @@
+use std::marker::PhantomData;
+
 /// Implement `Scopable` to enable usage with [`Node::scope`]
-pub trait Scopable<Scoped> {
+pub trait Scopable<Scoping, Scoped> {
     /// Provide a scoped mutable reference to a subset of your state.
     ///
     /// This method is called by backer for various purposes,
@@ -25,16 +27,31 @@ pub trait Scopable<Scoped> {
     ///     }
     /// }
     /// ```
-    fn scope<F, Result>(&mut self, f: F) -> Result
+    fn scope<F, Result>(scoping: &mut Scoping, f: F) -> Result
     where
         F: FnOnce(&mut Scoped) -> Result;
 }
 
-impl Scopable<()> for () {
-    fn scope<F, Result>(&mut self, f: F) -> Result
+pub(crate) struct VoidScoper;
+
+impl Scopable<(), ()> for VoidScoper {
+    fn scope<F, Result>(scoping: &mut (), f: F) -> Result
     where
         F: FnOnce(&mut ()) -> Result,
     {
-        f(self)
+        f(scoping)
+    }
+}
+
+pub struct NoOpScoper<Scoping> {
+    _s: PhantomData<Scoping>,
+}
+
+impl<Scoping> Scopable<Scoping, Scoping> for NoOpScoper<Scoping> {
+    fn scope<F, Result>(scoping: &mut Scoping, f: F) -> Result
+    where
+        F: FnOnce(&mut Scoping) -> Result,
+    {
+        f(scoping)
     }
 }

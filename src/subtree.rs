@@ -17,17 +17,27 @@ type SubtreeFn<SubState, SubCtx> =
 pub(crate) struct Subtree<
     SubState,
     SubCtx,
-    State: ScopableOption<SubState>,
-    Ctx: ScopableOption<SubCtx>,
+    State,
+    Ctx,
+    StateScoper: ScopableOption<State, SubState>,
+    CtxScoper: ScopableOption<Ctx, SubCtx>,
 > {
     pub(crate) subtree_fn: SubtreeFn<SubState, SubCtx>,
     pub(crate) stored_tree: Option<NodeWith<SubState, SubCtx>>,
     pub(crate) _p: PhantomData<State>,
     pub(crate) _c: PhantomData<Ctx>,
+    pub(crate) _ss: PhantomData<StateScoper>,
+    pub(crate) _cs: PhantomData<CtxScoper>,
 }
 
-impl<SubState, SubCtx, State: ScopableOption<SubState>, Ctx: ScopableOption<SubCtx>> Debug
-    for Subtree<SubState, SubCtx, State, Ctx>
+impl<
+        SubState,
+        SubCtx,
+        State,
+        Ctx,
+        StateScoper: ScopableOption<State, SubState>,
+        CtxScoper: ScopableOption<Ctx, SubCtx>,
+    > Debug for Subtree<SubState, SubCtx, State, Ctx, StateScoper, CtxScoper>
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         f.debug_struct("Subtree")
@@ -37,14 +47,15 @@ impl<SubState, SubCtx, State: ScopableOption<SubState>, Ctx: ScopableOption<SubC
     }
 }
 
-impl<SubCtx, SubState, State, Ctx> NodeTrait<State, Ctx> for Subtree<SubState, SubCtx, State, Ctx>
+impl<SubCtx, SubState, State, Ctx, StateScoper, CtxScoper> NodeTrait<State, Ctx>
+    for Subtree<SubState, SubCtx, State, Ctx, StateScoper, CtxScoper>
 where
-    State: ScopableOption<SubState>,
-    Ctx: ScopableOption<SubCtx>,
+    StateScoper: ScopableOption<State, SubState>,
+    CtxScoper: ScopableOption<Ctx, SubCtx>,
 {
     fn draw(&mut self, state: &mut State, ctx: &mut Ctx) {
-        state.scope_option(|state| {
-            ctx.scope_option(|ctx| {
+        StateScoper::scope_option(state, |state| {
+            CtxScoper::scope_option(ctx, |ctx| {
                 let (Some(state), Some(ctx)) = (state, ctx) else {
                     return None::<()>;
                 };
@@ -59,8 +70,8 @@ where
         });
     }
     fn layout(&mut self, available_area: Area, state: &mut State, ctx: &mut Ctx) {
-        state.scope_option(|state| {
-            ctx.scope_option(|ctx| {
+        StateScoper::scope_option(state, |state| {
+            CtxScoper::scope_option(ctx, |ctx| {
                 let (Some(state), Some(ctx)) = (state, ctx) else {
                     return None::<()>;
                 };
@@ -80,25 +91,24 @@ where
         state: &mut State,
         ctx: &mut Ctx,
     ) -> crate::constraints::SizeConstraints {
-        state
-            .scope_option(|state| {
-                ctx.scope_option(|ctx| {
-                    let (Some(state), Some(ctx)) = (state, ctx) else {
-                        return None;
-                    };
-                    let mut subtree = self
-                        .stored_tree
-                        .take()
-                        .unwrap_or((self.subtree_fn)(state, ctx));
-                    let result = subtree.inner.constraints(area, state, ctx);
-                    self.stored_tree = Some(subtree);
-                    Some(result)
-                })
+        StateScoper::scope_option(state, |state| {
+            CtxScoper::scope_option(ctx, |ctx| {
+                let (Some(state), Some(ctx)) = (state, ctx) else {
+                    return None;
+                };
+                let mut subtree = self
+                    .stored_tree
+                    .take()
+                    .unwrap_or((self.subtree_fn)(state, ctx));
+                let result = subtree.inner.constraints(area, state, ctx);
+                self.stored_tree = Some(subtree);
+                Some(result)
             })
-            .unwrap_or(SizeConstraints {
-                width: Constraint::none(),
-                height: Constraint::none(),
-                aspect: None,
-            })
+        })
+        .unwrap_or(SizeConstraints {
+            width: Constraint::none(),
+            height: Constraint::none(),
+            aspect: None,
+        })
     }
 }

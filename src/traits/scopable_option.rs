@@ -2,7 +2,7 @@ use super::Scopable;
 
 /// Implement `ScopableOption` to enable usage with [`Node::scope`] for optional state.
 /// For non-optional state, implement [`Scopable`].
-pub trait ScopableOption<Scoped> {
+pub trait ScopableOption<Scoping, Scoped> {
     /// Provide a scoped mutable reference to an optional subset of your state.
     ///
     /// ```rust
@@ -23,19 +23,19 @@ pub trait ScopableOption<Scoped> {
     ///     }
     /// }
     /// ```
-    fn scope_option<F, Result>(&mut self, f: F) -> Result
+    fn scope_option<F, Result>(scoping: &mut Scoping, f: F) -> Result
     where
         F: FnOnce(Option<&mut Scoped>) -> Result;
 }
 
-impl<T, Scoped> ScopableOption<Scoped> for T
+impl<T, Scoping, Scoped> ScopableOption<Scoping, Scoped> for T
 where
-    T: Scopable<Scoped>,
+    T: Scopable<Scoping, Scoped>,
 {
-    fn scope_option<F, Result>(&mut self, f: F) -> Result
+    fn scope_option<F, Result>(scoping: &mut Scoping, f: F) -> Result
     where
         F: FnOnce(Option<&mut Scoped>) -> Result,
     {
-        self.scope(|s| f(Some(s)))
+        Self::scope(scoping, |s| f(Some(s)))
     }
 }
