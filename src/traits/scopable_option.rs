@@ -14,12 +14,10 @@ pub trait ScopableOption<Scoping, Scoped> {
     ///
     /// struct B;
     ///
-    /// impl ScopableOption<B> for A {
-    ///     fn scope_option<F, Result>(&mut self, f: F) -> Result
-    ///     where
-    ///         F: FnOnce(Option<&mut B>) -> Result,
-    ///     {
-    ///        f(self.b.as_mut())
+    /// struct Scoper;
+    /// impl ScopableOption<A, B> for Scoper {
+    ///     fn scope_option<Result>(scoping: &mut A, f: impl FnOnce(Option<&mut B>) -> Result) -> Result {
+    ///        f(scoping.b.as_mut())
     ///     }
     /// }
     /// ```

@@ -17,13 +17,10 @@ pub trait Scopable<Scoping, Scoped> {
     ///
     /// struct B;
     ///
-    /// impl Scopable<B> for A {
-    ///     fn scope<F, Result>(&mut self, f: F) -> Result
-    ///     where
-    ///         F: FnOnce(&mut B) -> Result,
-    ///     {
-    ///        let scoped = &mut self.b;
-    ///        f(scoped)
+    /// struct Scoper;
+    /// impl Scopable<A, B> for Scoper {
+    ///     fn scope<Result>(scoping: &mut A, f: impl FnOnce(&mut B) -> Result) -> Result {
+    ///        f(&mut scoping.b)
     ///     }
     /// }
     /// ```
