@@ -32,20 +32,33 @@ use std::marker::PhantomData;
 ///     draw(|_area, _state: &mut B| {})
 /// }
 /// ```
-pub trait Scopable<Scoping, Scoped> {
+// pub trait Scopable<Scoping, Scoped> {
+//     /// Provide a scoped mutable reference to a subset of your state.
+//     ///
+//     /// This method is called by backer for various purposes,
+//     /// passing different closures for `f` & using the result returned by `Scopable::scope`.
+//     fn scope<'scoping, 'scoped, Result>(
+//         scoping: &'scoping mut Scoping,
+//         f: impl FnOnce(&'_ mut Scoped) -> Result + 'scoped,
+//     ) -> Result
+//     where
+//         Scoped: 'scoped,
+//         Scoping: 'scoping;
+//     // 'scoping: 'state;
+// }
+
+pub trait Scopable<'a, Scoping, Scoped> {
     /// Provide a scoped mutable reference to a subset of your state.
     ///
     /// This method is called by backer for various purposes,
     /// passing different closures for `f` & using the result returned by `Scopable::scope`.
-    fn scope<Result>(scoping: &mut Scoping, f: impl FnOnce(&mut Scoped) -> Result) -> Result;
-}
-
-pub(crate) struct VoidScoper;
-
-impl Scopable<(), ()> for VoidScoper {
-    fn scope<Result>(scoping: &mut (), f: impl FnOnce(&mut ()) -> Result) -> Result {
-        f(scoping)
-    }
+    fn scope<Result>(
+        scoping: &'a mut Scoping,
+        f: impl FnOnce(&'_ mut Scoped) -> Result + 'a,
+    ) -> Result
+    where
+        Scoped: 'a;
+    // Scoping: 'a;
 }
 
 /// Used to implement scoping which has no effect.
@@ -54,8 +67,8 @@ pub struct NoOpScoper<Scoping> {
     _s: PhantomData<Scoping>,
 }
 
-impl<Scoping> Scopable<Scoping, Scoping> for NoOpScoper<Scoping> {
-    fn scope<Result>(scoping: &mut Scoping, f: impl FnOnce(&mut Scoping) -> Result) -> Result {
-        f(scoping)
-    }
-}
+// impl<Scoping> Scopable<Scoping, Scoping> for NoOpScoper<Scoping> {
+//     fn scope<Result>(scoping: &mut Scoping, f: impl FnOnce(&mut Scoping) -> Result) -> Result {
+//         f(scoping)
+//     }
+// }

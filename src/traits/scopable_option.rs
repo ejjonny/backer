@@ -21,22 +21,29 @@ use super::Scopable;
 ///     }
 /// }
 /// ```
-pub trait ScopableOption<Scoping, Scoped> {
+pub trait ScopableOption<'a, Scoping, Scoped> {
     /// Provide a scoped mutable reference to an optional subset of your state.
     fn scope_option<Result>(
-        scoping: &mut Scoping,
-        f: impl FnOnce(Option<&mut Scoped>) -> Result,
-    ) -> Result;
+        scoping: &'a mut Scoping,
+        f: impl FnOnce(Option<&'_ mut Scoped>) -> Result + 'a,
+    ) -> Result
+    where
+        Scoped: 'a;
+    // Scoping: 'a;
 }
 
-impl<T, Scoping, Scoped> ScopableOption<Scoping, Scoped> for T
+impl<'a, T, Scoping, Scoped> ScopableOption<'a, Scoping, Scoped> for T
 where
-    T: Scopable<Scoping, Scoped>,
+    T: Scopable<'a, Scoping, Scoped>,
 {
     fn scope_option<Result>(
-        scoping: &mut Scoping,
-        f: impl FnOnce(Option<&mut Scoped>) -> Result,
-    ) -> Result {
+        scoping: &'a mut Scoping,
+        f: impl FnOnce(Option<&'_ mut Scoped>) -> Result + 'a,
+    ) -> Result
+    where
+        Scoped: 'a,
+        // Scoping: 'a,
+    {
         Self::scope(scoping, |s| f(Some(s)))
     }
 }

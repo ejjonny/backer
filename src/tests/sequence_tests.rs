@@ -391,9 +391,9 @@ mod tests {
     #[test]
     fn test_constraint_combination() {
         assert_eq!(
-            row::<(), ()>(vec![space(), space().height(30.)])
+            row::<()>(vec![space(), space().height(30.)])
                 .inner
-                .constraints(Area::zero(), &mut (), &mut ()),
+                .constraints(Area::zero(), &mut ()),
             SizeConstraints {
                 width: Constraint::none(),
                 height: Constraint {
@@ -404,9 +404,9 @@ mod tests {
             }
         );
         assert_eq!(
-            row::<(), ()>(vec![space().height(40.), space().height(30.)])
+            row::<()>(vec![space().height(40.), space().height(30.)])
                 .inner
-                .constraints(Area::zero(), &mut (), &mut ()),
+                .constraints(Area::zero(), &mut ()),
             SizeConstraints {
                 width: Constraint::none(),
                 height: Constraint {
@@ -417,9 +417,9 @@ mod tests {
             }
         );
         assert_eq!(
-            column::<(), ()>(vec![space(), space().width(10.)])
+            column::<()>(vec![space(), space().width(10.)])
                 .inner
-                .constraints(Area::zero(), &mut (), &mut ()),
+                .constraints(Area::zero(), &mut ()),
             SizeConstraints {
                 width: Constraint {
                     lower: Some(10.),
@@ -430,9 +430,9 @@ mod tests {
             }
         );
         assert_eq!(
-            column::<(), ()>(vec![space().width(20.), space().width(10.)])
+            column::<()>(vec![space().width(20.), space().width(10.)])
                 .inner
-                .constraints(Area::zero(), &mut (), &mut ()),
+                .constraints(Area::zero(), &mut ()),
             SizeConstraints {
                 width: Constraint {
                     lower: Some(20.),
@@ -443,9 +443,9 @@ mod tests {
             }
         );
         assert_eq!(
-            stack::<(), ()>(vec![space(), space().height(10.)])
+            stack::<()>(vec![space(), space().height(10.)])
                 .inner
-                .constraints(Area::zero(), &mut (), &mut ()),
+                .constraints(Area::zero(), &mut ()),
             SizeConstraints {
                 width: Constraint::none(),
                 height: Constraint {
@@ -456,9 +456,9 @@ mod tests {
             }
         );
         assert_eq!(
-            stack::<(), ()>(vec![space().height(20.), space().width(10.)])
+            stack::<()>(vec![space().height(20.), space().width(10.)])
                 .inner
-                .constraints(Area::zero(), &mut (), &mut ()),
+                .constraints(Area::zero(), &mut ()),
             SizeConstraints {
                 width: Constraint {
                     lower: Some(10.),
@@ -472,9 +472,9 @@ mod tests {
             }
         );
         assert_eq!(
-            stack::<(), ()>(vec![space().height(20.), space().height(10.)])
+            stack::<()>(vec![space().height(20.), space().height(10.)])
                 .inner
-                .constraints(Area::zero(), &mut (), &mut ()),
+                .constraints(Area::zero(), &mut ()),
             SizeConstraints {
                 width: Constraint {
                     lower: None,
@@ -488,9 +488,9 @@ mod tests {
             }
         );
         assert_eq!(
-            stack::<(), ()>(vec![space().width(20.), space().width(10.)])
+            stack::<()>(vec![space().width(20.), space().width(10.)])
                 .inner
-                .constraints(Area::zero(), &mut (), &mut ()),
+                .constraints(Area::zero(), &mut ()),
             SizeConstraints {
                 width: Constraint {
                     lower: Some(20.),

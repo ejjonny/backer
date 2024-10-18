@@ -24,7 +24,6 @@ mod tests;
 
 pub use layout::Layout;
 pub use node::Node;
-pub use node::NodeWith;
 
 /// Traits for layout definitions
 pub mod traits;

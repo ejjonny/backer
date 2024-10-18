@@ -1,7 +1,7 @@
-use crate::{layout::NodeValue, models::*, NodeWith};
+use crate::{layout::NodeValue, models::*, Node};
 use std::{ops::RangeBounds, rc::Rc};
 
-impl<State> NodeWith<State, ()> {
+impl<'a, State> Node<'a, State> {
     /// Constrains the node's height as a function of available width.
     ///
     /// Generally you should prefer size constraints, aspect ratio constraints or area readers over dynamic height.
@@ -9,36 +9,6 @@ impl<State> NodeWith<State, ()> {
     /// **This is primarily for UI elements such as text** where node height must depend on available width & scaling is
     /// not a simple option.
     pub fn dynamic_height(self, f: impl Fn(f32, &mut State) -> f32 + 'static) -> Self {
-        self.wrap_or_update_explicit(Size {
-            dynamic_height: Some(Rc::new(move |h, a, _| f(h, a))),
-            ..Default::default()
-        })
-    }
-    /// Constrains the node's width as a function of available height.
-    ///
-    /// Generally you should prefer size constraints, aspect ratio constraints or area readers over dynamic height.
-    ///
-    /// **This is primarily for UI elements such as text** where node width must depend on available height & scaling is
-    /// not a simple option.
-    pub fn dynamic_width(self, f: impl Fn(f32, &mut State) -> f32 + 'static) -> Self {
-        self.wrap_or_update_explicit(Size {
-            dynamic_width: Some(Rc::new(move |h, a, _| f(h, a))),
-            ..Default::default()
-        })
-    }
-}
-
-impl<State, Ctx> NodeWith<State, Ctx> {
-    /// Constrains the node's height as a function of available width.
-    ///
-    /// Generally you should prefer size constraints, aspect ratio constraints or area readers over dynamic height.
-    ///
-    /// **This is primarily for UI elements such as text** where node height must depend on available width & scaling is
-    /// not a simple option.
-    pub fn dynamic_height_with(
-        self,
-        f: impl Fn(f32, &mut State, &mut Ctx) -> f32 + 'static,
-    ) -> Self {
         self.wrap_or_update_explicit(Size {
             dynamic_height: Some(Rc::new(f)),
             ..Default::default()
@@ -50,18 +20,15 @@ impl<State, Ctx> NodeWith<State, Ctx> {
     ///
     /// **This is primarily for UI elements such as text** where node width must depend on available height & scaling is
     /// not a simple option.
-    pub fn dynamic_width_with(
-        self,
-        f: impl Fn(f32, &mut State, &mut Ctx) -> f32 + 'static,
-    ) -> Self {
+    pub fn dynamic_width(self, f: impl Fn(f32, &mut State) -> f32 + 'static) -> Self {
         self.wrap_or_update_explicit(Size {
             dynamic_width: Some(Rc::new(f)),
             ..Default::default()
         })
     }
     /// Adds padding to the node along the leading edge
-    pub fn pad_leading(self, amount: f32) -> NodeWith<State, Ctx> {
-        NodeWith {
+    pub fn pad_leading(self, amount: f32) -> Node<'a, State> {
+        Node {
             inner: NodeValue::Padding {
                 amounts: Padding {
                     leading: amount,
@@ -74,8 +41,8 @@ impl<State, Ctx> NodeWith<State, Ctx> {
         }
     }
     /// Adds horizontal padding to the node (leading & trailing)
-    pub fn pad_x(self, amount: f32) -> NodeWith<State, Ctx> {
-        NodeWith {
+    pub fn pad_x(self, amount: f32) -> Node<'a, State> {
+        Node {
             inner: NodeValue::Padding {
                 amounts: Padding {
                     leading: amount,
@@ -88,8 +55,8 @@ impl<State, Ctx> NodeWith<State, Ctx> {
         }
     }
     /// Adds padding to the node along the trailing edge
-    pub fn pad_trailing(self, amount: f32) -> NodeWith<State, Ctx> {
-        NodeWith {
+    pub fn pad_trailing(self, amount: f32) -> Node<'a, State> {
+        Node {
             inner: NodeValue::Padding {
                 amounts: Padding {
                     leading: 0.,
@@ -102,8 +69,8 @@ impl<State, Ctx> NodeWith<State, Ctx> {
         }
     }
     /// Adds padding to the node along the top edge
-    pub fn pad_top(self, amount: f32) -> NodeWith<State, Ctx> {
-        NodeWith {
+    pub fn pad_top(self, amount: f32) -> Node<'a, State> {
+        Node {
             inner: NodeValue::Padding {
                 amounts: Padding {
                     leading: 0.,
@@ -117,8 +84,8 @@ impl<State, Ctx> NodeWith<State, Ctx> {
     }
 
     /// Adds vertical padding to the node (top & bottom)
-    pub fn pad_y(self, amount: f32) -> NodeWith<State, Ctx> {
-        NodeWith {
+    pub fn pad_y(self, amount: f32) -> Node<'a, State> {
+        Node {
             inner: NodeValue::Padding {
                 amounts: Padding {
                     leading: 0.,
@@ -131,8 +98,8 @@ impl<State, Ctx> NodeWith<State, Ctx> {
         }
     }
     /// Adds padding to the node along the bottom edge
-    pub fn pad_bottom(self, amount: f32) -> NodeWith<State, Ctx> {
-        NodeWith {
+    pub fn pad_bottom(self, amount: f32) -> Node<'a, State> {
+        Node {
             inner: NodeValue::Padding {
                 amounts: Padding {
                     leading: 0.,
@@ -145,8 +112,8 @@ impl<State, Ctx> NodeWith<State, Ctx> {
         }
     }
     /// Adds padding to the node on all sides
-    pub fn pad(self, amount: f32) -> NodeWith<State, Ctx> {
-        NodeWith {
+    pub fn pad(self, amount: f32) -> Node<'a, State> {
+        Node {
             inner: NodeValue::Padding {
                 amounts: Padding {
                     leading: amount,
@@ -161,8 +128,8 @@ impl<State, Ctx> NodeWith<State, Ctx> {
     /// Offsets the node along the x axis.
     /// This is an absolute offset that simply shifts nodes away from their calculated position
     /// This won't impact layout besides child nodes also being offset
-    pub fn offset_x(self, amount: f32) -> NodeWith<State, Ctx> {
-        NodeWith {
+    pub fn offset_x(self, amount: f32) -> Node<'a, State> {
+        Node {
             inner: NodeValue::Offset {
                 offset_x: amount,
                 offset_y: 0.,
@@ -173,8 +140,8 @@ impl<State, Ctx> NodeWith<State, Ctx> {
     /// Offsets the node along the y axis.
     /// This is an absolute offset that simply shifts nodes away from their calculated position
     /// This won't impact layout besides child nodes also being offset
-    pub fn offset_y(self, amount: f32) -> NodeWith<State, Ctx> {
-        NodeWith {
+    pub fn offset_y(self, amount: f32) -> Node<'a, State> {
+        Node {
             inner: NodeValue::Offset {
                 offset_x: 0.,
                 offset_y: amount,
@@ -185,8 +152,8 @@ impl<State, Ctx> NodeWith<State, Ctx> {
     /// Offsets the node along the x & y axis.
     /// This is an absolute offset that simply shifts nodes away from their calculated position
     /// This won't impact layout besides child nodes also being offset
-    pub fn offset(self, offset_x: f32, offset_y: f32) -> NodeWith<State, Ctx> {
-        NodeWith {
+    pub fn offset(self, offset_x: f32, offset_y: f32) -> Node<'a, State> {
+        Node {
             inner: NodeValue::Offset {
                 offset_x,
                 offset_y,
@@ -311,7 +278,7 @@ impl<State, Ctx> NodeWith<State, Ctx> {
     /// The area available to the attached node is the size of the node it's attached to.
     /// Useful for adding an unconstrained node as an ornament, background, or overlay to a constrained node.
     pub fn attach_over(self, node: Self) -> Self {
-        NodeWith {
+        Node {
             inner: NodeValue::Coupled {
                 over: true,
                 element: Box::new(self.inner),
@@ -324,7 +291,7 @@ impl<State, Ctx> NodeWith<State, Ctx> {
     /// The area available to the attached node is the size of the node it's attached to.
     /// Useful for adding an unconstrained node as an ornament, background, or overlay to a constrained node.
     pub fn attach_under(self, node: Self) -> Self {
-        NodeWith {
+        Node {
             inner: NodeValue::Coupled {
                 over: false,
                 element: Box::new(self.inner),
@@ -332,7 +299,7 @@ impl<State, Ctx> NodeWith<State, Ctx> {
             },
         }
     }
-    fn wrap_or_update_explicit(mut self, size: Size<State, Ctx>) -> Self {
+    fn wrap_or_update_explicit(mut self, size: Size<State>) -> Self {
         match self.inner {
             NodeValue::Explicit {
                 ref mut options,
@@ -369,7 +336,7 @@ impl<State, Ctx> NodeWith<State, Ctx> {
                 };
             }
             _ => {
-                return NodeWith {
+                return Node {
                     inner: NodeValue::Explicit {
                         options: size,
                         element: Box::new(self.inner),
@@ -388,11 +355,11 @@ mod tests {
 
     #[test]
     fn test_explicit_wrap_valid() {
-        let c = space::<(), ()>()
+        let c = space::<()>()
             .width(10.)
             .width_range(5.0..)
             .inner
-            .constraints(Area::zero(), &mut (), &mut ());
+            .constraints(Area::zero(), &mut ());
         assert!(c.width.upper.is_none());
         assert_eq!(c.width.lower.unwrap(), 5.);
     }

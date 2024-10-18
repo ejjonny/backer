@@ -1,7 +1,7 @@
 use crate::layout::NodeValue;
 use std::fmt;
 
-impl<State, Ctx> fmt::Debug for NodeValue<State, Ctx> {
+impl<'a, State> fmt::Debug for NodeValue<'a, State> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             NodeValue::Padding { amounts, element } => f
