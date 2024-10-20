@@ -1,9 +1,5 @@
 use crate::{
-    constraints::{Constraint, SizeConstraints},
-    drawable::Drawable,
-    models::*,
-    traits::NodeTrait,
-    Node, NodeWith,
+    constraints::SizeConstraints, drawable::Drawable, models::*, traits::NodeTrait, Node, NodeWith,
 };
 use core::f32;
 use std::rc::Rc;
@@ -192,8 +188,8 @@ impl<State, Ctx> NodeValue<State, Ctx> {
         available_area: Area,
         contextual_x_align: Option<XAlign>,
         contextual_y_align: Option<YAlign>,
-        a: &mut State,
-        b: &mut Ctx,
+        state: &mut State,
+        ctx: &mut Ctx,
     ) -> Vec<Area> {
         match self {
             NodeValue::Padding { amounts, .. } => vec![Area {
@@ -214,8 +210,8 @@ impl<State, Ctx> NodeValue<State, Ctx> {
                 Orientation::Vertical,
                 off_axis_align.unwrap_or(XAlign::Center),
                 align.unwrap_or(YAlign::Center),
-                a,
-                b,
+                state,
+                ctx,
                 true,
             ),
             NodeValue::Row {
@@ -230,8 +226,8 @@ impl<State, Ctx> NodeValue<State, Ctx> {
                 Orientation::Horizontal,
                 align.unwrap_or(XAlign::Center),
                 off_axis_align.unwrap_or(YAlign::Center),
-                a,
-                b,
+                state,
+                ctx,
                 true,
             ),
             NodeValue::Stack(children) => children.iter().map(|_| available_area).collect(),
@@ -248,7 +244,7 @@ impl<State, Ctx> NodeValue<State, Ctx> {
                     .or(contextual_y_align)
                     .unwrap_or(YAlign::Center);
                 let available_area = available_area.constrained(
-                    &SizeConstraints::from_size(options.clone(), available_area, a, b),
+                    &SizeConstraints::from_size(options.clone(), available_area, state, ctx),
                     x_align,
                     y_align,
                 );
@@ -345,13 +341,16 @@ impl<State, Ctx> NodeValue<State, Ctx> {
 
 impl Area {
     fn constrained(self, constraints: &SizeConstraints, x_align: XAlign, y_align: YAlign) -> Self {
-        let mut width = match (constraints.width.lower, constraints.width.upper) {
+        let mut width = match (constraints.width.get_lower(), constraints.width.get_upper()) {
             (None, None) => self.width,
             (None, Some(upper)) => self.width.min(upper),
             (Some(lower), None) => self.width.max(lower),
             (Some(lower), Some(upper)) => self.width.clamp(lower, upper.max(lower)),
         };
-        let mut height = match (constraints.height.lower, constraints.height.upper) {
+        let mut height = match (
+            constraints.height.get_lower(),
+            constraints.height.get_upper(),
+        ) {
             (None, None) => self.height,
             (None, Some(upper)) => self.height.min(upper),
             (Some(lower), None) => self.height.max(lower),
@@ -423,10 +422,8 @@ pub(crate) fn layout_axis<State, Ctx>(
             Orientation::Vertical => size_constraint.height,
         };
         let mut final_size = Option::<f32>::None;
-        let Constraint {
-            mut lower,
-            mut upper,
-        } = constraint;
+        let mut lower = constraint.get_lower();
+        let mut upper = constraint.get_upper();
 
         if let Some(aspect) = size_constraint.aspect {
             match orientation {

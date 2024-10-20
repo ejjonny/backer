@@ -396,10 +396,7 @@ mod tests {
                 .constraints(Area::zero(), &mut (), &mut ()),
             SizeConstraints {
                 width: Constraint::none(),
-                height: Constraint {
-                    lower: Some(30.),
-                    upper: None
-                },
+                height: Constraint::new(Some(30.), None),
                 aspect: None
             }
         );
@@ -409,10 +406,7 @@ mod tests {
                 .constraints(Area::zero(), &mut (), &mut ()),
             SizeConstraints {
                 width: Constraint::none(),
-                height: Constraint {
-                    lower: Some(40.),
-                    upper: Some(40.)
-                },
+                height: Constraint::new(Some(40.), Some(40.)),
                 aspect: None
             }
         );
@@ -421,10 +415,7 @@ mod tests {
                 .inner
                 .constraints(Area::zero(), &mut (), &mut ()),
             SizeConstraints {
-                width: Constraint {
-                    lower: Some(10.),
-                    upper: None
-                },
+                width: Constraint::new(Some(10.), None),
                 height: Constraint::none(),
                 aspect: None
             }
@@ -434,10 +425,7 @@ mod tests {
                 .inner
                 .constraints(Area::zero(), &mut (), &mut ()),
             SizeConstraints {
-                width: Constraint {
-                    lower: Some(20.),
-                    upper: Some(20.)
-                },
+                width: Constraint::new(Some(20.), Some(20.)),
                 height: Constraint::none(),
                 aspect: None
             }
@@ -448,10 +436,7 @@ mod tests {
                 .constraints(Area::zero(), &mut (), &mut ()),
             SizeConstraints {
                 width: Constraint::none(),
-                height: Constraint {
-                    lower: Some(10.),
-                    upper: None
-                },
+                height: Constraint::new(Some(10.), None),
                 aspect: None
             }
         );
@@ -460,14 +445,8 @@ mod tests {
                 .inner
                 .constraints(Area::zero(), &mut (), &mut ()),
             SizeConstraints {
-                width: Constraint {
-                    lower: Some(10.),
-                    upper: None
-                },
-                height: Constraint {
-                    lower: Some(20.),
-                    upper: None
-                },
+                width: Constraint::new(Some(10.), None),
+                height: Constraint::new(Some(20.), None),
                 aspect: None
             }
         );
@@ -476,14 +455,8 @@ mod tests {
                 .inner
                 .constraints(Area::zero(), &mut (), &mut ()),
             SizeConstraints {
-                width: Constraint {
-                    lower: None,
-                    upper: None
-                },
-                height: Constraint {
-                    lower: Some(20.),
-                    upper: Some(20.)
-                },
+                width: Constraint::none(),
+                height: Constraint::new(Some(20.), Some(20.)),
                 aspect: None
             }
         );
@@ -492,14 +465,24 @@ mod tests {
                 .inner
                 .constraints(Area::zero(), &mut (), &mut ()),
             SizeConstraints {
-                width: Constraint {
-                    lower: Some(20.),
-                    upper: Some(20.)
-                },
-                height: Constraint {
-                    lower: None,
-                    upper: None
-                },
+                width: Constraint::new(Some(20.), Some(20.)),
+                height: Constraint::none(),
+                aspect: None
+            }
+        );
+    }
+    #[test]
+    fn test_explicit_in_explicit_conflict_parent_priority() {
+        assert_eq!(
+            space::<(), ()>()
+                .width_range(10.0..)
+                .pad(0.)
+                .width_range(..5.)
+                .inner
+                .constraints(Area::zero(), &mut (), &mut ()),
+            SizeConstraints {
+                width: Constraint::new(Some(5.), Some(5.)),
+                height: Constraint::none(),
                 aspect: None
             }
         );

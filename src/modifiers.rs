@@ -393,7 +393,7 @@ mod tests {
             .width_range(5.0..)
             .inner
             .constraints(Area::zero(), &mut (), &mut ());
-        assert!(c.width.upper.is_none());
-        assert_eq!(c.width.lower.unwrap(), 5.);
+        assert!(c.width.get_upper().is_none());
+        assert_eq!(c.width.get_lower().unwrap(), 5.);
     }
 }

@@ -55,7 +55,7 @@ impl Default for MyApp {
           ]
         })
         .collect(),
-      show_backer: false,
+      show_backer: true,
     }
   }
 }
