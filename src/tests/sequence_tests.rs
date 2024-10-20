@@ -446,7 +446,7 @@ mod tests {
                 .constraints(Area::zero(), &mut (), &mut ()),
             SizeConstraints {
                 width: Constraint::new(Some(10.), None),
-                height: Constraint::new(Some(10.), None),
+                height: Constraint::new(Some(20.), None),
                 aspect: None
             }
         );

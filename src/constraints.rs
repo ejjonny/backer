@@ -24,16 +24,16 @@ impl Constraint {
     pub(crate) fn get_lower(&self) -> Option<f32> {
         self.lower
     }
-    pub(crate) fn set_lower(&self, value: Option<f32>) -> Option<f32> {
+    pub(crate) fn set_lower(&mut self, value: Option<f32>) {
         assert!(Self::check_constraints(value, self.upper));
-        self.lower
+        self.lower = value;
     }
     pub(crate) fn get_upper(&self) -> Option<f32> {
         self.upper
     }
-    pub(crate) fn set_upper(&self, value: Option<f32>) -> Option<f32> {
+    pub(crate) fn set_upper(&mut self, value: Option<f32>) {
         assert!(Self::check_constraints(self.lower, value));
-        self.lower
+        self.upper = value;
     }
     pub(crate) fn clamp(&self, value: f32) -> f32 {
         match (self.lower, self.upper) {
@@ -274,7 +274,7 @@ impl Constraint {
 
 impl SizeConstraints {
     pub(crate) fn from_size<A, B>(value: Size<A, B>, area: Area, a: &mut A, b: &mut B) -> Self {
-        let initial = SizeConstraints {
+        let mut initial = SizeConstraints {
             width: if value.width_min.is_some() || value.width_max.is_some() {
                 Constraint::new(value.width_min, value.width_max)
             } else {
