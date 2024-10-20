@@ -472,7 +472,7 @@ mod tests {
         );
     }
     #[test]
-    fn test_explicit_in_explicit() {
+    fn test_explicit_in_explicit_conflict_parent_priority() {
         assert_eq!(
             space::<(), ()>()
                 .width_range(10.0..)
