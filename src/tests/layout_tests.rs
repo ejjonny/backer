@@ -588,4 +588,19 @@ mod tests {
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
     }
+    #[test]
+    fn test_explicit_in_explicit() {
+        Layout::new(|()| {
+            draw(|a, _| {
+                assert_eq!(a, Area::new(40., 0., 20., 100.));
+            })
+            .width_range(20.0..)
+            .pad(0.)
+            .attach_under(draw(|a, _| {
+                assert_eq!(a, Area::new(45., 0., 10., 100.));
+            }))
+            .width_range(..10.)
+        })
+        .draw(Area::new(0., 0., 100., 100.), &mut ());
+    }
 }
