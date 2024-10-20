@@ -439,16 +439,6 @@ pub(crate) fn layout_axis<State, Ctx>(
                 }
             }
         }
-        match orientation {
-            Orientation::Horizontal => {
-                sizes[i].width.set_lower(lower);
-                sizes[i].width.set_upper(lower);
-            }
-            Orientation::Vertical => {
-                sizes[i].height.set_lower(lower);
-                sizes[i].height.set_upper(lower);
-            }
-        };
 
         if let Some(lower) = lower {
             if default_size < lower {
@@ -488,7 +478,7 @@ pub(crate) fn layout_axis<State, Ctx>(
         room.iter().filter(|r| r.abs() > 0.).count() as f32 > 0.
     }
 
-    let limit = 0;
+    let limit = 5;
     let mut i = 0;
     loop {
         if i > limit {
@@ -567,17 +557,12 @@ pub(crate) fn layout_axis<State, Ctx>(
         let child_size = final_sizes[i].unwrap();
 
         let mut area = match orientation {
-            Orientation::Horizontal => {
-                if pool != 0. {
-                    dbg!(&final_sizes, pool, &sizes);
-                }
-                Area {
-                    x: current_pos,
-                    y: available_area.y,
-                    width: child_size,
-                    height: available_area.height,
-                }
-            }
+            Orientation::Horizontal => Area {
+                x: current_pos,
+                y: available_area.y,
+                width: child_size,
+                height: available_area.height,
+            },
             Orientation::Vertical => Area {
                 x: available_area.x,
                 y: current_pos,
