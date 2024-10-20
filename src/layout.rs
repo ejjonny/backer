@@ -188,8 +188,8 @@ impl<State, Ctx> NodeValue<State, Ctx> {
         available_area: Area,
         contextual_x_align: Option<XAlign>,
         contextual_y_align: Option<YAlign>,
-        a: &mut State,
-        b: &mut Ctx,
+        state: &mut State,
+        ctx: &mut Ctx,
     ) -> Vec<Area> {
         match self {
             NodeValue::Padding { amounts, .. } => vec![Area {
@@ -210,8 +210,8 @@ impl<State, Ctx> NodeValue<State, Ctx> {
                 Orientation::Vertical,
                 off_axis_align.unwrap_or(XAlign::Center),
                 align.unwrap_or(YAlign::Center),
-                a,
-                b,
+                state,
+                ctx,
                 true,
             ),
             NodeValue::Row {
@@ -226,8 +226,8 @@ impl<State, Ctx> NodeValue<State, Ctx> {
                 Orientation::Horizontal,
                 align.unwrap_or(XAlign::Center),
                 off_axis_align.unwrap_or(YAlign::Center),
-                a,
-                b,
+                state,
+                ctx,
                 true,
             ),
             NodeValue::Stack(children) => children.iter().map(|_| available_area).collect(),
@@ -244,7 +244,7 @@ impl<State, Ctx> NodeValue<State, Ctx> {
                     .or(contextual_y_align)
                     .unwrap_or(YAlign::Center);
                 let available_area = available_area.constrained(
-                    &SizeConstraints::from_size(options.clone(), available_area, a, b),
+                    &SizeConstraints::from_size(options.clone(), available_area, state, ctx),
                     x_align,
                     y_align,
                 );
