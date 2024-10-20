@@ -54,7 +54,11 @@ fn layout_for_highlight(ctx: &mut State) -> Node<State> {
     row_spaced(
         20.,
         vec![
-            scope::<_, _, HighlightScoper>(|highlight| rel_abs_seq(*highlight)),
+            if highlight == HighlightedCase::RelAbsSequence || highlight == HighlightedCase::None {
+                scope::<_, _, HighlightScoper>(|highlight| rel_abs_seq(*highlight))
+            } else {
+                empty()
+            },
             if highlight == HighlightedCase::AlignmentOffset || highlight == HighlightedCase::None {
                 column_spaced(
                     10.,
@@ -105,30 +109,27 @@ fn layout_for_highlight(ctx: &mut State) -> Node<State> {
     )
 }
 
-fn rel_abs_seq(highlight: HighlightedCase) -> Node<HighlightedCase> {
-    if highlight == HighlightedCase::RelAbsSequence || highlight == HighlightedCase::None {
-        return column_spaced(
-            10.,
-            vec![
-                text("Mixed (rel/abs) Sequence Constraints", 15., WHITE),
-                stack(vec![
-                    rect(BLUE),
-                    column_spaced(10., vec![rect(WHITE), rect(WHITE).height(30.), rect(WHITE)])
-                        .pad(10.),
-                ]),
-                button("Fullscreen", |highlight: &mut HighlightedCase| {
-                    if *highlight == HighlightedCase::RelAbsSequence {
-                        *highlight = HighlightedCase::None;
-                    } else {
-                        *highlight = HighlightedCase::RelAbsSequence;
-                    }
-                })
-                .height(BTN_SIZE)
-                .align(Align::Bottom),
-            ],
-        );
-    }
-    empty()
+fn rel_abs_seq(_highlight: HighlightedCase) -> Node<HighlightedCase> {
+    column_spaced(
+        10.,
+        vec![
+            text("Mixed (rel/abs) Sequence Constraints", 15., WHITE),
+            stack(vec![
+                rect(BLUE),
+                column_spaced(10., vec![rect(WHITE), rect(WHITE).height(30.), rect(WHITE)])
+                    .pad(10.),
+            ]),
+            button("Fullscreen", |highlight: &mut HighlightedCase| {
+                if *highlight == HighlightedCase::RelAbsSequence {
+                    *highlight = HighlightedCase::None;
+                } else {
+                    *highlight = HighlightedCase::RelAbsSequence;
+                }
+            })
+            .height(BTN_SIZE)
+            .align(Align::Bottom),
+        ],
+    )
 }
 
 fn text<U>(string: &'static str, font_size: f32, color: Color) -> Node<U> {
