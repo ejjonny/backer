@@ -77,7 +77,6 @@ impl<State, Ctx> NodeValue<State, Ctx> {
                                 + child.width.get_lower().unwrap_or(0.)
                                 + amounts.trailing,
                         ),
-                        // None,
                         child
                             .width
                             .get_upper()
@@ -246,7 +245,7 @@ impl Constraint {
         // Child constraint is limited by parent constraint as it propogates up
         // The parent can be thought of as a wrapper which hides the constraints of it's child
         //
-        // If there is no lower bound on the parent
+        // For example: if there is no lower bound on the parent
         // & the lower bound on the child is higher than the parent's upper bound
         // we should limit the lower bound to the parent's upper bound
         //
