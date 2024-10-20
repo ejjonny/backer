@@ -471,4 +471,20 @@ mod tests {
             }
         );
     }
+    #[test]
+    fn test_explicit_in_explicit() {
+        assert_eq!(
+            space::<(), ()>()
+                .width_range(10.0..)
+                .pad(0.)
+                .width_range(..5.)
+                .inner
+                .constraints(Area::zero(), &mut (), &mut ()),
+            SizeConstraints {
+                width: Constraint::new(Some(5.), Some(5.)),
+                height: Constraint::none(),
+                aspect: None
+            }
+        );
+    }
 }

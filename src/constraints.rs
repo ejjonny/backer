@@ -72,18 +72,20 @@ impl<State, Ctx> NodeValue<State, Ctx> {
                 let child = element.constraints(allocations[0], state, ctx);
                 SizeConstraints {
                     width: Constraint::new(
-                        Some(
-                            amounts.leading
-                                + child.width.get_lower().unwrap_or(0.)
-                                + amounts.trailing,
-                        ),
+                        child
+                            .width
+                            .get_lower()
+                            .map(|lower| lower + amounts.leading + amounts.trailing),
                         child
                             .width
                             .get_upper()
                             .map(|upper| upper + amounts.leading + amounts.trailing),
                     ),
                     height: Constraint::new(
-                        Some(amounts.top + child.height.get_lower().unwrap_or(0.) + amounts.bottom),
+                        child
+                            .height
+                            .get_lower()
+                            .map(|lower| lower + amounts.top + amounts.bottom),
                         child
                             .height
                             .get_upper()
