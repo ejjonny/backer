@@ -367,13 +367,6 @@ impl<State, Ctx> NodeWith<State, Ctx> {
                     dynamic_height: size.dynamic_height.or(options.dynamic_height.clone()),
                     dynamic_width: size.dynamic_width.or(options.dynamic_width.clone()),
                 };
-                assert!(
-                    if let (Some(wmn), Some(wmx)) = (options.width_min, options.width_max) {
-                        wmn <= wmx
-                    } else {
-                        true
-                    }
-                )
             }
             _ => {
                 return NodeWith {
