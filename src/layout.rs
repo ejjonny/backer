@@ -1,9 +1,5 @@
 use crate::{
-    constraints::{Constraint, SizeConstraints},
-    drawable::Drawable,
-    models::*,
-    traits::NodeTrait,
-    Node, NodeWith,
+    constraints::SizeConstraints, drawable::Drawable, models::*, traits::NodeTrait, Node, NodeWith,
 };
 use core::f32;
 use std::rc::Rc;
@@ -345,13 +341,16 @@ impl<State, Ctx> NodeValue<State, Ctx> {
 
 impl Area {
     fn constrained(self, constraints: &SizeConstraints, x_align: XAlign, y_align: YAlign) -> Self {
-        let mut width = match (constraints.width.lower, constraints.width.upper) {
+        let mut width = match (constraints.width.get_lower(), constraints.width.get_upper()) {
             (None, None) => self.width,
             (None, Some(upper)) => self.width.min(upper),
             (Some(lower), None) => self.width.max(lower),
             (Some(lower), Some(upper)) => self.width.clamp(lower, upper.max(lower)),
         };
-        let mut height = match (constraints.height.lower, constraints.height.upper) {
+        let mut height = match (
+            constraints.height.get_lower(),
+            constraints.height.get_upper(),
+        ) {
             (None, None) => self.height,
             (None, Some(upper)) => self.height.min(upper),
             (Some(lower), None) => self.height.max(lower),
@@ -423,10 +422,8 @@ pub(crate) fn layout_axis<State, Ctx>(
             Orientation::Vertical => size_constraint.height,
         };
         let mut final_size = Option::<f32>::None;
-        let Constraint {
-            mut lower,
-            mut upper,
-        } = constraint;
+        let mut lower = constraint.get_lower();
+        let mut upper = constraint.get_upper();
 
         if let Some(aspect) = size_constraint.aspect {
             match orientation {
@@ -442,6 +439,16 @@ pub(crate) fn layout_axis<State, Ctx>(
                 }
             }
         }
+        match orientation {
+            Orientation::Horizontal => {
+                sizes[i].width.set_lower(lower);
+                sizes[i].width.set_upper(lower);
+            }
+            Orientation::Vertical => {
+                sizes[i].height.set_lower(lower);
+                sizes[i].height.set_upper(lower);
+            }
+        };
 
         if let Some(lower) = lower {
             if default_size < lower {
@@ -481,7 +488,7 @@ pub(crate) fn layout_axis<State, Ctx>(
         room.iter().filter(|r| r.abs() > 0.).count() as f32 > 0.
     }
 
-    let limit = 5;
+    let limit = 0;
     let mut i = 0;
     loop {
         if i > limit {
@@ -560,12 +567,17 @@ pub(crate) fn layout_axis<State, Ctx>(
         let child_size = final_sizes[i].unwrap();
 
         let mut area = match orientation {
-            Orientation::Horizontal => Area {
-                x: current_pos,
-                y: available_area.y,
-                width: child_size,
-                height: available_area.height,
-            },
+            Orientation::Horizontal => {
+                if pool != 0. {
+                    dbg!(&final_sizes, pool, &sizes);
+                }
+                Area {
+                    x: current_pos,
+                    y: available_area.y,
+                    width: child_size,
+                    height: available_area.height,
+                }
+            }
             Orientation::Vertical => Area {
                 x: available_area.x,
                 y: current_pos,

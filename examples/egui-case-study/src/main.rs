@@ -37,25 +37,25 @@ struct Item {
 impl Default for MyApp {
   fn default() -> Self {
     MyApp {
-      items: (0..30)
+      items: (0..1)
         .flat_map(|_| {
           vec![
             Item {
               title: "Item 1".to_string(),
               points: 6000000,
             },
-            Item {
-              title: "Item 2".to_string(),
-              points: 6000,
-            },
-            Item {
-              title: "Item 3".to_string(),
-              points: 80,
-            },
+            // Item {
+            //   title: "Item 2".to_string(),
+            //   points: 6000,
+            // },
+            // Item {
+            //   title: "Item 3".to_string(),
+            //   points: 80,
+            // },
           ]
         })
         .collect(),
-      show_backer: false,
+      show_backer: true,
     }
   }
 }
