@@ -124,7 +124,7 @@ fn main_view<'a>(state: &mut State<'_>) -> Node<State<'a>> {
                                 fit_label(state, profile_blurb, 10.),
                             ],
                         )
-                        .align(Align::TopLeading)
+                        .align_contents(Align::Leading)
                         .width_range((80.0)..),
                         column_spaced(
                             10.,
@@ -190,7 +190,8 @@ fn main_view<'a>(state: &mut State<'_>) -> Node<State<'a>> {
                             ],
                         ),
                     ],
-                ),
+                )
+                .pad_bottom(15.),
                 col_divider(DEMO_GRAY).height(1.),
                 row_spaced(
                     10.,
@@ -199,10 +200,10 @@ fn main_view<'a>(state: &mut State<'_>) -> Node<State<'a>> {
                             10.,
                             vec![
                                 label(state, "Edit PFP", 18.),
-                                fit_label(state, pic_blurb, 10.).height(80.),
+                                fit_label(state, pic_blurb, 10.),
                             ],
                         )
-                        .align(Align::TopLeading)
+                        .align_contents(Align::Leading)
                         .width_range((80.0)..),
                         column_spaced(
                             10.,
@@ -223,7 +224,7 @@ fn main_view<'a>(state: &mut State<'_>) -> Node<State<'a>> {
                                                 ),
                                             ],
                                         )
-                                        .align(Align::Leading),
+                                        .align_contents(Align::Leading),
                                     ],
                                 ),
                                 row_spaced(
@@ -246,7 +247,8 @@ fn main_view<'a>(state: &mut State<'_>) -> Node<State<'a>> {
                             ],
                         ),
                     ],
-                ),
+                )
+                .pad_bottom(15.),
                 col_divider(DEMO_GRAY).height(1.),
                 row_spaced(
                     10.,
@@ -255,10 +257,10 @@ fn main_view<'a>(state: &mut State<'_>) -> Node<State<'a>> {
                             10.,
                             vec![
                                 label(state, "Edit personal information", 18.),
-                                fit_label(state, info_blurb, 10.).height(50.),
+                                fit_label(state, info_blurb, 10.),
                             ],
                         )
-                        .align(Align::TopLeading)
+                        .align_contents(Align::Leading)
                         .width_range((80.0)..),
                         column_spaced(
                             5.,
@@ -278,16 +280,17 @@ fn main_view<'a>(state: &mut State<'_>) -> Node<State<'a>> {
                                         .align(Align::TopLeading)
                                         .pad(5.),
                                 ])
+                                .align_contents(Align::TopLeading)
                                 .height(50.),
                             ],
                         )
-                        .align(Align::Leading),
+                        .align_contents(Align::Leading),
                     ],
-                )
-                .align(Align::Top),
+                ),
             ],
         )
-        .align(Align::TopLeading)
+        .align_contents(Align::TopLeading)
+        .expand()
         .pad_y(40.)
         .pad_x(30.),
         rect_stroke(DEMO_GRAY),
@@ -321,7 +324,7 @@ fn side_bar<'a>(state: &mut State<'_>) -> Node<State<'a>> {
                 space(),
             ],
         )
-        .align(Align::TopLeading)
+        .align_contents(Align::TopLeading)
         .pad(30.),
     ])
     .align(Align::Leading)
@@ -333,9 +336,7 @@ fn header<'a>(state: &mut State<'_>) -> Node<State<'a>> {
         10.,
         vec![
             menu_button(state),
-            label(state, "My Account", 18.)
-                .align(Align::Bottom)
-                .width(110.),
+            label(state, "My Account", 18.).width(110.),
             space(),
             stack(vec![
                 rect(DEMO_FG, DEMO_HINT, 5.),
