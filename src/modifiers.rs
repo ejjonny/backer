@@ -271,6 +271,7 @@ impl<State, Ctx> NodeWith<State, Ctx> {
             (Some(x), Some(y)) => self.x_align(x).y_align(y),
         }
     }
+    /// Applies an alignment to all the contents of a container / sequence node
     pub fn align_contents(self, align: Align) -> Self {
         let (x, y) = align.axis_aligns();
         match (x, y) {
@@ -290,6 +291,9 @@ impl<State, Ctx> NodeWith<State, Ctx> {
                 align: ref mut row_align,
                 ..
             } => *row_align = Some(align),
+            NodeValue::Stack {
+                ref mut x_align, ..
+            } => *x_align = Some(align),
             _ => (),
         }
         self
@@ -304,6 +308,9 @@ impl<State, Ctx> NodeWith<State, Ctx> {
                 align: ref mut col_align,
                 ..
             } => *col_align = Some(align),
+            NodeValue::Stack {
+                ref mut y_align, ..
+            } => *y_align = Some(align),
             _ => (),
         }
         self

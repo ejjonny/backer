@@ -8,7 +8,7 @@ use crate::{
 };
 use std::{marker::PhantomData, rc::Rc};
 
-/// Defines a vertical sequence of elements
+/// Creates a vertical sequence of elements
 pub fn column<State, Ctx>(elements: Vec<NodeWith<State, Ctx>>) -> NodeWith<State, Ctx> {
     NodeWith {
         inner: NodeValue::Column {
@@ -19,7 +19,7 @@ pub fn column<State, Ctx>(elements: Vec<NodeWith<State, Ctx>>) -> NodeWith<State
         },
     }
 }
-/// Defines multiple elements at once.
+/// Creates multiple elements at once.
 /// Has no impact on layout.
 /// Just a convenience for adding a `Vec` of elements to a sequence node inline.
 /// ```rust
@@ -43,7 +43,7 @@ pub fn group<State, Ctx>(elements: Vec<NodeWith<State, Ctx>>) -> NodeWith<State,
         inner: NodeValue::Group(filter_empty(ungroup(elements))),
     }
 }
-/// Defines a vertical sequence of elements with the specified spacing between each element.
+/// Creates a vertical sequence of elements with the specified spacing between each element.
 pub fn column_spaced<State, Ctx>(
     spacing: f32,
     elements: Vec<NodeWith<State, Ctx>>,
@@ -57,7 +57,7 @@ pub fn column_spaced<State, Ctx>(
         },
     }
 }
-/// Defines a horizontal sequence of elements
+/// Creates a horizontal sequence of elements
 pub fn row<State, Ctx>(elements: Vec<NodeWith<State, Ctx>>) -> NodeWith<State, Ctx> {
     NodeWith {
         inner: NodeValue::Row {
@@ -68,7 +68,7 @@ pub fn row<State, Ctx>(elements: Vec<NodeWith<State, Ctx>>) -> NodeWith<State, C
         },
     }
 }
-/// Defines a horizontal sequence of elements with the specified spacing between each element.
+/// Creates a horizontal sequence of elements with the specified spacing between each element.
 pub fn row_spaced<State, Ctx>(
     spacing: f32,
     elements: Vec<NodeWith<State, Ctx>>,
@@ -82,7 +82,7 @@ pub fn row_spaced<State, Ctx>(
         },
     }
 }
-/// Defines a sequence of elements to be laid out on top of each other.
+/// Creates a sequence of elements to be laid out on top of each other.
 pub fn stack<State, Ctx>(elements: Vec<NodeWith<State, Ctx>>) -> NodeWith<State, Ctx> {
     NodeWith {
         inner: NodeValue::Stack {
@@ -92,7 +92,7 @@ pub fn stack<State, Ctx>(elements: Vec<NodeWith<State, Ctx>>) -> NodeWith<State,
         },
     }
 }
-/// Defines a node that can be drawn
+/// Creates a node that can be drawn
 /// This node is the point of integration with the UI library of your choice.
 /// ```rust
 /// use backer::*;
@@ -117,7 +117,7 @@ pub fn draw<State>(drawable: impl Fn(Area, &mut State) + 'static) -> Node<State>
         }),
     }
 }
-/// Defines a node that can be drawn
+/// Creates a node that can be drawn (see [`draw`])
 pub fn draw_with<State, Ctx>(
     drawable: impl Fn(Area, &mut State, &mut Ctx) + 'static,
 ) -> NodeWith<State, Ctx> {
@@ -128,7 +128,10 @@ pub fn draw_with<State, Ctx>(
         }),
     }
 }
-/// Defines an empty space which is laid out the same as any other node.
+/// Creates an empty space which is laid out the same as any other node.
+///
+/// To add spacing between each item in a row or column you can also use
+/// [`row_spaced`] & [`column_spaced`]
 pub fn space<State, Ctx>() -> NodeWith<State, Ctx> {
     NodeWith {
         inner: NodeValue::Space,
