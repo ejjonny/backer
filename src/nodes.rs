@@ -8,7 +8,23 @@ use crate::{
 };
 use std::{marker::PhantomData, rc::Rc};
 
+macro_rules! container_doc {
+    () => {
+        r#"
+Container nodes, by default, will only take up enough space to fit their contents.
+
+If you want the container to take up as much space as is available you can use an `expand` modifier,
+or add an unconstrained node to it's contents.
+
+Unconstrained nodes can be conceptualized as "pushing" outwards & expanding their container,
+or pushing against other unconstrained nodes with equal force.
+        "#
+    };
+}
+
 /// Creates a vertical sequence of elements
+///
+#[doc = container_doc!()]
 pub fn column<State, Ctx>(elements: Vec<NodeWith<State, Ctx>>) -> NodeWith<State, Ctx> {
     NodeWith {
         inner: NodeValue::Column {
@@ -44,6 +60,8 @@ pub fn group<State, Ctx>(elements: Vec<NodeWith<State, Ctx>>) -> NodeWith<State,
     }
 }
 /// Creates a vertical sequence of elements with the specified spacing between each element.
+///
+#[doc = container_doc!()]
 pub fn column_spaced<State, Ctx>(
     spacing: f32,
     elements: Vec<NodeWith<State, Ctx>>,
@@ -58,6 +76,8 @@ pub fn column_spaced<State, Ctx>(
     }
 }
 /// Creates a horizontal sequence of elements
+///
+#[doc = container_doc!()]
 pub fn row<State, Ctx>(elements: Vec<NodeWith<State, Ctx>>) -> NodeWith<State, Ctx> {
     NodeWith {
         inner: NodeValue::Row {
@@ -69,6 +89,8 @@ pub fn row<State, Ctx>(elements: Vec<NodeWith<State, Ctx>>) -> NodeWith<State, C
     }
 }
 /// Creates a horizontal sequence of elements with the specified spacing between each element.
+///
+#[doc = container_doc!()]
 pub fn row_spaced<State, Ctx>(
     spacing: f32,
     elements: Vec<NodeWith<State, Ctx>>,
@@ -83,6 +105,8 @@ pub fn row_spaced<State, Ctx>(
     }
 }
 /// Creates a sequence of elements to be laid out on top of each other.
+///
+#[doc = container_doc!()]
 pub fn stack<State, Ctx>(elements: Vec<NodeWith<State, Ctx>>) -> NodeWith<State, Ctx> {
     NodeWith {
         inner: NodeValue::Stack {
