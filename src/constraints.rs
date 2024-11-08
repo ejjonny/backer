@@ -1,6 +1,6 @@
 use crate::{
     layout::NodeValue,
-    models::{Area, Size},
+    models::{Area, Size, XAlign, YAlign},
 };
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -8,6 +8,24 @@ pub(crate) struct SizeConstraints {
     pub(crate) width: Constraint,
     pub(crate) height: Constraint,
     pub(crate) aspect: Option<f32>,
+    pub(crate) expand_x: bool,
+    pub(crate) expand_y: bool,
+    pub(crate) x_align: Option<XAlign>,
+    pub(crate) y_align: Option<YAlign>,
+}
+
+impl Default for SizeConstraints {
+    fn default() -> Self {
+        SizeConstraints {
+            width: Constraint::none(),
+            height: Constraint::none(),
+            aspect: None,
+            expand_x: false,
+            expand_y: false,
+            x_align: None,
+            y_align: None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -91,7 +109,7 @@ impl<State, Ctx> NodeValue<State, Ctx> {
                             .get_upper()
                             .map(|upper| upper + amounts.top + amounts.bottom),
                     ),
-                    aspect: None,
+                    ..Default::default()
                 }
             }
             NodeValue::Column {
@@ -113,18 +131,14 @@ impl<State, Ctx> NodeValue<State, Ctx> {
                                     element.constraints(*allocated, state, ctx).height,
                                     *spacing,
                                 ),
-                                aspect: None,
+                                ..Default::default()
                             })
                         } else {
                             Some(element.constraints(*allocated, state, ctx))
                         }
                     },
                 )
-                .unwrap_or(SizeConstraints {
-                    width: Constraint::none(),
-                    height: Constraint::none(),
-                    aspect: None,
-                }),
+                .unwrap_or_default(),
             NodeValue::Row {
                 ref mut elements,
                 spacing,
@@ -144,19 +158,15 @@ impl<State, Ctx> NodeValue<State, Ctx> {
                                 height: current.height.combine_adjacent_priority(
                                     element.constraints(*allocated, state, ctx).height,
                                 ),
-                                aspect: None,
+                                ..Default::default()
                             })
                         } else {
                             Some(element.constraints(*allocated, state, ctx))
                         }
                     },
                 )
-                .unwrap_or(SizeConstraints {
-                    width: Constraint::none(),
-                    height: Constraint::none(),
-                    aspect: None,
-                }),
-            NodeValue::Stack(elements) => elements
+                .unwrap_or_default(),
+            NodeValue::Stack { elements, .. } => elements
                 .iter_mut()
                 .fold(Option::<SizeConstraints>::None, |current, element| {
                     if let Some(current) = current {
@@ -169,11 +179,7 @@ impl<State, Ctx> NodeValue<State, Ctx> {
                         Some(element.constraints(allocations[0], state, ctx))
                     }
                 })
-                .unwrap_or(SizeConstraints {
-                    width: Constraint::none(),
-                    height: Constraint::none(),
-                    aspect: None,
-                }),
+                .unwrap_or_default(),
             NodeValue::Explicit { options, element } => {
                 SizeConstraints::from_size(options.clone(), allocations[0], state, ctx)
                     .combine_explicit_with_child(element.constraints(allocations[0], state, ctx))
@@ -181,11 +187,7 @@ impl<State, Ctx> NodeValue<State, Ctx> {
             NodeValue::Offset { element, .. } => element.constraints(allocations[0], state, ctx),
             NodeValue::Scope { scoped } => scoped.constraints(allocations[0], state, ctx),
             NodeValue::Draw(_) | NodeValue::Space | NodeValue::AreaReader { .. } => {
-                SizeConstraints {
-                    width: Constraint::none(),
-                    height: Constraint::none(),
-                    aspect: None,
-                }
+                SizeConstraints::default()
             }
             NodeValue::Coupled { element, .. } => element.constraints(allocations[0], state, ctx),
             NodeValue::Empty | NodeValue::Group(_) => unreachable!(),
@@ -204,15 +206,38 @@ impl SizeConstraints {
         SizeConstraints {
             width: self.width.combine_adjacent_priority(other.width),
             height: self.height.combine_adjacent_priority(other.height),
-            aspect: None,
+            ..Default::default()
         }
     }
     pub(crate) fn combine_explicit_with_child(self, child: Self) -> Self {
         SizeConstraints {
-            width: self.width.combine_explicit_with_child(child.width),
-            height: self.height.combine_explicit_with_child(child.height),
-            aspect: self.aspect.or(child.aspect),
+            width: if self.expand_x {
+                Constraint::none()
+            } else {
+                self.width.combine_explicit_with_child(child.width)
+            },
+            height: if self.expand_y {
+                Constraint::none()
+            } else {
+                self.height.combine_explicit_with_child(child.height)
+            },
+            aspect: self.aspect.or(if self.expand_x || self.expand_y {
+                None
+            } else {
+                child.aspect
+            }),
+            expand_x: self.expand_x,
+            expand_y: self.expand_y,
+            x_align: self.x_align,
+            y_align: self.y_align,
         }
+        // SizeConstraints {
+        //     width: self.width.combine_explicit_with_child(child.width),
+        //     height: self.height.combine_explicit_with_child(child.height),
+        //     aspect: self.aspect.or(child.aspect),
+        //     expand_x: false,
+        //     expand_y: false,
+        // }
     }
 }
 
@@ -288,6 +313,10 @@ impl SizeConstraints {
                 Constraint::none()
             },
             aspect: value.aspect,
+            expand_x: value.expand_x,
+            expand_y: value.expand_y,
+            x_align: value.x_align,
+            y_align: value.y_align,
         };
         if let Some(dynamic) = value.dynamic_height {
             let result = Some(initial.height.clamp(dynamic(area.width, a, b)));

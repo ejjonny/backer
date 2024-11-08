@@ -22,20 +22,46 @@ fn main() -> eframe::Result {
 }
 
 fn my_layout_fn(ui: &mut Ui) -> Node<Ui> {
-    column_spaced(
-        10.,
-        vec![
-            draw_a(ui),
-            row_spaced(
-                10.,
-                vec![
-                    draw_b(ui).width_range(200.0..),
-                    column_spaced(10., vec![draw_a(ui), draw_b(ui), draw_c(ui)]),
-                ],
-            ),
-            draw_c(ui),
-        ],
-    )
+    // stack(vec![
+    //     draw_a(ui)
+    //         .height(30.)
+    //         .width(20.)
+    //         // .aspect(1.)
+    //         .expand_y()
+    //         .align(Align::BottomTrailing),
+    //     draw_b(ui).height(30.).width(30.).align(Align::TopLeading),
+    // ])
+    // .width(100.)
+    // .expand_y()
+    // .attach_over(draw_rect(Color32::GREEN, true))
+
+    // column(vec![draw_a(ui).aspect(0.5).align(Align::Leading)]).expand()
+
+    // column(vec![draw_a(ui).width(10.), draw_a(ui).width(30.)])
+    //     .align(Align::Leading)
+    //     .expand()
+
+    // draw_a(ui).align(Align::Leading).aspect(0.5)
+
+    // .expand()
+    // .width(200.)
+    // .align(Align::Leading)
+    // .expand()
+
+    // draw_a(ui).expand().aspect(0.5).align(Align::Leading)
+
+    // row(vec![
+    //     row(vec![draw_b(ui).width(10.)]),
+    //     draw_a(ui).width(30.),
+    // ])
+    // .align_contents(Align::Trailing)
+    // .expand()
+
+    draw_a(ui)
+        .width_range(20.0..)
+        .pad(0.)
+        .attach_over(draw_c(ui))
+        .width_range(..10.)
 }
 
 fn draw_a(ui: &mut Ui) -> Node<Ui> {

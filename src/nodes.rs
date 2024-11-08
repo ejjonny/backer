@@ -85,7 +85,11 @@ pub fn row_spaced<State, Ctx>(
 /// Defines a sequence of elements to be laid out on top of each other.
 pub fn stack<State, Ctx>(elements: Vec<NodeWith<State, Ctx>>) -> NodeWith<State, Ctx> {
     NodeWith {
-        inner: NodeValue::Stack(filter_empty(ungroup(elements))),
+        inner: NodeValue::Stack {
+            elements: filter_empty(ungroup(elements)),
+            x_align: None,
+            y_align: None,
+        },
     }
 }
 /// Defines a node that can be drawn

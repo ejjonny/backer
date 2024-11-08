@@ -5,7 +5,6 @@ use std::{
 };
 
 use crate::{
-    constraints::{Constraint, SizeConstraints},
     models::Area,
     traits::{NodeTrait, ScopableOption},
     NodeWith,
@@ -105,10 +104,6 @@ where
                 Some(result)
             })
         })
-        .unwrap_or(SizeConstraints {
-            width: Constraint::none(),
-            height: Constraint::none(),
-            aspect: None,
-        })
+        .unwrap_or_default()
     }
 }

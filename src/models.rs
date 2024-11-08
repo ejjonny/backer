@@ -37,14 +37,14 @@ pub enum Align {
     CenterCenter,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub(crate) enum XAlign {
     Leading,
     Center,
     Trailing,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub(crate) enum YAlign {
     Top,
     Center,
@@ -128,6 +128,8 @@ pub(crate) struct Size<A, B> {
     pub(crate) aspect: Option<f32>,
     pub(crate) dynamic_height: DimensionFn<A, B>,
     pub(crate) dynamic_width: DimensionFn<A, B>,
+    pub(crate) expand_x: bool,
+    pub(crate) expand_y: bool,
 }
 
 impl<A, B> Clone for Size<A, B> {
@@ -142,13 +144,27 @@ impl<A, B> Clone for Size<A, B> {
             aspect: self.aspect,
             dynamic_height: self.dynamic_height.clone(),
             dynamic_width: self.dynamic_width.clone(),
+            expand_x: self.expand_x,
+            expand_y: self.expand_y,
         }
     }
 }
 
 impl<A, B> std::fmt::Debug for Size<A, B> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Size")
+        f.debug_struct("Size")
+            .field("width_min", &self.width_min)
+            .field("width_max", &self.width_max)
+            .field("height_min", &self.height_min)
+            .field("height_max", &self.height_max)
+            .field("x_align", &self.x_align)
+            .field("y_align", &self.y_align)
+            .field("aspect", &self.aspect)
+            .field("dynamic_height", &"<function>")
+            .field("dynamic_width", &"<function>")
+            .field("expand_x", &self.expand_x)
+            .field("expand_y", &self.expand_y)
+            .finish()
     }
 }
 
@@ -171,6 +187,8 @@ impl<A, B> Size<A, B> {
             aspect: None,
             dynamic_height: None,
             dynamic_width: None,
+            expand_x: false,
+            expand_y: false,
         }
     }
 }

@@ -199,6 +199,7 @@ impl<State, Ctx> NodeWith<State, Ctx> {
         self.wrap_or_update_explicit(Size {
             width_min: Some(width),
             width_max: Some(width),
+            expand_x: false,
             ..Default::default()
         })
     }
@@ -207,6 +208,7 @@ impl<State, Ctx> NodeWith<State, Ctx> {
         self.wrap_or_update_explicit(Size {
             height_min: Some(height),
             height_max: Some(height),
+            expand_y: false,
             ..Default::default()
         })
     }
@@ -226,6 +228,7 @@ impl<State, Ctx> NodeWith<State, Ctx> {
                 std::ops::Bound::Excluded(bound) => Some(*bound),
                 std::ops::Bound::Unbounded => None,
             },
+            expand_y: false,
             ..Default::default()
         })
     }
@@ -245,13 +248,20 @@ impl<State, Ctx> NodeWith<State, Ctx> {
                 std::ops::Bound::Excluded(bound) => Some(*bound),
                 std::ops::Bound::Unbounded => None,
             },
+            expand_x: false,
             ..Default::default()
         })
     }
     /// Specifies an alignment along the x and/or y axis.
     ///
-    /// This will only have an effect if the node is constrained along the axis to be smaller than the area that is available,
-    /// otherwise, there's no wiggle room.
+    /// If this seems to not have any effect - make sure your constraints create
+    /// enough space for the node to adhere to the desired alignment.
+    ///
+    /// The child (the node to be aligned) must be constrained to be smaller than it's container, &
+    /// the container must be constrained to be larger than the child -
+    /// otherwise there is no wiggle room for alignment to take effect.
+    ///
+    /// If you don't want a container to hug / shrink-wrap it's contents use [`NodeWith::expand()`]
     pub fn align(self, align: Align) -> Self {
         let (x, y) = align.axis_aligns();
         match (x, y) {
@@ -261,7 +271,16 @@ impl<State, Ctx> NodeWith<State, Ctx> {
             (Some(x), Some(y)) => self.x_align(x).y_align(y),
         }
     }
-    fn x_align(mut self, align: XAlign) -> Self {
+    pub fn align_contents(self, align: Align) -> Self {
+        let (x, y) = align.axis_aligns();
+        match (x, y) {
+            (None, None) => self,
+            (None, Some(y)) => self.y_align_contents(y),
+            (Some(x), None) => self.x_align_contents(x),
+            (Some(x), Some(y)) => self.x_align_contents(x).y_align_contents(y),
+        }
+    }
+    fn x_align_contents(mut self, align: XAlign) -> Self {
         match self.inner {
             NodeValue::Column {
                 off_axis_align: ref mut col_align,
@@ -271,16 +290,11 @@ impl<State, Ctx> NodeWith<State, Ctx> {
                 align: ref mut row_align,
                 ..
             } => *row_align = Some(align),
-            _ => {
-                return self.wrap_or_update_explicit(Size {
-                    x_align: Some(align),
-                    ..Default::default()
-                });
-            }
+            _ => (),
         }
         self
     }
-    fn y_align(mut self, align: YAlign) -> Self {
+    fn y_align_contents(mut self, align: YAlign) -> Self {
         match self.inner {
             NodeValue::Row {
                 off_axis_align: ref mut row_align,
@@ -290,19 +304,57 @@ impl<State, Ctx> NodeWith<State, Ctx> {
                 align: ref mut col_align,
                 ..
             } => *col_align = Some(align),
-            _ => {
-                return self.wrap_or_update_explicit(Size {
-                    y_align: Some(align),
-                    ..Default::default()
-                });
-            }
+            _ => (),
         }
         self
+    }
+    fn x_align(self, align: XAlign) -> Self {
+        self.wrap_or_update_explicit(Size {
+            x_align: Some(align),
+            ..Default::default()
+        })
+    }
+    fn y_align(self, align: YAlign) -> Self {
+        self.wrap_or_update_explicit(Size {
+            y_align: Some(align),
+            ..Default::default()
+        })
     }
     /// Constrains the node's height to `ratio` of width
     pub fn aspect(self, ratio: f32) -> Self {
         self.wrap_or_update_explicit(Size {
             aspect: Some(ratio),
+            ..Default::default()
+        })
+    }
+    /// Expands the node along both axes, ignoring child sizes.
+    ///
+    /// Prevents containers from hugging / shrink-wrapping their contents.
+    /// This is mutually exclusive with explicit size constraints.
+    pub fn expand(self) -> Self {
+        self.wrap_or_update_explicit(Size {
+            expand_x: true,
+            expand_y: true,
+            ..Default::default()
+        })
+    }
+    /// Expands the node along the y axis, ignoring child sizes.
+    ///
+    /// Prevents containers from hugging / shrink-wrapping their contents.
+    /// This is mutually exclusive with explicit height constraints.
+    pub fn expand_y(self) -> Self {
+        self.wrap_or_update_explicit(Size {
+            expand_y: true,
+            ..Default::default()
+        })
+    }
+    /// Expands the node along the x axis, ignoring child sizes.
+    ///
+    /// Prevents containers from hugging / shrink-wrapping their contents.
+    /// This is mutually exclusive with explicit width constraints.
+    pub fn expand_x(self) -> Self {
+        self.wrap_or_update_explicit(Size {
+            expand_x: true,
             ..Default::default()
         })
     }
@@ -366,6 +418,8 @@ impl<State, Ctx> NodeWith<State, Ctx> {
                     aspect: size.aspect.or(options.aspect),
                     dynamic_height: size.dynamic_height.or(options.dynamic_height.clone()),
                     dynamic_width: size.dynamic_width.or(options.dynamic_width.clone()),
+                    expand_x: size.expand_x || options.expand_x,
+                    expand_y: size.expand_y || options.expand_y,
                 };
             }
             _ => {

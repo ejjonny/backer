@@ -255,6 +255,7 @@ mod tests {
                 .height(20.)
                 .align(Align::CenterCenter),
             ])
+            .expand()
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
     }
@@ -397,7 +398,7 @@ mod tests {
             SizeConstraints {
                 width: Constraint::none(),
                 height: Constraint::new(Some(30.), None),
-                aspect: None
+                ..Default::default()
             }
         );
         assert_eq!(
@@ -407,7 +408,7 @@ mod tests {
             SizeConstraints {
                 width: Constraint::none(),
                 height: Constraint::new(Some(40.), Some(40.)),
-                aspect: None
+                ..Default::default()
             }
         );
         assert_eq!(
@@ -417,7 +418,7 @@ mod tests {
             SizeConstraints {
                 width: Constraint::new(Some(10.), None),
                 height: Constraint::none(),
-                aspect: None
+                ..Default::default()
             }
         );
         assert_eq!(
@@ -427,7 +428,7 @@ mod tests {
             SizeConstraints {
                 width: Constraint::new(Some(20.), Some(20.)),
                 height: Constraint::none(),
-                aspect: None
+                ..Default::default()
             }
         );
         assert_eq!(
@@ -437,7 +438,7 @@ mod tests {
             SizeConstraints {
                 width: Constraint::none(),
                 height: Constraint::new(Some(10.), None),
-                aspect: None
+                ..Default::default()
             }
         );
         assert_eq!(
@@ -447,7 +448,7 @@ mod tests {
             SizeConstraints {
                 width: Constraint::new(Some(10.), None),
                 height: Constraint::new(Some(20.), None),
-                aspect: None
+                ..Default::default()
             }
         );
         assert_eq!(
@@ -457,7 +458,7 @@ mod tests {
             SizeConstraints {
                 width: Constraint::none(),
                 height: Constraint::new(Some(20.), Some(20.)),
-                aspect: None
+                ..Default::default()
             }
         );
         assert_eq!(
@@ -467,7 +468,7 @@ mod tests {
             SizeConstraints {
                 width: Constraint::new(Some(20.), Some(20.)),
                 height: Constraint::none(),
-                aspect: None
+                ..Default::default()
             }
         );
     }
@@ -483,7 +484,7 @@ mod tests {
             SizeConstraints {
                 width: Constraint::new(Some(5.), Some(5.)),
                 height: Constraint::none(),
-                aspect: None
+                ..Default::default()
             }
         );
     }
