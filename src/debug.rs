@@ -72,7 +72,7 @@ impl<State, Ctx> fmt::Debug for NodeValue<State, Ctx> {
                 over,
             } => f
                 .debug_struct("Coupled")
-                .field("element", element)
+                .field("element", &element)
                 .field("coupled", coupled)
                 .field("over", over)
                 .finish(),

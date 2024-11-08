@@ -1,5 +1,5 @@
 use crate::{
-    layout::NodeValue,
+    layout::{NodeInterfaceTrait, NodeValue},
     models::{Area, Size, XAlign, YAlign},
 };
 

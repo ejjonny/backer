@@ -1,4 +1,8 @@
-use crate::{layout::NodeValue, models::*, NodeWith};
+use crate::{
+    layout::{NodeCache, NodeValue},
+    models::*,
+    NodeWith,
+};
 use std::{ops::RangeBounds, rc::Rc};
 
 impl<State> NodeWith<State, ()> {
@@ -69,7 +73,7 @@ impl<State, Ctx> NodeWith<State, Ctx> {
                     top: 0.,
                     bottom: 0.,
                 },
-                element: Box::new(self.inner),
+                element: Box::new(NodeCache::new(self.inner)),
             },
         }
     }
@@ -83,7 +87,7 @@ impl<State, Ctx> NodeWith<State, Ctx> {
                     top: 0.,
                     bottom: 0.,
                 },
-                element: Box::new(self.inner),
+                element: Box::new(NodeCache::new(self.inner)),
             },
         }
     }
@@ -97,7 +101,7 @@ impl<State, Ctx> NodeWith<State, Ctx> {
                     top: 0.,
                     bottom: 0.,
                 },
-                element: Box::new(self.inner),
+                element: Box::new(NodeCache::new(self.inner)),
             },
         }
     }
@@ -111,7 +115,7 @@ impl<State, Ctx> NodeWith<State, Ctx> {
                     top: amount,
                     bottom: 0.,
                 },
-                element: Box::new(self.inner),
+                element: Box::new(NodeCache::new(self.inner)),
             },
         }
     }
@@ -126,7 +130,7 @@ impl<State, Ctx> NodeWith<State, Ctx> {
                     top: amount,
                     bottom: amount,
                 },
-                element: Box::new(self.inner),
+                element: Box::new(NodeCache::new(self.inner)),
             },
         }
     }
@@ -140,7 +144,7 @@ impl<State, Ctx> NodeWith<State, Ctx> {
                     top: 0.,
                     bottom: amount,
                 },
-                element: Box::new(self.inner),
+                element: Box::new(NodeCache::new(self.inner)),
             },
         }
     }
@@ -154,7 +158,7 @@ impl<State, Ctx> NodeWith<State, Ctx> {
                     top: amount,
                     bottom: amount,
                 },
-                element: Box::new(self.inner),
+                element: Box::new(NodeCache::new(self.inner)),
             },
         }
     }
@@ -166,7 +170,7 @@ impl<State, Ctx> NodeWith<State, Ctx> {
             inner: NodeValue::Offset {
                 offset_x: amount,
                 offset_y: 0.,
-                element: Box::new(self.inner),
+                element: Box::new(NodeCache::new(self.inner)),
             },
         }
     }
@@ -178,7 +182,7 @@ impl<State, Ctx> NodeWith<State, Ctx> {
             inner: NodeValue::Offset {
                 offset_x: 0.,
                 offset_y: amount,
-                element: Box::new(self.inner),
+                element: Box::new(NodeCache::new(self.inner)),
             },
         }
     }
@@ -190,7 +194,7 @@ impl<State, Ctx> NodeWith<State, Ctx> {
             inner: NodeValue::Offset {
                 offset_x,
                 offset_y,
-                element: Box::new(self.inner),
+                element: Box::new(NodeCache::new(self.inner)),
             },
         }
     }
@@ -373,8 +377,8 @@ impl<State, Ctx> NodeWith<State, Ctx> {
         NodeWith {
             inner: NodeValue::Coupled {
                 over: true,
-                element: Box::new(self.inner),
-                coupled: Box::new(node.inner),
+                element: Box::new(NodeCache::new(self.inner)),
+                coupled: Box::new(NodeCache::new(node.inner)),
             },
         }
     }
@@ -386,8 +390,8 @@ impl<State, Ctx> NodeWith<State, Ctx> {
         NodeWith {
             inner: NodeValue::Coupled {
                 over: false,
-                element: Box::new(self.inner),
-                coupled: Box::new(node.inner),
+                element: Box::new(NodeCache::new(self.inner)),
+                coupled: Box::new(NodeCache::new(node.inner)),
             },
         }
     }
@@ -433,7 +437,7 @@ impl<State, Ctx> NodeWith<State, Ctx> {
                 return NodeWith {
                     inner: NodeValue::Explicit {
                         options: size,
-                        element: Box::new(self.inner),
+                        element: Box::new(NodeCache::new(self.inner)),
                     },
                 };
             }

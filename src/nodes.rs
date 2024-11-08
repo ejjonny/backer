@@ -1,6 +1,6 @@
 use crate::{
     drawable::Drawable,
-    layout::NodeValue,
+    layout::{NodeCache, NodeValue},
     models::*,
     subtree::Subtree,
     traits::{ScopableOption, VoidScoper},
@@ -230,7 +230,7 @@ where
     }
 }
 
-fn ungroup<State, Ctx>(elements: Vec<NodeWith<State, Ctx>>) -> Vec<NodeValue<State, Ctx>> {
+fn ungroup<State, Ctx>(elements: Vec<NodeWith<State, Ctx>>) -> Vec<NodeCache<State, Ctx>> {
     elements
         .into_iter()
         .flat_map(|el| {
@@ -238,16 +238,19 @@ fn ungroup<State, Ctx>(elements: Vec<NodeWith<State, Ctx>>) -> Vec<NodeValue<Sta
                 els
             } else {
                 vec![el.inner]
+                    .into_iter()
+                    .map(|el| NodeCache::new(el))
+                    .collect()
             }
         })
         .collect()
 }
 
-fn filter_empty<State, Ctx>(elements: Vec<NodeValue<State, Ctx>>) -> Vec<NodeValue<State, Ctx>> {
+fn filter_empty<State, Ctx>(elements: Vec<NodeCache<State, Ctx>>) -> Vec<NodeCache<State, Ctx>> {
     elements
         .into_iter()
         .filter(|el| {
-            if let NodeValue::Empty = el {
+            if let NodeValue::Empty = el.kind {
                 return false;
             }
             true
