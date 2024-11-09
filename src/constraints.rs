@@ -1,6 +1,7 @@
 use crate::{
-    layout::{NodeInterfaceTrait, NodeValue},
+    layout::NodeValue,
     models::{Area, Size, XAlign, YAlign},
+    traits::NodeTrait,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -231,13 +232,6 @@ impl SizeConstraints {
             x_align: self.x_align,
             y_align: self.y_align,
         }
-        // SizeConstraints {
-        //     width: self.width.combine_explicit_with_child(child.width),
-        //     height: self.height.combine_explicit_with_child(child.height),
-        //     aspect: self.aspect.or(child.aspect),
-        //     expand_x: false,
-        //     expand_y: false,
-        // }
     }
 }
 

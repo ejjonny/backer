@@ -19,6 +19,7 @@ mod drawable;
 mod layout;
 mod modifiers;
 mod node;
+mod node_cache;
 mod subtree;
 mod tests;
 

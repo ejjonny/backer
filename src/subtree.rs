@@ -5,7 +5,7 @@ use std::{
 };
 
 use crate::{
-    models::Area,
+    models::{Area, XAlign, YAlign},
     traits::{NodeTrait, ScopableOption},
     NodeWith,
 };
@@ -68,7 +68,14 @@ where
             })
         });
     }
-    fn layout(&mut self, available_area: Area, state: &mut State, ctx: &mut Ctx) {
+    fn layout(
+        &mut self,
+        available_area: Area,
+        contextual_x_align: Option<XAlign>,
+        contextual_y_align: Option<YAlign>,
+        state: &mut State,
+        ctx: &mut Ctx,
+    ) {
         StateScoper::scope_option(state, |state| {
             CtxScoper::scope_option(ctx, |ctx| {
                 let (Some(state), Some(ctx)) = (state, ctx) else {
@@ -78,7 +85,13 @@ where
                     .stored_tree
                     .take()
                     .unwrap_or((self.subtree_fn)(state, ctx));
-                subtree.inner.layout(available_area, None, None, state, ctx);
+                subtree.inner.layout(
+                    available_area,
+                    contextual_x_align,
+                    contextual_y_align,
+                    state,
+                    ctx,
+                );
                 self.stored_tree = Some(subtree);
                 None::<()>
             })

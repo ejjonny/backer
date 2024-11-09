@@ -1,7 +1,8 @@
 use crate::{
     drawable::Drawable,
-    layout::{NodeCache, NodeValue},
+    layout::NodeValue,
     models::*,
+    node_cache::NodeCache,
     subtree::Subtree,
     traits::{ScopableOption, VoidScoper},
     Node, NodeWith,
