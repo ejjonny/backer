@@ -33,7 +33,16 @@ impl<State, Ctx> fmt::Debug for NodeValue<State, Ctx> {
                 .field("align", align)
                 .field("off_axis_align", off_axis_align)
                 .finish(),
-            NodeValue::Stack(elements) => f.debug_tuple("Stack").field(elements).finish(),
+            NodeValue::Stack {
+                elements,
+                x_align,
+                y_align,
+            } => f
+                .debug_struct("Stack")
+                .field("elements", elements)
+                .field("x_align", x_align)
+                .field("y_align", y_align)
+                .finish(),
             NodeValue::Group(elements) => f.debug_tuple("Group").field(elements).finish(),
             NodeValue::Offset {
                 offset_x,
@@ -63,7 +72,7 @@ impl<State, Ctx> fmt::Debug for NodeValue<State, Ctx> {
                 over,
             } => f
                 .debug_struct("Coupled")
-                .field("element", element)
+                .field("element", &element)
                 .field("coupled", coupled)
                 .field("over", over)
                 .finish(),

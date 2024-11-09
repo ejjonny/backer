@@ -167,7 +167,7 @@ impl eframe::App for MyApp {
                                 .pad_leading(3.),
                               ],
                             )
-                            .align(Align::Leading)
+                            .align_contents(Align::Leading)
                             .width_range(120.0..),
                             space(),
                             draw(|area, state: &mut State| {
@@ -193,10 +193,10 @@ impl eframe::App for MyApp {
                     })
                     .collect(),
                 ),
-                space(),
               ],
             )
-            .align(Align::Top)
+            .align_contents(Align::Top)
+            .expand_y()
             .pad(10.)
           })
           .draw(area, &mut state);

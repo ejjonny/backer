@@ -17,7 +17,8 @@ mod tests {
                 })
                 .width(30.),
             ])
-            .align(Align::Leading)
+            .align_contents(Align::Leading)
+            .expand()
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
         Layout::new(|()| {
@@ -45,7 +46,8 @@ mod tests {
                 })
                 .width(30.),
             ])
-            .align(Align::Trailing)
+            .align_contents(Align::Trailing)
+            .expand()
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
         Layout::new(|()| {
@@ -59,7 +61,8 @@ mod tests {
                 })
                 .height(30.),
             ])
-            .align(Align::Top)
+            .align_contents(Align::Top)
+            .expand()
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
         Layout::new(|()| {
@@ -87,7 +90,8 @@ mod tests {
                 })
                 .height(30.),
             ])
-            .align(Align::Bottom)
+            .align_contents(Align::Bottom)
+            .expand()
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
     }
@@ -104,7 +108,8 @@ mod tests {
                 })
                 .width(30.),
             ])
-            .align(Align::Leading)
+            .align_contents(Align::Leading)
+            .expand()
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
         Layout::new(|()| {
@@ -132,7 +137,8 @@ mod tests {
                 })
                 .width(30.),
             ])
-            .align(Align::Trailing)
+            .align_contents(Align::Trailing)
+            .expand()
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
         Layout::new(|()| {
@@ -146,7 +152,8 @@ mod tests {
                 })
                 .height(30.),
             ])
-            .align(Align::Top)
+            .align_contents(Align::Top)
+            .expand()
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
         Layout::new(|()| {
@@ -174,7 +181,8 @@ mod tests {
                 })
                 .height(30.),
             ])
-            .align(Align::Bottom)
+            .align_contents(Align::Bottom)
+            .expand()
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
     }
@@ -191,7 +199,8 @@ mod tests {
                 })
                 .width(30.),
             ])
-            .align(Align::Leading)
+            .align_contents(Align::Leading)
+            .expand()
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
         Layout::new(|()| {
@@ -219,7 +228,8 @@ mod tests {
                 })
                 .width(30.),
             ])
-            .align(Align::Trailing)
+            .align_contents(Align::Trailing)
+            .expand()
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
         Layout::new(|()| {
@@ -233,7 +243,8 @@ mod tests {
                 })
                 .height(30.),
             ])
-            .align(Align::Top)
+            .align_contents(Align::Top)
+            .expand()
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
         Layout::new(|()| {
@@ -261,7 +272,8 @@ mod tests {
                 })
                 .height(30.),
             ])
-            .align(Align::Bottom)
+            .align_contents(Align::Bottom)
+            .expand()
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
     }
@@ -278,7 +290,8 @@ mod tests {
                 })
                 .width(30.),
             ])
-            .align(Align::Leading)
+            .align_contents(Align::Leading)
+            .expand()
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
         Layout::new(|()| {
@@ -306,7 +319,8 @@ mod tests {
                 })
                 .width(30.),
             ])
-            .align(Align::Trailing)
+            .align_contents(Align::Trailing)
+            .expand()
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
         Layout::new(|()| {
@@ -320,7 +334,8 @@ mod tests {
                 })
                 .height(30.),
             ])
-            .align(Align::Top)
+            .align_contents(Align::Top)
+            .expand()
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
         Layout::new(|()| {
@@ -348,7 +363,8 @@ mod tests {
                 })
                 .height(30.),
             ])
-            .align(Align::Bottom)
+            .align_contents(Align::Bottom)
+            .expand()
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
     }
@@ -431,6 +447,7 @@ mod tests {
             })
             .aspect(0.5)
             .align(Align::Leading)])
+            .expand()
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
         Layout::new(|()| {
@@ -439,6 +456,7 @@ mod tests {
             })
             .aspect(0.5)
             .align(Align::Trailing)])
+            .expand()
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
     }

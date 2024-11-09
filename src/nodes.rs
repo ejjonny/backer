@@ -2,13 +2,30 @@ use crate::{
     drawable::Drawable,
     layout::NodeValue,
     models::*,
+    node_cache::NodeCache,
     subtree::Subtree,
     traits::{ScopableOption, VoidScoper},
     Node, NodeWith,
 };
 use std::{marker::PhantomData, rc::Rc};
 
-/// Defines a vertical sequence of elements
+macro_rules! container_doc {
+    () => {
+        r#"
+Container nodes, by default, will only take up enough space to fit their contents.
+
+If you want the container to take up as much space as is available you can use an `expand` modifier,
+or add an unconstrained node to it's contents.
+
+Unconstrained nodes can be conceptualized as "pushing" outwards & expanding their container,
+or pushing against other unconstrained nodes with equal force.
+        "#
+    };
+}
+
+/// Creates a vertical sequence of elements
+///
+#[doc = container_doc!()]
 pub fn column<State, Ctx>(elements: Vec<NodeWith<State, Ctx>>) -> NodeWith<State, Ctx> {
     NodeWith {
         inner: NodeValue::Column {
@@ -19,7 +36,7 @@ pub fn column<State, Ctx>(elements: Vec<NodeWith<State, Ctx>>) -> NodeWith<State
         },
     }
 }
-/// Defines multiple elements at once.
+/// Creates multiple elements at once.
 /// Has no impact on layout.
 /// Just a convenience for adding a `Vec` of elements to a sequence node inline.
 /// ```rust
@@ -43,7 +60,9 @@ pub fn group<State, Ctx>(elements: Vec<NodeWith<State, Ctx>>) -> NodeWith<State,
         inner: NodeValue::Group(filter_empty(ungroup(elements))),
     }
 }
-/// Defines a vertical sequence of elements with the specified spacing between each element.
+/// Creates a vertical sequence of elements with the specified spacing between each element.
+///
+#[doc = container_doc!()]
 pub fn column_spaced<State, Ctx>(
     spacing: f32,
     elements: Vec<NodeWith<State, Ctx>>,
@@ -57,7 +76,9 @@ pub fn column_spaced<State, Ctx>(
         },
     }
 }
-/// Defines a horizontal sequence of elements
+/// Creates a horizontal sequence of elements
+///
+#[doc = container_doc!()]
 pub fn row<State, Ctx>(elements: Vec<NodeWith<State, Ctx>>) -> NodeWith<State, Ctx> {
     NodeWith {
         inner: NodeValue::Row {
@@ -68,7 +89,9 @@ pub fn row<State, Ctx>(elements: Vec<NodeWith<State, Ctx>>) -> NodeWith<State, C
         },
     }
 }
-/// Defines a horizontal sequence of elements with the specified spacing between each element.
+/// Creates a horizontal sequence of elements with the specified spacing between each element.
+///
+#[doc = container_doc!()]
 pub fn row_spaced<State, Ctx>(
     spacing: f32,
     elements: Vec<NodeWith<State, Ctx>>,
@@ -82,13 +105,19 @@ pub fn row_spaced<State, Ctx>(
         },
     }
 }
-/// Defines a sequence of elements to be laid out on top of each other.
+/// Creates a sequence of elements to be laid out on top of each other.
+///
+#[doc = container_doc!()]
 pub fn stack<State, Ctx>(elements: Vec<NodeWith<State, Ctx>>) -> NodeWith<State, Ctx> {
     NodeWith {
-        inner: NodeValue::Stack(filter_empty(ungroup(elements))),
+        inner: NodeValue::Stack {
+            elements: filter_empty(ungroup(elements)),
+            x_align: None,
+            y_align: None,
+        },
     }
 }
-/// Defines a node that can be drawn
+/// Creates a node that can be drawn
 /// This node is the point of integration with the UI library of your choice.
 /// ```rust
 /// use backer::*;
@@ -113,7 +142,7 @@ pub fn draw<State>(drawable: impl Fn(Area, &mut State) + 'static) -> Node<State>
         }),
     }
 }
-/// Defines a node that can be drawn
+/// Creates a node that can be drawn (see [`draw`])
 pub fn draw_with<State, Ctx>(
     drawable: impl Fn(Area, &mut State, &mut Ctx) + 'static,
 ) -> NodeWith<State, Ctx> {
@@ -124,7 +153,10 @@ pub fn draw_with<State, Ctx>(
         }),
     }
 }
-/// Defines an empty space which is laid out the same as any other node.
+/// Creates an empty space which is laid out the same as any other node.
+///
+/// To add spacing between each item in a row or column you can also use
+/// [`row_spaced`] & [`column_spaced`]
 pub fn space<State, Ctx>() -> NodeWith<State, Ctx> {
     NodeWith {
         inner: NodeValue::Space,
@@ -223,7 +255,7 @@ where
     }
 }
 
-fn ungroup<State, Ctx>(elements: Vec<NodeWith<State, Ctx>>) -> Vec<NodeValue<State, Ctx>> {
+fn ungroup<State, Ctx>(elements: Vec<NodeWith<State, Ctx>>) -> Vec<NodeCache<State, Ctx>> {
     elements
         .into_iter()
         .flat_map(|el| {
@@ -231,16 +263,19 @@ fn ungroup<State, Ctx>(elements: Vec<NodeWith<State, Ctx>>) -> Vec<NodeValue<Sta
                 els
             } else {
                 vec![el.inner]
+                    .into_iter()
+                    .map(|el| NodeCache::new(el))
+                    .collect()
             }
         })
         .collect()
 }
 
-fn filter_empty<State, Ctx>(elements: Vec<NodeValue<State, Ctx>>) -> Vec<NodeValue<State, Ctx>> {
+fn filter_empty<State, Ctx>(elements: Vec<NodeCache<State, Ctx>>) -> Vec<NodeCache<State, Ctx>> {
     elements
         .into_iter()
         .filter(|el| {
-            if let NodeValue::Empty = el {
+            if let NodeValue::Empty = el.kind {
                 return false;
             }
             true

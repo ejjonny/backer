@@ -52,7 +52,7 @@ fn layout_for_highlight(ctx: &mut State) -> Node<State> {
     }
     let highlight = ctx.highlight;
     row_spaced(
-        20.,
+        10.,
         vec![
             if highlight == HighlightedCase::RelAbsSequence || highlight == HighlightedCase::None {
                 scope::<_, _, HighlightScoper>(|highlight| rel_abs_seq(*highlight))
