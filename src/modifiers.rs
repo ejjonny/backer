@@ -276,6 +276,26 @@ impl<State, Ctx> NodeWith<State, Ctx> {
         }
     }
     /// Applies an alignment to all the contents of a container / sequence node
+    ///
+    /// This modifier must be used immediately after the container / sequence node to take effect:
+    ///
+    /// ```rust
+    /// use backer::models::*;
+    /// use backer::nodes::*;
+    ///
+    /// row::<(), ()>(vec![
+    ///     draw(|a, _| {
+    ///         assert_eq!(a, Area::new(60., 0., 10., 100.));
+    ///     })
+    ///     .width(10.),
+    ///     draw(|a, _| {
+    ///         assert_eq!(a, Area::new(70., 0., 30., 100.));
+    ///     })
+    ///     .width(30.),
+    /// ])
+    /// .align_contents(Align::Trailing)
+    /// .expand();
+    /// ```
     pub fn align_contents(self, align: Align) -> Self {
         let (x, y) = align.axis_aligns();
         match (x, y) {
