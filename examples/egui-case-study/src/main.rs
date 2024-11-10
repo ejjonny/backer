@@ -196,8 +196,8 @@ impl eframe::App for MyApp {
               ],
             )
             .align_contents(Align::Top)
-            .expand_y()
             .pad(10.)
+            .align(Align::Top)
           })
           .draw(area, &mut state);
         });

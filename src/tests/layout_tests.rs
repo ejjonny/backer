@@ -621,4 +621,33 @@ mod tests {
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
     }
+    #[test]
+    fn test_compressed_expanded_respects_lower_bound() {
+        Layout::new(|()| {
+            stack(vec![
+                draw(|a, _| {
+                    assert_eq!(a, Area::new(0., -50., 100., 200.));
+                })
+                .height(200.),
+                draw(|a, _| {
+                    assert_eq!(a, Area::new(0., -50., 100., 200.));
+                }),
+            ])
+            .expand()
+        })
+        .draw(Area::new(0., 0., 100., 100.), &mut ());
+        Layout::new(|()| {
+            column(vec![stack(vec![
+                draw(|a, _| {
+                    assert_eq!(a, Area::new(0., -50., 100., 200.));
+                })
+                .height(200.),
+                draw(|a, _| {
+                    assert_eq!(a, Area::new(0., -50., 100., 200.));
+                }),
+            ])
+            .expand()])
+        })
+        .draw(Area::new(0., 0., 100., 100.), &mut ());
+    }
 }

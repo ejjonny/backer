@@ -369,28 +369,31 @@ impl Area {
         contextual_x_align: XAlign,
         contextual_y_align: YAlign,
     ) -> Self {
-        let mut width = if constraints.expand_x {
-            self.width
-        } else {
-            match (constraints.width.get_lower(), constraints.width.get_upper()) {
-                (None, None) => self.width,
-                (None, Some(upper)) => self.width.min(upper),
-                (Some(lower), None) => self.width.max(lower),
-                (Some(lower), Some(upper)) => self.width.clamp(lower, upper.max(lower)),
-            }
+        let mut width = match (
+            constraints.width.get_lower(),
+            if constraints.expand_x {
+                None
+            } else {
+                constraints.width.get_upper()
+            },
+        ) {
+            (None, None) => self.width,
+            (None, Some(upper)) => self.width.min(upper),
+            (Some(lower), None) => self.width.max(lower),
+            (Some(lower), Some(upper)) => self.width.clamp(lower, upper.max(lower)),
         };
-        let mut height = if constraints.expand_y {
-            self.height
-        } else {
-            match (
-                constraints.height.get_lower(),
-                constraints.height.get_upper(),
-            ) {
-                (None, None) => self.height,
-                (None, Some(upper)) => self.height.min(upper),
-                (Some(lower), None) => self.height.max(lower),
-                (Some(lower), Some(upper)) => self.height.clamp(lower, upper.max(lower)),
-            }
+        let mut height = match (
+            constraints.height.get_lower(),
+            if constraints.expand_y {
+                None
+            } else {
+                constraints.height.get_upper()
+            },
+        ) {
+            (None, None) => self.height,
+            (None, Some(upper)) => self.height.min(upper),
+            (Some(lower), None) => self.height.max(lower),
+            (Some(lower), Some(upper)) => self.height.clamp(lower, upper.max(lower)),
         };
         if let Some(aspect) = constraints.aspect {
             width = (height * aspect).min(width);
