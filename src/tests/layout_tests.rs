@@ -624,15 +624,14 @@ mod tests {
     #[test]
     fn test_expand_compressed() {
         Layout::new(|()| {
-            column(vec![
+            stack(vec![
                 draw(|a, _| {
-                    assert_eq!(a, Area::new(0., -10., 100., 60.));
+                    assert_eq!(a, Area::new(0., -50., 100., 200.));
                 })
-                .height(60.),
+                .height(200.),
                 draw(|a, _| {
-                    assert_eq!(a, Area::new(0., 50., 100., 60.));
-                })
-                .height(60.),
+                    assert_eq!(a, Area::new(0., -50., 100., 200.));
+                }),
             ])
             .expand()
         })
