@@ -34,15 +34,15 @@ impl<State> Debug for NodeCache<State> {
 }
 
 impl<State> NodeTrait<State> for NodeCache<State> {
-    fn constraints(&mut self, available_area: Area, state: &mut State) -> SizeConstraints {
+    fn constraints(&mut self, available_area: Area, state: &mut State) -> Option<SizeConstraints> {
         if let (Some(cache), Some(constraints)) = (self.cache_area, self.cached_constraints) {
             if cache == available_area {
-                return constraints;
+                return Some(constraints);
             }
         }
         let constraints = self.kind.constraints(available_area, state);
         self.cache_area = Some(available_area);
-        self.cached_constraints = Some(constraints);
+        self.cached_constraints = constraints;
         constraints
     }
     fn layout(

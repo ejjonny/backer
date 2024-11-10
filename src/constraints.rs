@@ -76,7 +76,7 @@ impl<State> NodeValue<State> {
         &mut self,
         available_area: Area,
         state: &mut State,
-    ) -> SizeConstraints {
+    ) -> Option<SizeConstraints> {
         let contextual_aligns = self.contextual_aligns();
         let allocations = self.allocate_area(
             available_area,
@@ -85,32 +85,31 @@ impl<State> NodeValue<State> {
             state,
         );
         match self {
-            NodeValue::Padding { amounts, element } => {
-                let child = element.constraints(allocations[0], state);
-                SizeConstraints {
+            NodeValue::Padding { amounts, element } => element
+                .constraints(allocations[0], state)
+                .map(|constraints| SizeConstraints {
                     width: Constraint::new(
-                        child
+                        constraints
                             .width
                             .get_lower()
                             .map(|lower| lower + amounts.leading + amounts.trailing),
-                        child
+                        constraints
                             .width
                             .get_upper()
                             .map(|upper| upper + amounts.leading + amounts.trailing),
                     ),
                     height: Constraint::new(
-                        child
+                        constraints
                             .height
                             .get_lower()
                             .map(|lower| lower + amounts.top + amounts.bottom),
-                        child
+                        constraints
                             .height
                             .get_upper()
                             .map(|upper| upper + amounts.top + amounts.bottom),
                     ),
                     ..Default::default()
-                }
-            }
+                }),
             NodeValue::Column {
                 ref mut elements,
                 spacing,
@@ -118,26 +117,18 @@ impl<State> NodeValue<State> {
             } => elements
                 .iter_mut()
                 .zip(allocations.iter())
-                .fold(
-                    Option::<SizeConstraints>::None,
-                    |current, (element, allocated)| {
-                        if let Some(current) = current {
-                            Some(SizeConstraints {
-                                width: current.width.combine_adjacent_priority(
-                                    element.constraints(*allocated, state).width,
-                                ),
-                                height: current.height.combine_sum(
-                                    element.constraints(*allocated, state).height,
-                                    *spacing,
-                                ),
-                                ..Default::default()
-                            })
-                        } else {
-                            Some(element.constraints(*allocated, state))
-                        }
-                    },
-                )
-                .unwrap_or_default(),
+                .filter_map(|(element, &allocated)| element.constraints(allocated, state))
+                .fold(Option::<SizeConstraints>::None, |current, constraints| {
+                    if let Some(current) = current {
+                        Some(SizeConstraints {
+                            width: current.width.combine_adjacent_priority(constraints.width),
+                            height: current.height.combine_sum(constraints.height, *spacing),
+                            ..Default::default()
+                        })
+                    } else {
+                        Some(constraints)
+                    }
+                }),
             NodeValue::Row {
                 ref mut elements,
                 spacing,
@@ -145,48 +136,43 @@ impl<State> NodeValue<State> {
             } => elements
                 .iter_mut()
                 .zip(allocations.iter())
-                .fold(
-                    Option::<SizeConstraints>::None,
-                    |current, (element, allocated)| {
-                        if let Some(current) = current {
-                            Some(SizeConstraints {
-                                width: current.width.combine_sum(
-                                    element.constraints(*allocated, state).width,
-                                    *spacing,
-                                ),
-                                height: current.height.combine_adjacent_priority(
-                                    element.constraints(*allocated, state).height,
-                                ),
-                                ..Default::default()
-                            })
-                        } else {
-                            Some(element.constraints(*allocated, state))
-                        }
-                    },
-                )
-                .unwrap_or_default(),
-            NodeValue::Stack { elements, .. } => {
-                elements
-                    .iter_mut()
-                    .fold(Option::<SizeConstraints>::None, |current, element| {
-                        if let Some(current) = current {
-                            Some(current.combine_adjacent_priority(
-                                element.constraints(allocations[0], state),
-                            ))
-                        } else {
-                            Some(element.constraints(allocations[0], state))
-                        }
-                    })
-                    .unwrap_or_default()
-            }
-            NodeValue::Explicit { options, element } => {
-                SizeConstraints::from_size(options.clone(), allocations[0], state)
-                    .combine_explicit_with_child(element.constraints(allocations[0], state))
-            }
+                .filter_map(|(element, &allocated)| element.constraints(allocated, state))
+                .fold(Option::<SizeConstraints>::None, |current, constraints| {
+                    if let Some(current) = current {
+                        Some(SizeConstraints {
+                            width: current.width.combine_sum(constraints.width, *spacing),
+                            height: current.height.combine_adjacent_priority(constraints.height),
+                            ..Default::default()
+                        })
+                    } else {
+                        Some(constraints)
+                    }
+                }),
+            NodeValue::Stack { elements, .. } => elements
+                .iter_mut()
+                .filter_map(|element| element.constraints(allocations[0], state))
+                .fold(Option::<SizeConstraints>::None, |current, constraints| {
+                    if let Some(current) = current {
+                        Some(current.combine_adjacent_priority(constraints))
+                    } else {
+                        Some(constraints)
+                    }
+                }),
+            NodeValue::Explicit { options, element } => element
+                .constraints(allocations[0], state)
+                .map(|child_constraints| {
+                    SizeConstraints::from_size(options.clone(), allocations[0], state)
+                        .combine_explicit_with_child(child_constraints)
+                }),
             NodeValue::Offset { element, .. } => element.constraints(allocations[0], state),
-            NodeValue::Draw(_) | NodeValue::Space | NodeValue::AreaReader { .. } => {
-                SizeConstraints::default()
+            NodeValue::Draw(drawable) => {
+                if drawable.visible {
+                    Some(SizeConstraints::default())
+                } else {
+                    None
+                }
             }
+            NodeValue::Space | NodeValue::AreaReader { .. } => Some(SizeConstraints::default()),
             NodeValue::Coupled { element, .. } => element.constraints(allocations[0], state),
             NodeValue::Empty | NodeValue::Group(_) => unreachable!(),
         }

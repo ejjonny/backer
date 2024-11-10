@@ -128,6 +128,16 @@ pub fn draw<State>(drawable: impl Drawable<State> + 'static) -> Node<State> {
         inner: NodeValue::Draw(DrawableNode {
             area: Area::default(),
             drawable: Box::new(drawable),
+            visible: true,
+        }),
+    }
+}
+pub fn draw_visible<State>(drawable: impl Drawable<State> + 'static, visible: bool) -> Node<State> {
+    Node {
+        inner: NodeValue::Draw(DrawableNode {
+            area: Area::default(),
+            drawable: Box::new(drawable),
+            visible,
         }),
     }
 }

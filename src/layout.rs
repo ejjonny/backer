@@ -62,7 +62,11 @@ impl<State> Layout<State> {
         let mut layout = (self.tree)(state);
         let constraints = layout.inner.constraints(area, state);
         layout.inner.layout(
-            area.constrained(&constraints, XAlign::Center, YAlign::Center),
+            area.constrained(
+                &constraints.unwrap_or_default(),
+                XAlign::Center,
+                YAlign::Center,
+            ),
             None,
             None,
             state,
@@ -221,9 +225,10 @@ impl<State> NodeValue<State> {
                 y_align,
             } => elements
                 .iter_mut()
-                .map(|child| {
+                .filter_map(|element| element.constraints(available_area, state))
+                .map(|constraints| {
                     available_area.constrained(
-                        &child.constraints(available_area, state),
+                        &constraints,
                         x_align.unwrap_or(XAlign::Center),
                         y_align.unwrap_or(YAlign::Center),
                     )
@@ -244,10 +249,14 @@ impl<State> NodeValue<State> {
                 width: available_area.width,
                 height: available_area.height,
             }],
-            NodeValue::Draw(_)
-            | NodeValue::Space
-            | NodeValue::AreaReader { .. }
-            | NodeValue::Coupled { .. } => {
+            NodeValue::Draw(drawable) => {
+                if drawable.visible {
+                    vec![available_area]
+                } else {
+                    vec![]
+                }
+            }
+            NodeValue::Space | NodeValue::AreaReader { .. } | NodeValue::Coupled { .. } => {
                 vec![available_area]
             }
             NodeValue::Group(_) | NodeValue::Empty => unreachable!(),
@@ -393,7 +402,7 @@ pub(crate) fn layout_axis<State>(
     state: &mut State,
     check: bool,
 ) -> Vec<Area> {
-    let sizes: Vec<SizeConstraints> = elements
+    let sizes: Vec<Option<SizeConstraints>> = elements
         .iter_mut()
         .map(|element| element.constraints(available_area, state))
         .collect();
@@ -413,61 +422,63 @@ pub(crate) fn layout_axis<State>(
     let mut room_to_shrink = vec![0.0; element_count];
 
     for (i, size_constraint) in sizes.iter().enumerate() {
-        let constraint = match orientation {
-            Orientation::Horizontal => size_constraint.width,
-            Orientation::Vertical => size_constraint.height,
-        };
-        let mut final_size = Option::<f32>::None;
-        let mut lower = constraint.get_lower();
-        let mut upper = constraint.get_upper();
+        if let Some(size_constraint) = size_constraint {
+            let constraint = match orientation {
+                Orientation::Horizontal => size_constraint.width,
+                Orientation::Vertical => size_constraint.height,
+            };
+            let mut final_size = Option::<f32>::None;
+            let mut lower = constraint.get_lower();
+            let mut upper = constraint.get_upper();
 
-        if let Some(aspect) = size_constraint.aspect {
-            match orientation {
-                Orientation::Horizontal => {
-                    let value = sizes[i].height.clamping(available_area.height) * aspect;
-                    lower = Some(value);
-                    upper = Some(value);
+            if let Some(aspect) = size_constraint.aspect {
+                match orientation {
+                    Orientation::Horizontal => {
+                        let value = size_constraint.height.clamping(available_area.height) * aspect;
+                        lower = Some(value);
+                        upper = Some(value);
+                    }
+                    Orientation::Vertical => {
+                        let value = size_constraint.width.clamping(available_area.width) / aspect;
+                        lower = Some(value);
+                        upper = Some(value);
+                    }
                 }
-                Orientation::Vertical => {
-                    let value = sizes[i].width.clamping(available_area.width) / aspect;
-                    lower = Some(value);
-                    upper = Some(value);
+            }
+
+            if let Some(lower) = lower {
+                if default_size < lower {
+                    pool += default_size - lower;
+                    final_size = Some(lower);
                 }
             }
-        }
-
-        if let Some(lower) = lower {
-            if default_size < lower {
-                pool += default_size - lower;
-                final_size = Some(lower);
+            if let Some(upper) = upper {
+                if default_size > upper {
+                    pool += default_size - upper;
+                    final_size = Some(upper);
+                }
             }
-        }
-        if let Some(upper) = upper {
-            if default_size > upper {
-                pool += default_size - upper;
-                final_size = Some(upper);
-            }
-        }
 
-        if let Some(lower) = lower {
-            if default_size >= lower {
-                room_to_shrink[i] = -(final_size.unwrap_or(default_size) - lower);
+            if let Some(lower) = lower {
+                if default_size >= lower {
+                    room_to_shrink[i] = -(final_size.unwrap_or(default_size) - lower);
+                }
+            } else {
+                // Effectively, this means the element can shrink to 0
+                room_to_shrink[i] = -default_size;
             }
-        } else {
-            // Effectively, this means the element can shrink to 0
-            room_to_shrink[i] = -default_size;
-        }
 
-        if let Some(upper) = upper {
-            if default_size <= upper {
-                room_to_grow[i] = -(final_size.unwrap_or(default_size) - upper);
+            if let Some(upper) = upper {
+                if default_size <= upper {
+                    room_to_grow[i] = -(final_size.unwrap_or(default_size) - upper);
+                }
+            } else {
+                // Effectively, this means the element can expand any amount
+                room_to_grow[i] = default_size * 10.;
             }
-        } else {
-            // Effectively, this means the element can expand any amount
-            room_to_grow[i] = default_size * 10.;
-        }
 
-        final_sizes[i] = final_size.unwrap_or(default_size).into();
+            final_sizes[i] = final_size.unwrap_or(default_size).into();
+        }
     }
 
     fn can_accommodate(room: &[f32]) -> bool {
@@ -552,21 +563,38 @@ pub(crate) fn layout_axis<State>(
     for (i, child) in elements.iter_mut().enumerate() {
         let child_size = final_sizes[i].unwrap();
 
-        let area = match orientation {
-            Orientation::Horizontal => Area {
-                x: current_pos,
-                y: available_area.y,
-                width: child_size,
-                height: available_area.height,
-            },
-            Orientation::Vertical => Area {
-                x: available_area.x,
-                y: current_pos,
-                width: available_area.width,
-                height: child_size,
-            },
-        }
-        .constrained(&sizes[i], x_align, y_align);
+        let area = if let Some(size) = sizes[i] {
+            match orientation {
+                Orientation::Horizontal => Area {
+                    x: current_pos,
+                    y: available_area.y,
+                    width: child_size,
+                    height: available_area.height,
+                },
+                Orientation::Vertical => Area {
+                    x: available_area.x,
+                    y: current_pos,
+                    width: available_area.width,
+                    height: child_size,
+                },
+            }
+            .constrained(&size, x_align, y_align)
+        } else {
+            match orientation {
+                Orientation::Horizontal => Area {
+                    x: current_pos,
+                    y: available_area.y,
+                    width: 0.,
+                    height: available_area.height,
+                },
+                Orientation::Vertical => Area {
+                    x: available_area.x,
+                    y: current_pos,
+                    width: available_area.width,
+                    height: 0.,
+                },
+            }
+        };
 
         if !check {
             child.layout(area, Some(x_align), Some(y_align), state);
