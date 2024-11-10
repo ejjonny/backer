@@ -621,4 +621,21 @@ mod tests {
         })
         .draw(Area::new(0., 0., 100., 100.), &mut ());
     }
+    #[test]
+    fn test_expand_compressed() {
+        Layout::new(|()| {
+            column(vec![
+                draw(|a, _| {
+                    assert_eq!(a, Area::new(0., -10., 100., 60.));
+                })
+                .height(60.),
+                draw(|a, _| {
+                    assert_eq!(a, Area::new(0., 50., 100., 60.));
+                })
+                .height(60.),
+            ])
+            .expand()
+        })
+        .draw(Area::new(0., 0., 100., 100.), &mut ());
+    }
 }
