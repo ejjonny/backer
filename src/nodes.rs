@@ -1,4 +1,10 @@
-use crate::{drawable::Drawable, layout::NodeValue, models::*, node_cache::NodeCache, Node};
+use crate::{
+    drawable::{Drawable, DrawableNode},
+    layout::NodeValue,
+    models::*,
+    node_cache::NodeCache,
+    Node,
+};
 use std::rc::Rc;
 
 macro_rules! container_doc {
@@ -120,11 +126,11 @@ pub fn stack<State>(elements: Vec<Node<State>>) -> Node<State> {
 ///  })
 ///}
 /// ```
-pub fn draw<State>(drawable: impl Fn(Area, &mut State) + 'static) -> Node<State> {
+pub fn draw<State>(drawable: impl Drawable<State> + 'static) -> Node<State> {
     Node {
-        inner: NodeValue::Draw(Drawable {
+        inner: NodeValue::Draw(DrawableNode {
             area: Area::default(),
-            draw: Rc::new(move |area, state| drawable(area, state)),
+            drawable: Box::new(drawable),
         }),
     }
 }

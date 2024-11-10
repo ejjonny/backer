@@ -1,5 +1,5 @@
 use crate::{
-    constraints::SizeConstraints, drawable::Drawable, models::*, node_cache::NodeCache,
+    constraints::SizeConstraints, drawable::DrawableNode, models::*, node_cache::NodeCache,
     traits::NodeTrait, Node,
 };
 use core::f32;
@@ -101,7 +101,7 @@ pub(crate) enum NodeValue<State> {
         offset_y: f32,
         element: Box<NodeCache<State>>,
     },
-    Draw(Drawable<State>),
+    Draw(DrawableNode<State>),
     Explicit {
         options: Size<State>,
         element: Box<NodeCache<State>>,
