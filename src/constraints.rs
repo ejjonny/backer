@@ -213,12 +213,18 @@ impl SizeConstraints {
     pub(crate) fn combine_explicit_with_child(self, child: Self) -> Self {
         SizeConstraints {
             width: if self.expand_x {
-                Constraint::none()
+                Constraint::new(
+                    self.width.combine_explicit_with_child(child.width).lower,
+                    None,
+                )
             } else {
                 self.width.combine_explicit_with_child(child.width)
             },
             height: if self.expand_y {
-                Constraint::none()
+                Constraint::new(
+                    self.height.combine_explicit_with_child(child.height).lower,
+                    None,
+                )
             } else {
                 self.height.combine_explicit_with_child(child.height)
             },
