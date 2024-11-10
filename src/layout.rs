@@ -250,11 +250,7 @@ impl<State> NodeValue<State> {
                 height: available_area.height,
             }],
             NodeValue::Draw(drawable) => {
-                if drawable.visible {
-                    vec![available_area]
-                } else {
-                    vec![]
-                }
+                vec![available_area]
             }
             NodeValue::Space | NodeValue::AreaReader { .. } | NodeValue::Coupled { .. } => {
                 vec![available_area]
@@ -407,14 +403,16 @@ pub(crate) fn layout_axis<State>(
         .map(|element| element.constraints(available_area, state))
         .collect();
     let element_count = elements.len();
+    let filtered_element_count = sizes.iter().filter_map(|&el| el).count();
+    dbg!(filtered_element_count);
 
-    let total_spacing = *spacing * (element_count as i32 - 1).max(0) as f32;
+    let total_spacing = *spacing * (filtered_element_count as i32 - 1).max(0) as f32;
     let available_size = match orientation {
         Orientation::Horizontal => available_area.width,
         Orientation::Vertical => available_area.height,
     } - total_spacing;
 
-    let default_size = available_size / element_count as f32;
+    let default_size = available_size / filtered_element_count as f32;
 
     let mut pool = 0.;
     let mut final_sizes = vec![None; element_count];
@@ -561,40 +559,23 @@ pub(crate) fn layout_axis<State>(
 
     let mut areas = Vec::<Area>::new();
     for (i, child) in elements.iter_mut().enumerate() {
-        let child_size = final_sizes[i].unwrap();
+        let child_size = final_sizes[i].unwrap_or(0.);
 
-        let area = if let Some(size) = sizes[i] {
-            match orientation {
-                Orientation::Horizontal => Area {
-                    x: current_pos,
-                    y: available_area.y,
-                    width: child_size,
-                    height: available_area.height,
-                },
-                Orientation::Vertical => Area {
-                    x: available_area.x,
-                    y: current_pos,
-                    width: available_area.width,
-                    height: child_size,
-                },
-            }
-            .constrained(&size, x_align, y_align)
-        } else {
-            match orientation {
-                Orientation::Horizontal => Area {
-                    x: current_pos,
-                    y: available_area.y,
-                    width: 0.,
-                    height: available_area.height,
-                },
-                Orientation::Vertical => Area {
-                    x: available_area.x,
-                    y: current_pos,
-                    width: available_area.width,
-                    height: 0.,
-                },
-            }
-        };
+        let area = match orientation {
+            Orientation::Horizontal => Area {
+                x: current_pos,
+                y: available_area.y,
+                width: child_size,
+                height: available_area.height,
+            },
+            Orientation::Vertical => Area {
+                x: available_area.x,
+                y: current_pos,
+                width: available_area.width,
+                height: child_size,
+            },
+        }
+        .constrained(&sizes[i].unwrap_or_default(), x_align, y_align);
 
         if !check {
             child.layout(area, Some(x_align), Some(y_align), state);
@@ -602,7 +583,9 @@ pub(crate) fn layout_axis<State>(
             areas.push(area);
         }
 
-        current_pos += child_size + *spacing;
+        if sizes[i].is_some() {
+            current_pos += child_size + *spacing;
+        }
     }
     areas
 }
