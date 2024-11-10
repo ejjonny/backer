@@ -392,9 +392,9 @@ mod tests {
     #[test]
     fn test_constraint_combination() {
         assert_eq!(
-            row::<(), ()>(vec![space(), space().height(30.)])
+            row::<()>(vec![space(), space().height(30.)])
                 .inner
-                .constraints(Area::zero(), &mut (), &mut ()),
+                .constraints(Area::zero(), &mut ()),
             SizeConstraints {
                 width: Constraint::none(),
                 height: Constraint::new(Some(30.), None),
@@ -402,9 +402,9 @@ mod tests {
             }
         );
         assert_eq!(
-            row::<(), ()>(vec![space().height(40.), space().height(30.)])
+            row::<()>(vec![space().height(40.), space().height(30.)])
                 .inner
-                .constraints(Area::zero(), &mut (), &mut ()),
+                .constraints(Area::zero(), &mut ()),
             SizeConstraints {
                 width: Constraint::none(),
                 height: Constraint::new(Some(40.), Some(40.)),
@@ -412,9 +412,9 @@ mod tests {
             }
         );
         assert_eq!(
-            column::<(), ()>(vec![space(), space().width(10.)])
+            column::<()>(vec![space(), space().width(10.)])
                 .inner
-                .constraints(Area::zero(), &mut (), &mut ()),
+                .constraints(Area::zero(), &mut ()),
             SizeConstraints {
                 width: Constraint::new(Some(10.), None),
                 height: Constraint::none(),
@@ -422,9 +422,9 @@ mod tests {
             }
         );
         assert_eq!(
-            column::<(), ()>(vec![space().width(20.), space().width(10.)])
+            column::<()>(vec![space().width(20.), space().width(10.)])
                 .inner
-                .constraints(Area::zero(), &mut (), &mut ()),
+                .constraints(Area::zero(), &mut ()),
             SizeConstraints {
                 width: Constraint::new(Some(20.), Some(20.)),
                 height: Constraint::none(),
@@ -432,9 +432,9 @@ mod tests {
             }
         );
         assert_eq!(
-            stack::<(), ()>(vec![space(), space().height(10.)])
+            stack::<()>(vec![space(), space().height(10.)])
                 .inner
-                .constraints(Area::zero(), &mut (), &mut ()),
+                .constraints(Area::zero(), &mut ()),
             SizeConstraints {
                 width: Constraint::none(),
                 height: Constraint::new(Some(10.), None),
@@ -442,9 +442,9 @@ mod tests {
             }
         );
         assert_eq!(
-            stack::<(), ()>(vec![space().height(20.), space().width(10.)])
+            stack::<()>(vec![space().height(20.), space().width(10.)])
                 .inner
-                .constraints(Area::zero(), &mut (), &mut ()),
+                .constraints(Area::zero(), &mut ()),
             SizeConstraints {
                 width: Constraint::new(Some(10.), None),
                 height: Constraint::new(Some(20.), None),
@@ -452,9 +452,9 @@ mod tests {
             }
         );
         assert_eq!(
-            stack::<(), ()>(vec![space().height(20.), space().height(10.)])
+            stack::<()>(vec![space().height(20.), space().height(10.)])
                 .inner
-                .constraints(Area::zero(), &mut (), &mut ()),
+                .constraints(Area::zero(), &mut ()),
             SizeConstraints {
                 width: Constraint::none(),
                 height: Constraint::new(Some(20.), Some(20.)),
@@ -462,9 +462,9 @@ mod tests {
             }
         );
         assert_eq!(
-            stack::<(), ()>(vec![space().width(20.), space().width(10.)])
+            stack::<()>(vec![space().width(20.), space().width(10.)])
                 .inner
-                .constraints(Area::zero(), &mut (), &mut ()),
+                .constraints(Area::zero(), &mut ()),
             SizeConstraints {
                 width: Constraint::new(Some(20.), Some(20.)),
                 height: Constraint::none(),
@@ -475,12 +475,12 @@ mod tests {
     #[test]
     fn test_explicit_in_explicit_conflict_parent_priority() {
         assert_eq!(
-            space::<(), ()>()
+            space::<()>()
                 .width_range(10.0..)
                 .pad(0.)
                 .width_range(..5.)
                 .inner
-                .constraints(Area::zero(), &mut (), &mut ()),
+                .constraints(Area::zero(), &mut ()),
             SizeConstraints {
                 width: Constraint::new(Some(5.), Some(5.)),
                 height: Constraint::none(),

@@ -1,6 +1,6 @@
 use crate::{
     constraints::SizeConstraints, drawable::Drawable, models::*, node_cache::NodeCache,
-    traits::NodeTrait, Node, NodeWith,
+    traits::NodeTrait, Node,
 };
 use core::f32;
 use std::{fmt::Debug, rc::Rc};
@@ -41,141 +41,110 @@ fn my_layout_fn(state: &mut MyState) -> Node<MyState> {
 struct MyState {}
 ```
  */
-pub struct Layout<State, Ctx> {
-    tree: LayoutFn<State, Ctx>,
+pub struct Layout<State> {
+    tree: LayoutFn<State>,
 }
 
-pub type LayoutFn<State, Ctx> = Box<dyn Fn(&mut State, &mut Ctx) -> NodeWith<State, Ctx>>;
+pub type LayoutFn<State> = Box<dyn Fn(&mut State) -> Node<State>>;
 
-impl<State, Ctx> Layout<State, Ctx> {
-    /// Creates a new [`Layout<State, Ctx>`].
-    pub fn new_with(tree: impl Fn(&mut State, &mut Ctx) -> NodeWith<State, Ctx> + 'static) -> Self {
+impl<State> Layout<State> {
+    /// Creates a new [`Layout<State>`].
+    pub fn new(tree: impl Fn(&mut State) -> Node<State> + 'static) -> Self {
         Self {
             tree: Box::new(tree),
         }
     }
 }
 
-impl<State> Layout<State, ()> {
-    /// Creates a new [`Layout<State, Ctx>`].
-    pub fn new(tree: impl Fn(&mut State) -> Node<State> + 'static) -> Self {
-        Self {
-            tree: Box::new(move |state, _| tree(state)),
-        }
-    }
-}
-
-impl<State> Layout<State, ()> {
+impl<State> Layout<State> {
     /// Calculates layout and draws all draw nodes in the tree
     pub fn draw(&self, area: Area, state: &mut State) {
-        let ctx = &mut ();
-        let mut layout = (self.tree)(state, ctx);
-        let constraints = layout.inner.constraints(area, state, ctx);
+        let mut layout = (self.tree)(state);
+        let constraints = layout.inner.constraints(area, state);
         layout.inner.layout(
             area.constrained(&constraints, XAlign::Center, YAlign::Center),
             None,
             None,
             state,
-            ctx,
         );
-        layout.inner.draw(state, ctx);
+        layout.inner.draw(state);
     }
 }
 
-impl<State, Ctx> Layout<State, Ctx> {
-    /// Calculates layout and draws all draw nodes in the tree
-    pub fn draw_with(&self, area: Area, state: &mut State, ctx: &mut Ctx) {
-        let mut layout = (self.tree)(state, ctx);
-        let constraints = layout.inner.constraints(area, state, ctx);
-        layout.inner.layout(
-            area.constrained(&constraints, XAlign::Center, YAlign::Center),
-            None,
-            None,
-            state,
-            ctx,
-        );
-        layout.inner.draw(state, ctx);
-    }
-}
+type AreaReaderFn<State> = Rc<dyn Fn(Area, &mut State) -> Node<State>>;
 
-type AreaReaderFn<State, Ctx> = Rc<dyn Fn(Area, &mut State, &mut Ctx) -> NodeWith<State, Ctx>>;
-
-pub(crate) enum NodeValue<State, Ctx> {
+pub(crate) enum NodeValue<State> {
     Padding {
         amounts: Padding,
-        element: Box<NodeCache<State, Ctx>>,
+        element: Box<NodeCache<State>>,
     },
     Column {
-        elements: Vec<NodeCache<State, Ctx>>,
+        elements: Vec<NodeCache<State>>,
         spacing: f32,
         align: Option<YAlign>,
         off_axis_align: Option<XAlign>,
     },
     Row {
-        elements: Vec<NodeCache<State, Ctx>>,
+        elements: Vec<NodeCache<State>>,
         spacing: f32,
         align: Option<XAlign>,
         off_axis_align: Option<YAlign>,
     },
     Stack {
-        elements: Vec<NodeCache<State, Ctx>>,
+        elements: Vec<NodeCache<State>>,
         x_align: Option<XAlign>,
         y_align: Option<YAlign>,
     },
-    Group(Vec<NodeCache<State, Ctx>>),
+    Group(Vec<NodeCache<State>>),
     Offset {
         offset_x: f32,
         offset_y: f32,
-        element: Box<NodeCache<State, Ctx>>,
+        element: Box<NodeCache<State>>,
     },
-    Draw(Drawable<State, Ctx>),
+    Draw(Drawable<State>),
     Explicit {
-        options: Size<State, Ctx>,
-        element: Box<NodeCache<State, Ctx>>,
+        options: Size<State>,
+        element: Box<NodeCache<State>>,
     },
     Empty,
     Space,
-    Scope {
-        scoped: Box<dyn NodeTrait<State, Ctx>>,
-    },
     AreaReader {
-        read: AreaReaderFn<State, Ctx>,
+        read: AreaReaderFn<State>,
     },
     Coupled {
         over: bool,
-        element: Box<NodeCache<State, Ctx>>,
-        coupled: Box<NodeCache<State, Ctx>>,
+        element: Box<NodeCache<State>>,
+        coupled: Box<NodeCache<State>>,
     },
 }
 
-impl<State, Ctx> NodeValue<State, Ctx> {
-    pub(crate) fn draw(&mut self, state: &mut State, ctx: &mut Ctx) {
+impl<State> NodeValue<State> {
+    pub(crate) fn draw(&mut self, state: &mut State) {
         match self {
-            NodeValue::Draw(drawable) => drawable.draw(drawable.area, state, ctx),
+            NodeValue::Draw(drawable) => drawable.draw(drawable.area, state),
             NodeValue::Padding { element, .. }
             | NodeValue::Explicit { element, .. }
             | NodeValue::Offset { element, .. } => {
-                element.draw(state, ctx);
+                element.draw(state);
             }
             NodeValue::Stack { elements, .. } => {
-                elements.iter_mut().for_each(|el| el.draw(state, ctx));
+                elements.iter_mut().for_each(|el| el.draw(state));
             }
             NodeValue::Column { elements, .. } | NodeValue::Row { elements, .. } => {
-                elements.iter_mut().rev().for_each(|el| el.draw(state, ctx));
+                elements.iter_mut().rev().for_each(|el| el.draw(state));
             }
             NodeValue::Space => (),
-            NodeValue::Scope { scoped } => scoped.draw(state, ctx),
             NodeValue::Coupled {
                 element,
                 coupled,
                 over,
             } => {
                 if *over {
-                    element.draw(state, ctx);
-                    coupled.draw(state, ctx);
+                    element.draw(state);
+                    coupled.draw(state);
                 } else {
-                    coupled.draw(state, ctx);
-                    element.draw(state, ctx);
+                    coupled.draw(state);
+                    element.draw(state);
                 }
             }
             NodeValue::Group(_) | NodeValue::Empty | NodeValue::AreaReader { .. } => {
@@ -208,7 +177,6 @@ impl<State, Ctx> NodeValue<State, Ctx> {
         contextual_x_align: Option<XAlign>,
         contextual_y_align: Option<YAlign>,
         state: &mut State,
-        ctx: &mut Ctx,
     ) -> Vec<Area> {
         match self {
             NodeValue::Padding { amounts, .. } => vec![Area {
@@ -230,7 +198,6 @@ impl<State, Ctx> NodeValue<State, Ctx> {
                 off_axis_align.unwrap_or(XAlign::Center),
                 align.unwrap_or(YAlign::Center),
                 state,
-                ctx,
                 true,
             ),
             NodeValue::Row {
@@ -246,7 +213,6 @@ impl<State, Ctx> NodeValue<State, Ctx> {
                 align.unwrap_or(XAlign::Center),
                 off_axis_align.unwrap_or(YAlign::Center),
                 state,
-                ctx,
                 true,
             ),
             NodeValue::Stack {
@@ -257,7 +223,7 @@ impl<State, Ctx> NodeValue<State, Ctx> {
                 .iter_mut()
                 .map(|child| {
                     available_area.constrained(
-                        &child.constraints(available_area, state, ctx),
+                        &child.constraints(available_area, state),
                         x_align.unwrap_or(XAlign::Center),
                         y_align.unwrap_or(YAlign::Center),
                     )
@@ -265,7 +231,7 @@ impl<State, Ctx> NodeValue<State, Ctx> {
                 .collect(),
             NodeValue::Explicit { options, .. } => {
                 vec![available_area.constrained(
-                    &SizeConstraints::from_size(options.clone(), available_area, state, ctx),
+                    &SizeConstraints::from_size(options.clone(), available_area, state),
                     contextual_x_align.unwrap_or(XAlign::Center),
                     contextual_y_align.unwrap_or(YAlign::Center),
                 )]
@@ -280,7 +246,6 @@ impl<State, Ctx> NodeValue<State, Ctx> {
             }],
             NodeValue::Draw(_)
             | NodeValue::Space
-            | NodeValue::Scope { .. }
             | NodeValue::AreaReader { .. }
             | NodeValue::Coupled { .. } => {
                 vec![available_area]
@@ -295,7 +260,6 @@ impl<State, Ctx> NodeValue<State, Ctx> {
         contextual_x_align: Option<XAlign>,
         contextual_y_align: Option<YAlign>,
         state: &mut State,
-        ctx: &mut Ctx,
     ) {
         let contextual_aligns = self.contextual_aligns();
 
@@ -304,7 +268,6 @@ impl<State, Ctx> NodeValue<State, Ctx> {
             contextual_aligns.0.or(contextual_x_align),
             contextual_aligns.1.or(contextual_y_align),
             state,
-            ctx,
         );
 
         match self {
@@ -323,20 +286,18 @@ impl<State, Ctx> NodeValue<State, Ctx> {
                 elements
                     .iter_mut()
                     .zip(allocated)
-                    .for_each(|(el, allocation)| {
-                        el.layout(allocation, *x_align, *y_align, state, ctx)
-                    });
+                    .for_each(|(el, allocation)| el.layout(allocation, *x_align, *y_align, state));
             }
             NodeValue::Stack { elements, .. } => {
                 elements
                     .iter_mut()
                     .zip(allocated)
-                    .for_each(|(el, allocation)| el.layout(allocation, None, None, state, ctx));
+                    .for_each(|(el, allocation)| el.layout(allocation, None, None, state));
             }
             NodeValue::Padding { element, .. }
             | NodeValue::Explicit { element, .. }
             | NodeValue::Offset { element, .. } => {
-                element.layout(allocated[0], None, None, state, ctx);
+                element.layout(allocated[0], None, None, state);
             }
             NodeValue::Draw(drawable) => {
                 drawable.area = allocated[0];
@@ -344,18 +305,15 @@ impl<State, Ctx> NodeValue<State, Ctx> {
                 drawable.area.height = drawable.area.height.max(0.);
             }
             NodeValue::Space => (),
-            NodeValue::Scope { scoped } => {
-                scoped.layout(available_area, None, None, state, ctx);
-            }
             NodeValue::AreaReader { read } => {
-                *self = read(allocated[0], state, ctx).inner;
-                self.layout(allocated[0], None, None, state, ctx);
+                *self = read(allocated[0], state).inner;
+                self.layout(allocated[0], None, None, state);
             }
             NodeValue::Coupled {
                 element, coupled, ..
             } => {
-                element.layout(allocated[0], None, None, state, ctx);
-                coupled.layout(allocated[0], None, None, state, ctx);
+                element.layout(allocated[0], None, None, state);
+                coupled.layout(allocated[0], None, None, state);
             }
             NodeValue::Group(_) | NodeValue::Empty => unreachable!(),
         }
@@ -425,20 +383,19 @@ pub(crate) enum Orientation {
 }
 
 #[allow(clippy::too_many_arguments)]
-pub(crate) fn layout_axis<State, Ctx>(
-    elements: &mut [NodeCache<State, Ctx>],
+pub(crate) fn layout_axis<State>(
+    elements: &mut [NodeCache<State>],
     spacing: &f32,
     available_area: Area,
     orientation: Orientation,
     x_align: XAlign,
     y_align: YAlign,
     state: &mut State,
-    ctx: &mut Ctx,
     check: bool,
 ) -> Vec<Area> {
     let sizes: Vec<SizeConstraints> = elements
         .iter_mut()
-        .map(|element| element.constraints(available_area, state, ctx))
+        .map(|element| element.constraints(available_area, state))
         .collect();
     let element_count = elements.len();
 
@@ -612,7 +569,7 @@ pub(crate) fn layout_axis<State, Ctx>(
         .constrained(&sizes[i], x_align, y_align);
 
         if !check {
-            child.layout(area, Some(x_align), Some(y_align), state, ctx);
+            child.layout(area, Some(x_align), Some(y_align), state);
         } else {
             areas.push(area);
         }

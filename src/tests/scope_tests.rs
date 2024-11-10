@@ -3,11 +3,7 @@ mod tests {
     use crate::layout::*;
     use crate::models::*;
     use crate::nodes::*;
-    use crate::traits::NoOpScoper;
-    use crate::traits::Scopable;
-    use crate::traits::ScopableOption;
     use crate::Node;
-    use crate::NodeWith;
     #[test]
     fn test_scope() {
         struct A {
@@ -21,13 +17,7 @@ mod tests {
             test: true,
             b: B { test: true },
         };
-        struct AToBScoper;
-        impl Scopable<A, B> for AToBScoper {
-            fn scope<Result>(scoping: &mut A, f: impl FnOnce(&mut B) -> Result) -> Result {
-                f(&mut scoping.b)
-            }
-        }
-        fn layout(a: &mut A) -> NodeWith<A, ()> {
+        fn layout(a: &mut A) -> Node<A> {
             stack(vec![
                 if a.test {
                     draw(|area, a: &mut A| {
@@ -40,18 +30,21 @@ mod tests {
                         a.test = true;
                     })
                 },
-                scope::<_, _, AToBScoper>(|b: &mut B| {
-                    if b.test {
-                        draw(|area, b: &mut B| {
-                            assert_eq!(area, Area::new(0., 0., 100., 100.));
-                            b.test = false;
-                        })
-                    } else {
-                        draw(|area, b: &mut B| {
-                            assert_eq!(area, Area::new(0., 0., 100., 100.));
-                            b.test = true;
-                        })
-                    }
+                draw(|area, a: &mut A| {
+                    Layout::new(|b: &mut B| {
+                        if b.test {
+                            draw(|area, b: &mut B| {
+                                assert_eq!(area, Area::new(0., 0., 100., 100.));
+                                b.test = false;
+                            })
+                        } else {
+                            draw(|area, b: &mut B| {
+                                assert_eq!(area, Area::new(0., 0., 100., 100.));
+                                b.test = true;
+                            })
+                        }
+                    })
+                    .draw(area, &mut a.b);
                 }),
             ])
         }
@@ -69,26 +62,25 @@ mod tests {
         struct B {
             c: C,
         }
-        struct BToCScoper;
-        impl Scopable<B, C> for BToCScoper {
-            fn scope<Result>(scoping: &mut B, f: impl FnOnce(&mut C) -> Result) -> Result {
-                f(&mut scoping.c)
-            }
-        }
-
-        fn layout(_: &mut A, _: &mut B) -> NodeWith<A, B> {
+        type State<'a> = (&'a mut A, &'a mut B);
+        type SubState<'a> = (&'a mut A, &'a mut C);
+        fn layout<'a>(_: &mut State) -> Node<State<'a>> {
             stack(vec![
-                draw_with(|area, _, _| {
+                draw(|area, _state: &mut State| {
                     assert_eq!(area, Area::new(0., 0., 100., 100.));
                 }),
-                scope_with::<_, _, _, _, NoOpScoper<A>, BToCScoper>(|_, _| {
-                    draw_with(|area, _a: &mut A, _c: &mut C| {
-                        assert_eq!(area, Area::new(0., 0., 100., 100.));
+                draw(|area, state: &mut State| {
+                    Layout::new(|_state: &mut SubState| {
+                        draw(|area, _state: &mut SubState| {
+                            assert_eq!(area, Area::new(0., 0., 100., 100.));
+                        })
                     })
+                    .draw(area, &mut (&mut state.0, &mut state.1.c));
                 }),
             ])
         }
-        Layout::new_with(layout).draw_with(Area::new(0., 0., 100., 100.), &mut A, &mut B { c: C });
+        let mut state = (&mut A, &mut B { c: C });
+        Layout::new(layout).draw(Area::new(0., 0., 100., 100.), &mut state);
     }
     #[test]
     fn test_multiple_scope_paths() {
@@ -101,23 +93,25 @@ mod tests {
         fn layout(a: &mut A) -> Node<A> {
             stack(vec![path_b(a), path_c(a)])
         }
-        struct AToBScoper;
-        impl Scopable<A, B> for AToBScoper {
-            fn scope<Result>(scoping: &mut A, f: impl FnOnce(&mut B) -> Result) -> Result {
-                f(&mut scoping.b)
-            }
-        }
-        struct AToCScoper;
-        impl Scopable<A, C> for AToCScoper {
-            fn scope<Result>(scoping: &mut A, f: impl FnOnce(&mut C) -> Result) -> Result {
-                f(&mut scoping.c)
-            }
-        }
         fn path_b(_: &mut A) -> Node<A> {
-            stack(vec![scope::<_, _, AToBScoper>(|_b: &mut B| space())])
+            stack(vec![draw(|area, state: &mut A| {
+                Layout::new(|_state: &mut B| {
+                    draw(|area, _state: &mut B| {
+                        assert_eq!(area, Area::new(0., 0., 100., 100.));
+                    })
+                })
+                .draw(area, &mut state.b);
+            })])
         }
         fn path_c(_: &mut A) -> Node<A> {
-            stack(vec![scope::<_, _, AToCScoper>(|_c: &mut C| space())])
+            stack(vec![draw(|area, state: &mut A| {
+                Layout::new(|_state: &mut C| {
+                    draw(|area, _state: &mut C| {
+                        assert_eq!(area, Area::new(0., 0., 100., 100.));
+                    })
+                })
+                .draw(area, &mut state.c);
+            })])
         }
         Layout::new(layout).draw(Area::new(0., 0., 100., 100.), &mut A { b: B, c: C });
     }
@@ -127,17 +121,17 @@ mod tests {
         struct A {
             b: Option<B>,
         }
-        struct AScoper;
-        impl ScopableOption<A, B> for AScoper {
-            fn scope_option<Result>(
-                scoping: &mut A,
-                f: impl FnOnce(Option<&mut B>) -> Result,
-            ) -> Result {
-                f(scoping.b.as_mut())
-            }
-        }
         fn layout(_a: &mut A) -> Node<A> {
-            stack(vec![scope::<_, _, AScoper>(|_b: &mut B| space())])
+            stack(vec![draw(|area, state: &mut A| {
+                if let Some(ref mut b) = state.b {
+                    Layout::new(|_state: &mut B| {
+                        draw(|area, _state: &mut B| {
+                            assert_eq!(area, Area::new(0., 0., 100., 100.));
+                        })
+                    })
+                    .draw(area, b);
+                }
+            })])
         }
         Layout::new(layout).draw(Area::new(0., 0., 100., 100.), &mut A { b: Some(B) });
     }
@@ -147,30 +141,23 @@ mod tests {
         struct A {
             b: Option<B>,
         }
-        struct AScoper;
-        impl ScopableOption<A, B> for AScoper {
-            fn scope_option<Result>(
-                scoping: &mut A,
-                f: impl FnOnce(Option<&mut B>) -> Result,
-            ) -> Result {
-                f(scoping.b.as_mut())
-            }
+        type State<'a> = (&'a mut A, &'a mut B);
+        type SubState<'a> = (&'a mut B, &'a mut B);
+        let mut state = (&mut A { b: Some(B) }, &mut B);
+        fn layout<'a>(_state: &mut State) -> Node<State<'a>> {
+            stack(vec![draw(|area, state: &mut State| {
+                if let (
+                    A {
+                        b: Some(ref mut scoped_a),
+                    },
+                    ref mut b,
+                ) = state
+                {
+                    Layout::new(|_substate: &mut SubState| draw(|_: Area, _: &mut SubState| {}))
+                        .draw(area, &mut (scoped_a, b));
+                }
+            })])
         }
-        struct BScoper;
-        impl Scopable<B, B> for BScoper {
-            fn scope<Result>(scoping: &mut B, f: impl FnOnce(&mut B) -> Result) -> Result {
-                f(scoping)
-            }
-        }
-        fn layout(_b: &mut B, _a: &mut A) -> NodeWith<B, A> {
-            stack(vec![scope_with::<_, _, _, _, BScoper, AScoper>(
-                |_b: &mut B, _b_1: &mut B| space(),
-            )])
-        }
-        Layout::new_with(layout).draw_with(
-            Area::new(0., 0., 100., 100.),
-            &mut B,
-            &mut A { b: Some(B) },
-        );
+        Layout::new(layout).draw(Area::new(0., 0., 100., 100.), &mut state);
     }
 }

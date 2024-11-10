@@ -1,6 +1,5 @@
 use backer::models::*;
 use backer::nodes::*;
-use backer::traits::Scopable;
 use backer::Layout;
 use backer::Node;
 use macroquad::prelude::*;
@@ -41,21 +40,15 @@ async fn main() {
 
 const BTN_SIZE: f32 = 50.;
 fn layout_for_highlight(ctx: &mut State) -> Node<State> {
-    struct HighlightScoper;
-    impl Scopable<State, HighlightedCase> for HighlightScoper {
-        fn scope<Result>(
-            scoping: &mut State,
-            f: impl FnOnce(&mut HighlightedCase) -> Result,
-        ) -> Result {
-            f(&mut scoping.highlight)
-        }
-    }
     let highlight = ctx.highlight;
     row_spaced(
         10.,
         vec![
             if highlight == HighlightedCase::RelAbsSequence || highlight == HighlightedCase::None {
-                scope::<_, _, HighlightScoper>(|highlight| rel_abs_seq(*highlight))
+                draw(|area, state: &mut State| {
+                    Layout::new(|state: &mut HighlightedCase| rel_abs_seq(*state))
+                        .draw(area, &mut state.highlight);
+                })
             } else {
                 empty()
             },
