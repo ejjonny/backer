@@ -1,8 +1,5 @@
 use crate::{
-    drawable::{Drawable, DrawableNode},
-    layout::NodeValue,
-    models::*,
-    node_cache::NodeCache,
+    drawable::DrawableNode, layout::NodeValue, models::*, node_cache::NodeCache, traits::Drawable,
     Node,
 };
 use std::rc::Rc;

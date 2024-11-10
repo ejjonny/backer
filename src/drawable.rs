@@ -1,9 +1,5 @@
-use crate::models::Area;
+use crate::{models::Area, traits::Drawable};
 use std::fmt;
-
-pub trait Drawable<State> {
-    fn draw(&mut self, area: Area, state: &mut State);
-}
 
 impl<State, F: Fn(Area, &mut State)> Drawable<State> for F {
     fn draw(&mut self, area: Area, state: &mut State) {
