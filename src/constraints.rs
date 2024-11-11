@@ -174,6 +174,13 @@ impl<State> NodeValue<State> {
             }
             NodeValue::Space | NodeValue::AreaReader { .. } => Some(SizeConstraints::default()),
             NodeValue::Coupled { element, .. } => element.constraints(allocations[0], state),
+            NodeValue::Visibility { visible, element } => {
+                if *visible {
+                    element.constraints(allocations[0], state)
+                } else {
+                    None
+                }
+            }
             NodeValue::Empty | NodeValue::Group(_) => unreachable!(),
         }
     }

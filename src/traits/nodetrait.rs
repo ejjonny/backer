@@ -13,5 +13,5 @@ pub(crate) trait NodeTrait<State>: Debug {
         contextual_y_align: Option<YAlign>,
         state: &mut State,
     );
-    fn draw(&mut self, state: &mut State);
+    fn draw(&mut self, state: &mut State, contextual_visibility: bool);
 }

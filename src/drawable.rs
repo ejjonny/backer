@@ -14,9 +14,10 @@ pub(crate) struct DrawableNode<State> {
 }
 
 impl<State> DrawableNode<State> {
-    pub(crate) fn draw(&mut self, area: Area, state: &mut State) {
+    pub(crate) fn draw(&mut self, area: Area, state: &mut State, contextual_visibility: bool) {
         if area.width >= 0. && area.height >= 0. {
-            self.drawable.draw(area, state, self.visible);
+            self.drawable
+                .draw(area, state, contextual_visibility && self.visible);
         }
     }
 }

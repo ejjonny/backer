@@ -71,7 +71,7 @@ impl<State> Layout<State> {
             None,
             state,
         );
-        layout.inner.draw(state);
+        layout.inner.draw(state, true);
     }
 }
 
@@ -120,22 +120,31 @@ pub(crate) enum NodeValue<State> {
         element: Box<NodeCache<State>>,
         coupled: Box<NodeCache<State>>,
     },
+    Visibility {
+        visible: bool,
+        element: Box<NodeCache<State>>,
+    },
 }
 
 impl<State> NodeValue<State> {
-    pub(crate) fn draw(&mut self, state: &mut State) {
+    pub(crate) fn draw(&mut self, state: &mut State, contextual_visibility: bool) {
         match self {
-            NodeValue::Draw(drawable) => drawable.draw(drawable.area, state),
+            NodeValue::Draw(drawable) => drawable.draw(drawable.area, state, contextual_visibility),
             NodeValue::Padding { element, .. }
             | NodeValue::Explicit { element, .. }
             | NodeValue::Offset { element, .. } => {
-                element.draw(state);
+                element.draw(state, contextual_visibility);
             }
             NodeValue::Stack { elements, .. } => {
-                elements.iter_mut().for_each(|el| el.draw(state));
+                elements
+                    .iter_mut()
+                    .for_each(|el| el.draw(state, contextual_visibility));
             }
             NodeValue::Column { elements, .. } | NodeValue::Row { elements, .. } => {
-                elements.iter_mut().rev().for_each(|el| el.draw(state));
+                elements
+                    .iter_mut()
+                    .rev()
+                    .for_each(|el| el.draw(state, contextual_visibility));
             }
             NodeValue::Space => (),
             NodeValue::Coupled {
@@ -144,12 +153,15 @@ impl<State> NodeValue<State> {
                 over,
             } => {
                 if *over {
-                    element.draw(state);
-                    coupled.draw(state);
+                    element.draw(state, contextual_visibility);
+                    coupled.draw(state, contextual_visibility);
                 } else {
-                    coupled.draw(state);
-                    element.draw(state);
+                    coupled.draw(state, contextual_visibility);
+                    element.draw(state, contextual_visibility);
                 }
+            }
+            Self::Visibility { element, visible } => {
+                element.draw(state, *visible && contextual_visibility)
             }
             NodeValue::Group(_) | NodeValue::Empty | NodeValue::AreaReader { .. } => {
                 unreachable!()
@@ -249,12 +261,14 @@ impl<State> NodeValue<State> {
                 width: available_area.width,
                 height: available_area.height,
             }],
-            NodeValue::Draw(_) => {
+            NodeValue::Draw(_)
+            | NodeValue::Space
+            | NodeValue::AreaReader { .. }
+            | NodeValue::Coupled { .. }
+            | NodeValue::Visibility { .. } => {
                 vec![available_area]
             }
-            NodeValue::Space | NodeValue::AreaReader { .. } | NodeValue::Coupled { .. } => {
-                vec![available_area]
-            }
+
             NodeValue::Group(_) | NodeValue::Empty => unreachable!(),
         }
     }
@@ -319,6 +333,9 @@ impl<State> NodeValue<State> {
             } => {
                 element.layout(allocated[0], None, None, state);
                 coupled.layout(allocated[0], None, None, state);
+            }
+            NodeValue::Visibility { element, .. } => {
+                element.layout(allocated[0], None, None, state);
             }
             NodeValue::Group(_) | NodeValue::Empty => unreachable!(),
         }
@@ -398,11 +415,11 @@ pub(crate) fn layout_axis<State>(
     state: &mut State,
     check: bool,
 ) -> Vec<Area> {
+    let element_count = elements.len();
     let sizes: Vec<Option<SizeConstraints>> = elements
         .iter_mut()
         .map(|element| element.constraints(available_area, state))
         .collect();
-    let element_count = elements.len();
     let filtered_element_count = sizes.iter().filter_map(|&el| el).count();
 
     let total_spacing = *spacing * (filtered_element_count as i32 - 1).max(0) as f32;
@@ -558,7 +575,14 @@ pub(crate) fn layout_axis<State>(
 
     let mut areas = Vec::<Area>::new();
     for (i, child) in elements.iter_mut().enumerate() {
-        let child_size = final_sizes[i].unwrap_or(0.);
+        let child_size = final_sizes[i].unwrap_or(if filtered_element_count > 1 {
+            0.
+        } else {
+            match orientation {
+                Orientation::Horizontal => available_area.width,
+                Orientation::Vertical => available_area.height,
+            }
+        });
 
         let area = match orientation {
             Orientation::Horizontal => Area {

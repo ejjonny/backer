@@ -11,6 +11,10 @@ authors = ["ejjonny"]
 [lib]
 crate-type = ["lib"]
 
+# [features]
+# default = ["transitions"]
+# transitions = ["dep:lilt"]
+
 [[example]]
 name = "macroquad-example"
 path = "examples/macroquad-example/src/main.rs"
@@ -28,3 +32,6 @@ macroquad = "0.4.13"
 egui = "0.28.1"
 eframe = "0.28.1"
 egui_extras = { version = "0.28.1", features = ["default", "image"] }
+
+[dependencies]
+lilt = { version = "0.7.0", optional = true }

@@ -59,7 +59,7 @@ impl<State> NodeTrait<State> for NodeCache<State> {
             state,
         );
     }
-    fn draw(&mut self, state: &mut State) {
-        self.kind.draw(state)
+    fn draw(&mut self, state: &mut State, contextual_visibility: bool) {
+        self.kind.draw(state, contextual_visibility)
     }
 }

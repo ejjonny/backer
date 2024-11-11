@@ -381,6 +381,14 @@ impl<State> Node<State> {
             },
         }
     }
+    pub fn visible(self, visibility: bool) -> Self {
+        Node {
+            inner: NodeValue::Visibility {
+                visible: visibility,
+                element: Box::new(NodeCache::new(self.inner)),
+            },
+        }
+    }
     fn wrap_or_update_explicit(mut self, size: Size<State>) -> Self {
         match self.inner {
             NodeValue::Explicit {
@@ -432,19 +440,20 @@ impl<State> Node<State> {
     }
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use crate::models::*;
-//     use crate::nodes::*;
+#[cfg(test)]
+mod tests {
+    use crate::models::*;
+    use crate::nodes::*;
 
-//     #[test]
-//     fn test_explicit_wrap_valid() {
-//         let c = space::<()>()
-//             .width(10.)
-//             .width_range(5.0..)
-//             .inner
-//             .constraints(Area::zero(), &mut ());
-//         assert!(c.width.get_upper().is_none());
-//         assert_eq!(c.width.get_lower().unwrap(), 5.);
-//     }
-// }
+    #[test]
+    fn test_explicit_wrap_valid() {
+        let c = space::<()>()
+            .width(10.)
+            .width_range(5.0..)
+            .inner
+            .constraints(Area::zero(), &mut ())
+            .unwrap();
+        assert!(c.width.get_upper().is_none());
+        assert_eq!(c.width.get_lower().unwrap(), 5.);
+    }
+}
