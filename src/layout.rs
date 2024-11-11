@@ -249,7 +249,7 @@ impl<State> NodeValue<State> {
                 width: available_area.width,
                 height: available_area.height,
             }],
-            NodeValue::Draw(drawable) => {
+            NodeValue::Draw(_) => {
                 vec![available_area]
             }
             NodeValue::Space | NodeValue::AreaReader { .. } | NodeValue::Coupled { .. } => {
@@ -404,7 +404,6 @@ pub(crate) fn layout_axis<State>(
         .collect();
     let element_count = elements.len();
     let filtered_element_count = sizes.iter().filter_map(|&el| el).count();
-    dbg!(filtered_element_count);
 
     let total_spacing = *spacing * (filtered_element_count as i32 - 1).max(0) as f32;
     let available_size = match orientation {

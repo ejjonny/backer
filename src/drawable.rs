@@ -2,7 +2,7 @@ use crate::{models::Area, traits::Drawable};
 use std::fmt;
 
 impl<State, F: Fn(Area, &mut State)> Drawable<State> for F {
-    fn draw(&mut self, area: Area, state: &mut State) {
+    fn draw(&mut self, area: Area, state: &mut State, _visible: bool) {
         self(area, state)
     }
 }
@@ -15,8 +15,8 @@ pub(crate) struct DrawableNode<State> {
 
 impl<State> DrawableNode<State> {
     pub(crate) fn draw(&mut self, area: Area, state: &mut State) {
-        if area.width > 0. && area.height > 0. {
-            self.drawable.draw(area, state);
+        if area.width >= 0. && area.height >= 0. {
+            self.drawable.draw(area, state, self.visible);
         }
     }
 }
