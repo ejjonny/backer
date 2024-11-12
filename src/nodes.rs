@@ -110,7 +110,8 @@ pub fn stack<State>(elements: Vec<Node<State>>) -> Node<State> {
         },
     }
 }
-/// Creates a node that can be drawn
+/// Creates a node that can be drawn.
+///
 /// This node is the point of integration with the UI library of your choice.
 /// ```rust
 /// use backer::*;
@@ -135,6 +136,10 @@ pub fn draw<State>(drawable_fn: impl Fn(Area, &mut State) + 'static) -> Node<Sta
         }),
     }
 }
+/// Creates a node that can be drawn using an object which implements the `Drawable` trait
+/// (or the `TransitionDrawable` trait)
+///
+/// See [`draw`]
 pub fn draw_object<State>(drawable: impl Drawable<State> + 'static) -> Node<State> {
     Node {
         inner: NodeValue::Draw(DrawableNode {
