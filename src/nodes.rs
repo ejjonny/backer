@@ -132,7 +132,6 @@ pub fn draw<State>(drawable_fn: impl Fn(Area, &mut State) + 'static) -> Node<Sta
         inner: NodeValue::Draw(DrawableNode {
             area: Area::default(),
             drawable: SomeDrawable::Fn(Box::new(drawable_fn)),
-            visible: true,
         }),
     }
 }
@@ -141,7 +140,6 @@ pub fn draw_object<State>(drawable: impl Drawable<State> + 'static) -> Node<Stat
         inner: NodeValue::Draw(DrawableNode {
             area: Area::default(),
             drawable: SomeDrawable::Object(Box::new(drawable)),
-            visible: true,
         }),
     }
 }

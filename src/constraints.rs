@@ -165,13 +165,7 @@ impl<State> NodeValue<State> {
                         .combine_explicit_with_child(child_constraints)
                 }),
             NodeValue::Offset { element, .. } => element.constraints(allocations[0], state),
-            NodeValue::Draw(drawable) => {
-                if drawable.visible {
-                    Some(SizeConstraints::default())
-                } else {
-                    None
-                }
-            }
+            NodeValue::Draw(_) => Some(SizeConstraints::default()),
             NodeValue::Space | NodeValue::AreaReader { .. } => Some(SizeConstraints::default()),
             NodeValue::Coupled { element, .. } => element.constraints(allocations[0], state),
             NodeValue::Visibility { visible, element } => {
