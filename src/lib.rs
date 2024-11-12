@@ -25,6 +25,8 @@ mod tests;
 
 pub use layout::Layout;
 pub use node::Node;
+#[cfg(feature = "transitions")]
+pub use traits::transitions;
 
 /// Traits for layout definitions
 pub mod traits;

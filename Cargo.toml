@@ -11,9 +11,9 @@ authors = ["ejjonny"]
 [lib]
 crate-type = ["lib"]
 
-# [features]
-# default = ["transitions"]
-# transitions = ["dep:lilt"]
+[features]
+default = []
+transitions = ["dep:lilt"]
 
 [[example]]
 name = "macroquad-example"

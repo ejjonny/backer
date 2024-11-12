@@ -44,21 +44,13 @@ fn layout_for_highlight(ctx: &mut State) -> Node<State> {
     row_spaced(
         10.,
         vec![
-            // if highlight == HighlightedCase::RelAbsSequence || highlight == HighlightedCase::None {
-            draw_visible(
-                |area, state: &mut State| {
-                    Layout::new(|state: &mut HighlightedCase| rel_abs_seq(*state))
-                        .draw(area, &mut state.highlight);
-                },
+            draw(|area, state: &mut State| {
+                Layout::new(|state: &mut HighlightedCase| rel_abs_seq(*state))
+                    .draw(area, &mut state.highlight);
+            })
+            .visible(
                 highlight == HighlightedCase::RelAbsSequence || highlight == HighlightedCase::None,
             ),
-            //     draw(|area, state: &mut State| {
-            //         Layout::new(|state: &mut HighlightedCase| rel_abs_seq(*state))
-            //             .draw(area, &mut state.highlight);
-            //     })
-            // } else {
-            //     empty()
-            // },
             if highlight == HighlightedCase::AlignmentOffset || highlight == HighlightedCase::None {
                 column_spaced(
                     10.,

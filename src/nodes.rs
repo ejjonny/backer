@@ -1,5 +1,9 @@
 use crate::{
-    drawable::DrawableNode, layout::NodeValue, models::*, node_cache::NodeCache, traits::Drawable,
+    drawable::{DrawableNode, SomeDrawable},
+    layout::NodeValue,
+    models::*,
+    node_cache::NodeCache,
+    traits::Drawable,
     Node,
 };
 use std::rc::Rc;
@@ -123,24 +127,25 @@ pub fn stack<State>(elements: Vec<Node<State>>) -> Node<State> {
 ///  })
 ///}
 /// ```
-pub fn draw<State>(drawable: impl Drawable<State> + 'static) -> Node<State> {
+pub fn draw<State>(drawable_fn: impl Fn(Area, &mut State) + 'static) -> Node<State> {
     Node {
         inner: NodeValue::Draw(DrawableNode {
             area: Area::default(),
-            drawable: Box::new(drawable),
+            drawable: SomeDrawable::Fn(Box::new(drawable_fn)),
             visible: true,
         }),
     }
 }
-pub fn draw_visible<State>(drawable: impl Drawable<State> + 'static, visible: bool) -> Node<State> {
+pub fn draw_object<State>(drawable: impl Drawable<State> + 'static) -> Node<State> {
     Node {
         inner: NodeValue::Draw(DrawableNode {
             area: Area::default(),
-            drawable: Box::new(drawable),
-            visible,
+            drawable: SomeDrawable::Object(Box::new(drawable)),
+            visible: true,
         }),
     }
 }
+
 /// Creates an empty space which is laid out the same as any other node.
 ///
 /// To add spacing between each item in a row or column you can also use

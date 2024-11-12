@@ -1,15 +1,25 @@
 use crate::{models::Area, traits::Drawable};
 use std::fmt;
 
-impl<State, F: Fn(Area, &mut State)> Drawable<State> for F {
-    fn draw(&mut self, area: Area, state: &mut State, _visible: bool) {
-        self(area, state)
+type DrawFn<State> = Box<dyn Fn(Area, &mut State)>;
+
+pub(crate) enum SomeDrawable<State> {
+    Fn(DrawFn<State>),
+    Object(Box<dyn Drawable<State>>),
+}
+
+impl<State> SomeDrawable<State> {
+    fn draw(&mut self, area: Area, state: &mut State, visible: bool) {
+        match self {
+            SomeDrawable::Fn(closure) => closure(area, state),
+            SomeDrawable::Object(object) => object.draw(area, state, visible),
+        }
     }
 }
 
 pub(crate) struct DrawableNode<State> {
     pub(crate) area: Area,
-    pub(crate) drawable: Box<dyn Drawable<State>>,
+    pub(crate) drawable: SomeDrawable<State>,
     pub(crate) visible: bool,
 }
 
