@@ -12,7 +12,8 @@ authors = ["ejjonny"]
 crate-type = ["lib"]
 
 [features]
-default = []
+# default = []
+default = ["transitions"]
 transitions = ["dep:lilt"]
 
 [[example]]

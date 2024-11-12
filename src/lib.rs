@@ -25,8 +25,13 @@ mod tests;
 
 pub use layout::Layout;
 pub use node::Node;
+
 #[cfg(feature = "transitions")]
-pub use traits::transitions;
+pub use lilt::Easing;
+
+#[cfg(feature = "transitions")]
+/// Models & traits for interpolated layout
+pub mod transitions;
 
 /// Traits for layout definitions
 pub mod traits;
