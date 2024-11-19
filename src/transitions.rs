@@ -23,20 +23,25 @@ impl<State: TransitionState, T: TransitionDrawable<State>> Drawable<State> for T
         let mut bank = state.bank().clone();
         let mut anim = bank.animations.remove(&hsh).unwrap_or(AnimArea {
             visible: Animated::new(visible)
-                .duration(Self::duration())
-                .easing(Self::easing()),
+                .duration(self.duration())
+                .easing(self.easing())
+                .delay(self.delay()),
             x: Animated::new(area.x)
-                .duration(Self::duration())
-                .easing(Self::easing()),
+                .duration(self.duration())
+                .easing(self.easing())
+                .delay(self.delay()),
             y: Animated::new(area.y)
-                .duration(Self::duration())
-                .easing(Self::easing()),
+                .duration(self.duration())
+                .easing(self.easing())
+                .delay(self.delay()),
             width: Animated::new(area.width)
-                .duration(Self::duration())
-                .easing(Self::easing()),
+                .duration(self.duration())
+                .easing(self.easing())
+                .delay(self.delay()),
             height: Animated::new(area.height)
-                .duration(Self::duration())
-                .easing(Self::easing()),
+                .duration(self.duration())
+                .easing(self.easing())
+                .delay(self.delay()),
         });
         anim.visible.transition(visible, now);
         anim.x.transition(area.x, now);
@@ -68,9 +73,10 @@ pub trait TransitionDrawable<State: TransitionState> {
         visible: bool,
         visible_amount: f32,
     );
-    fn id(&self) -> &impl Hash;
-    fn easing() -> Easing;
-    fn duration() -> f32;
+    fn id(&self) -> &u64;
+    fn easing(&self) -> Easing;
+    fn duration(&self) -> f32;
+    fn delay(&self) -> f32;
 }
 pub trait TransitionState {
     fn bank(&mut self) -> &mut AnimationBank;
