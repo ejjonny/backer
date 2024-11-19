@@ -25,7 +25,7 @@ This project intends to be a flexible layout tool & not much else.
 
 Check out the [demo site](https://cyypherus.github.io/backer/): a mock page showcasing layout capabilities in a realistic interface. Built with [egui](https://github.com/emilk/egui)!
 
-[<img src="https://github.com/user-attachments/assets/71c2e83c-67e0-46e9-9bb8-d3bc5926c973">](https://ejjonny.github.io/backer/)
+[<img src="https://github.com/user-attachments/assets/71c2e83c-67e0-46e9-9bb8-d3bc5926c973">](https://cyypherus.github.io/backer/)
 
 Backer relies on simple rules that can compose to create complex, flexible layouts.
 
